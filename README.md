@@ -28,31 +28,9 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 
 ## Installation
 
-### Method 1: Easy Setup Installer (Recommended)
-You can directly compile a native Windows Installer. This bundles the core python application into a perfectly isolated executable and walks you through standard Desktop Shortcut creation and registry binding.
-1. Run `python_app/build_exe.py` and wait for compilation to succeed.
-2. Run `python_app/build_installer.py`.
-3. Open the generated `4_Zone_Rgb_Toolkit_Setup.exe` file located in `python_app/dist/Installer`.
-4. Follow the Setup Wizard.
-
-### Method 2: Portable Executable
-1. Run `python_app/build_exe.py`.
-2. Locate the fully standalone application `4_Zone_Rgb_Toolkit.exe` inside the `python_app/dist/4_Zone_Rgb_Toolkit` folder.
-3. You can move this folder/executable anywhere and run it without needing Python installed on the host machine.
-
-### Method 3: Running from Source
-Ensure you have Python 3.8+ installed.
-
-1. Navigate to the `python_app` directory.
-2. Create and activate a virtual environment (optional but recommended).
-3. Install the required dependencies:
-   ```bash
-   pip install PySide6 hidapi pynput wmi mss pyaudio numpy
-   ```
-4. Run the main interface:
-   ```bash
-   python gui_app.py
-   ```
+1. ![Download Release](assets/1.png)
+2. Unzip the downloaded file.
+3. Open the `.exe` file to run the application.
 
 *Note: The Live Audio Visualizer requires `pyaudio` and proper Loopback drivers on Windows. Reading CPU temperatures often requires running the application natively as an Administrator.*
 
