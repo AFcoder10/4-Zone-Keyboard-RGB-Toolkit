@@ -32,13 +32,6 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 2. Unzip the downloaded file.
 3. Open the `.exe` file to run the application.
 
-*Note: The Live Audio Visualizer requires `pyaudio` and proper Loopback drivers on Windows. Reading CPU temperatures often requires running the application natively as an Administrator.*
-
-## Building & Compiling Modifiable Assets
-If you decide to modify the source code or interface styling, you can instantly automatically rebuild the clean C++ based execution files using the provided tooling scripts.
-- To update the core standalone package and strip old cache: Wait in the `python_app` folder and run `python update_exe.py`
-- To repackage the Setup Wizard Installer: Run `python build_installer.py`
-
 ## Troubleshooting
 
 - **Keyboard Not Found:** Ensure your specific PID is mapped successfully in `python_controller.py`. If you have a different Lenovo model, you may need to add its Product ID hex definition under `L5PKeyboard.PRODUCT_IDS`.
