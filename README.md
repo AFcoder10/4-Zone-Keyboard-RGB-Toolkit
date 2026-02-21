@@ -32,6 +32,8 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 2. Unzip the downloaded file.
 3. Open the `.exe` file to run the application.
 
+*Note: Do not move or extract only the `.exe` file. You need to keep all the surrounding files and folders in the directory to run it properly.*
+
 ## Troubleshooting
 
 - **Keyboard Not Found:** Ensure your specific PID is mapped successfully in `python_controller.py`. If you have a different Lenovo model, you may need to add its Product ID hex definition under `L5PKeyboard.PRODUCT_IDS`.
