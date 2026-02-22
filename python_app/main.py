@@ -313,37 +313,7 @@ class RGBControllerApp(QMainWindow):
         self.speed_widget.setLayout(speed_layout)
         controls_layout.addWidget(self.speed_widget)
         
-        # Random Mode Speed slider
-        random_speed_layout = QHBoxLayout()
-        self.random_speed_label = QLabel('Random Mode Speed: 3s')
-        self.random_speed_label.setFixedWidth(180)
-        self.btn_random_speed_minus = QPushButton()
-        self.btn_random_speed_minus.setIcon(QIcon(minus_icon_path))
-        self.btn_random_speed_minus.setFixedSize(24, 24)
-        self.btn_random_speed_minus.setStyleSheet(icon_css)
-        self.btn_random_speed_minus.setCursor(Qt.PointingHandCursor)
-        self.btn_random_speed_minus.clicked.connect(lambda: self.random_speed_slider.setValue(max(1, self.random_speed_slider.value() - 1)))
-        self.random_speed_slider = QSlider(Qt.Horizontal)
-        self.random_speed_slider.setRange(1, 10)
-        self.random_speed_slider.setValue(3)
-        self.random_speed_slider.setTickPosition(QSlider.TicksBelow)
-        self.random_speed_slider.setTickInterval(1)
-        self.random_speed_slider.valueChanged.connect(self.on_random_speed_changed)
-        self.btn_random_speed_plus = QPushButton()
-        self.btn_random_speed_plus.setIcon(QIcon(plus_icon_path))
-        self.btn_random_speed_plus.setFixedSize(24, 24)
-        self.btn_random_speed_plus.setStyleSheet(icon_css)
-        self.btn_random_speed_plus.setCursor(Qt.PointingHandCursor)
-        self.btn_random_speed_plus.clicked.connect(lambda: self.random_speed_slider.setValue(min(10, self.random_speed_slider.value() + 1)))
-        random_speed_layout.addWidget(self.random_speed_label)
-        random_speed_layout.addWidget(self.btn_random_speed_minus)
-        random_speed_layout.addWidget(self.random_speed_slider, stretch=1)
-        random_speed_layout.addWidget(self.btn_random_speed_plus)
-        
-        self.random_speed_widget = QWidget()
-        self.random_speed_widget.setLayout(random_speed_layout)
-        self.random_speed_widget.hide()
-        controls_layout.addWidget(self.random_speed_widget)
+        # Random mode removed — related controls were deleted
         
         self.ambient_speed_layout = QHBoxLayout()
         self.ambient_speed_layout.setContentsMargins(145, 0, 0, 0) # align with slider
@@ -387,12 +357,7 @@ class RGBControllerApp(QMainWindow):
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
         self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Ambient Screen Color', '[Beta] Live Audio Visualizer']
-        self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)', '[Beta] Random']
-        # Random mode tracking
-        self.random_mode_enabled = False
-        self.random_mode_list = ['Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
-        self.random_mode_index = 0
-        self.random_mode_timer_count = 0
+        self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
         self.mode_list.setCurrentRow(0)
@@ -681,7 +646,7 @@ class RGBControllerApp(QMainWindow):
                 self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
             else:
                 self.colors_group.setStyleSheet('QGroupBox { color: #555555; }')
-            is_speed_enabled = mode_name not in ['Off', 'Static', '[Beta] CPU Temperature', 'Ambient Screen Color', 'Random']
+            is_speed_enabled = mode_name not in ['Off', 'Static', '[Beta] CPU Temperature', 'Ambient Screen Color']
             self.speed_widget.setEnabled(is_speed_enabled)
             self.speed_label.setStyleSheet('color: #E2E2E2;' if is_speed_enabled else 'color: #555555;')
             
@@ -702,25 +667,13 @@ class RGBControllerApp(QMainWindow):
                 self.vibrance_widget.show()
                 self.speed_widget.hide()
                 self.ambient_speed_widget.show()
-                self.random_speed_widget.hide()
-                self.random_mode_enabled = False
-            elif mode_name == '[Beta] Random':
-                # Random mode: show random speed slider
-                self.vibrance_widget.hide()
-                self.speed_widget.hide()
-                self.ambient_speed_widget.hide()
-                self.random_speed_widget.show()
-                self.random_mode_enabled = True
-                self.random_mode_timer_count = 0
-                self.random_mode_index = random.randint(0, len(self.random_mode_list) - 1)
             elif 'Live Audio Visualizer' in mode_name:
                 # In Live Audio Visualizer mode, hide vibrance (brightness boost) UI
                 self.vibrance_widget.hide()
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
                 self.speed_label.setStyleSheet('color: #E2E2E5E2;')
                 self.speed_widget.setEnabled(True)
-                self.random_speed_widget.hide()
-                self.random_mode_enabled = False
+                # (random mode removed)
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
                 self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
@@ -729,8 +682,7 @@ class RGBControllerApp(QMainWindow):
                 self.vibrance_widget.hide()
                 self.speed_widget.show()
                 self.ambient_speed_widget.hide()
-                self.random_speed_widget.hide()
-                self.random_mode_enabled = False
+                # (random mode removed)
             
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
@@ -787,11 +739,7 @@ class RGBControllerApp(QMainWindow):
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
-    def on_random_speed_changed(self, value):
-        self.random_speed_label.setText(f'Random Mode Speed: {value}s')
-        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
-        if '[Beta] Random' in mode_name:
-            self.random_mode_timer_count = 0  # Reset timer
+    # Random mode removed; handler deleted
     def on_vibrance_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
@@ -801,6 +749,7 @@ class RGBControllerApp(QMainWindow):
             self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
             # Does not need immediate effect replay - calculates frame by frame
     def apply_effect(self):
+        # Stop the custom timer before applying a new effect
         self.custom_timer.stop()
         if not self.mode_list.currentItem():
             return
@@ -908,26 +857,7 @@ class RGBControllerApp(QMainWindow):
                 return
             else:
                 mode_name = self.mode_list.currentItem().text()
-                
-                # Handle random mode cycling
-                if self.random_mode_enabled and mode_name == '[Beta] Random':
-                    self.random_mode_timer_count += 1
-                    # Timer runs at ~30ms intervals, so convert seconds to timer ticks
-                    timer_interval = 30  # milliseconds
-                    seconds_per_switch = self.random_speed_slider.value()
-                    ticks_per_switch = int((seconds_per_switch * 1000) / timer_interval)
-                    
-                    if self.random_mode_timer_count >= ticks_per_switch:
-                        self.random_mode_timer_count = 0
-                        self.random_mode_index = random.randint(0, len(self.random_mode_list) - 1)
-                        next_mode = self.random_mode_list[self.random_mode_index]
-                        items = self.mode_list.findItems(next_mode, Qt.MatchExactly)
-                        if items:
-                            self.mode_list.blockSignals(True)
-                            self.mode_list.setCurrentItem(items[0])
-                            self.mode_list.blockSignals(False)
-                            self.apply_effect()
-                    return
+                # (random mode removed) — continue with normal effect updates
                 
                 speed_mult = self.speed_slider.value() / 50.0
                 t = time.time()
