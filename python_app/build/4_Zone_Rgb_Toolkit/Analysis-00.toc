@@ -1,0 +1,3805 @@
+(['c:\\Users\\Aditya '
+  'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\main.py'],
+ ['c:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app'],
+ [],
+ [('C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_pyinstaller',
+   0),
+  ('C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks',
+   -1000),
+  ('C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib',
+   -1000)],
+ {},
+ [],
+ [],
+ False,
+ {},
+ 0,
+ [],
+ [('assets\\minus.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\minus.svg',
+   'DATA'),
+  ('assets\\plus.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\plus.svg',
+   'DATA'),
+  ('assets\\settings.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\settings.svg',
+   'DATA'),
+  ('assets\\toggle_off.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\toggle_off.svg',
+   'DATA'),
+  ('assets\\toggle_on.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\toggle_on.svg',
+   'DATA'),
+  ('audio_visualizer.py',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\audio_visualizer.py',
+   'DATA'),
+  ('python_controller.py',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\python_controller.py',
+   'DATA'),
+  ('rgb_wheel.ico',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\rgb_wheel.ico',
+   'DATA')],
+ '3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit '
+ '(AMD64)]',
+ [('pyi_rth_inspect',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
+   'PYSOURCE'),
+  ('pyi_rth_pkgutil',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
+   'PYSOURCE'),
+  ('pyi_rth_multiprocessing',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
+   'PYSOURCE'),
+  ('pyi_rth_pyside6',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pyside6.py',
+   'PYSOURCE'),
+  ('pyi_rth_pywintypes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
+   'PYSOURCE'),
+  ('pyi_rth_pythoncom',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
+   'PYSOURCE'),
+  ('main',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\main.py',
+   'PYSOURCE')],
+ [('_pyi_rth_utils.qt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\fake-modules\\_pyi_rth_utils\\qt.py',
+   'PYMODULE'),
+  ('importlib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\__init__.py',
+   'PYMODULE'),
+  ('importlib._bootstrap_external',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\_bootstrap_external.py',
+   'PYMODULE'),
+  ('importlib.metadata',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\__init__.py',
+   'PYMODULE'),
+  ('typing',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\typing.py',
+   'PYMODULE'),
+  ('importlib.abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\abc.py',
+   'PYMODULE'),
+  ('importlib.resources.abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\abc.py',
+   'PYMODULE'),
+  ('importlib.resources',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\__init__.py',
+   'PYMODULE'),
+  ('importlib.resources._legacy',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\_legacy.py',
+   'PYMODULE'),
+  ('importlib.resources._common',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\_common.py',
+   'PYMODULE'),
+  ('importlib.resources._adapters',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\_adapters.py',
+   'PYMODULE'),
+  ('tempfile',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\tempfile.py',
+   'PYMODULE'),
+  ('shutil',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\shutil.py',
+   'PYMODULE'),
+  ('tarfile',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\tarfile.py',
+   'PYMODULE'),
+  ('argparse',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\argparse.py',
+   'PYMODULE'),
+  ('gettext',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\gettext.py',
+   'PYMODULE'),
+  ('gzip',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\gzip.py',
+   'PYMODULE'),
+  ('_compression',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_compression.py',
+   'PYMODULE'),
+  ('copy',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\copy.py',
+   'PYMODULE'),
+  ('struct',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\struct.py',
+   'PYMODULE'),
+  ('lzma',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\lzma.py',
+   'PYMODULE'),
+  ('bz2',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\bz2.py',
+   'PYMODULE'),
+  ('fnmatch',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\fnmatch.py',
+   'PYMODULE'),
+  ('importlib._abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\_abc.py',
+   'PYMODULE'),
+  ('importlib.machinery',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\machinery.py',
+   'PYMODULE'),
+  ('importlib.metadata._itertools',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_itertools.py',
+   'PYMODULE'),
+  ('importlib.metadata._functools',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_functools.py',
+   'PYMODULE'),
+  ('importlib.metadata._collections',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_collections.py',
+   'PYMODULE'),
+  ('importlib.metadata._meta',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_meta.py',
+   'PYMODULE'),
+  ('importlib.metadata._adapters',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_adapters.py',
+   'PYMODULE'),
+  ('importlib.metadata._text',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\metadata\\_text.py',
+   'PYMODULE'),
+  ('email.message',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\message.py',
+   'PYMODULE'),
+  ('email.policy',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\policy.py',
+   'PYMODULE'),
+  ('email.contentmanager',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\contentmanager.py',
+   'PYMODULE'),
+  ('email.quoprimime',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\quoprimime.py',
+   'PYMODULE'),
+  ('string',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\string.py',
+   'PYMODULE'),
+  ('email.headerregistry',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\headerregistry.py',
+   'PYMODULE'),
+  ('email._header_value_parser',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\_header_value_parser.py',
+   'PYMODULE'),
+  ('urllib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\urllib\\__init__.py',
+   'PYMODULE'),
+  ('email.iterators',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\iterators.py',
+   'PYMODULE'),
+  ('email.generator',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\generator.py',
+   'PYMODULE'),
+  ('email._encoded_words',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\_encoded_words.py',
+   'PYMODULE'),
+  ('base64',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\base64.py',
+   'PYMODULE'),
+  ('getopt',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\getopt.py',
+   'PYMODULE'),
+  ('email.charset',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\charset.py',
+   'PYMODULE'),
+  ('email.encoders',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\encoders.py',
+   'PYMODULE'),
+  ('email.base64mime',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\base64mime.py',
+   'PYMODULE'),
+  ('email._policybase',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\_policybase.py',
+   'PYMODULE'),
+  ('email.header',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\header.py',
+   'PYMODULE'),
+  ('email.errors',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\errors.py',
+   'PYMODULE'),
+  ('email.utils',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\utils.py',
+   'PYMODULE'),
+  ('email._parseaddr',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\_parseaddr.py',
+   'PYMODULE'),
+  ('calendar',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\calendar.py',
+   'PYMODULE'),
+  ('urllib.parse',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\urllib\\parse.py',
+   'PYMODULE'),
+  ('ipaddress',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ipaddress.py',
+   'PYMODULE'),
+  ('datetime',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\datetime.py',
+   'PYMODULE'),
+  ('_pydatetime',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_pydatetime.py',
+   'PYMODULE'),
+  ('_strptime',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_strptime.py',
+   'PYMODULE'),
+  ('socket',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\socket.py',
+   'PYMODULE'),
+  ('selectors',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\selectors.py',
+   'PYMODULE'),
+  ('quopri',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\quopri.py',
+   'PYMODULE'),
+  ('inspect',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\inspect.py',
+   'PYMODULE'),
+  ('token',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\token.py',
+   'PYMODULE'),
+  ('dis',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\dis.py',
+   'PYMODULE'),
+  ('opcode',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\opcode.py',
+   'PYMODULE'),
+  ('ast',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ast.py',
+   'PYMODULE'),
+  ('contextlib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\contextlib.py',
+   'PYMODULE'),
+  ('textwrap',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\textwrap.py',
+   'PYMODULE'),
+  ('zipfile',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\zipfile\\__init__.py',
+   'PYMODULE'),
+  ('zipfile._path',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\zipfile\\_path\\__init__.py',
+   'PYMODULE'),
+  ('zipfile._path.glob',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\zipfile\\_path\\glob.py',
+   'PYMODULE'),
+  ('py_compile',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\py_compile.py',
+   'PYMODULE'),
+  ('threading',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\threading.py',
+   'PYMODULE'),
+  ('_threading_local',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_threading_local.py',
+   'PYMODULE'),
+  ('importlib.util',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\util.py',
+   'PYMODULE'),
+  ('pathlib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pathlib.py',
+   'PYMODULE'),
+  ('email',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\__init__.py',
+   'PYMODULE'),
+  ('email.parser',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\parser.py',
+   'PYMODULE'),
+  ('email.feedparser',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\email\\feedparser.py',
+   'PYMODULE'),
+  ('csv',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\csv.py',
+   'PYMODULE'),
+  ('importlib.readers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\readers.py',
+   'PYMODULE'),
+  ('importlib.resources.readers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\readers.py',
+   'PYMODULE'),
+  ('importlib.resources._itertools',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\resources\\_itertools.py',
+   'PYMODULE'),
+  ('tokenize',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\tokenize.py',
+   'PYMODULE'),
+  ('importlib._bootstrap',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\importlib\\_bootstrap.py',
+   'PYMODULE'),
+  ('_pyi_rth_utils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\fake-modules\\_pyi_rth_utils\\__init__.py',
+   'PYMODULE'),
+  ('multiprocessing.spawn',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\spawn.py',
+   'PYMODULE'),
+  ('multiprocessing.resource_tracker',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\resource_tracker.py',
+   'PYMODULE'),
+  ('signal',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\signal.py',
+   'PYMODULE'),
+  ('multiprocessing.util',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\util.py',
+   'PYMODULE'),
+  ('multiprocessing.forkserver',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\forkserver.py',
+   'PYMODULE'),
+  ('multiprocessing.connection',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\connection.py',
+   'PYMODULE'),
+  ('multiprocessing.resource_sharer',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\resource_sharer.py',
+   'PYMODULE'),
+  ('xmlrpc.client',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xmlrpc\\client.py',
+   'PYMODULE'),
+  ('xmlrpc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xmlrpc\\__init__.py',
+   'PYMODULE'),
+  ('xml.parsers.expat',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\parsers\\expat.py',
+   'PYMODULE'),
+  ('xml.parsers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\parsers\\__init__.py',
+   'PYMODULE'),
+  ('xml',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\__init__.py',
+   'PYMODULE'),
+  ('xml.sax.expatreader',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\expatreader.py',
+   'PYMODULE'),
+  ('xml.sax.saxutils',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\saxutils.py',
+   'PYMODULE'),
+  ('urllib.request',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\urllib\\request.py',
+   'PYMODULE'),
+  ('getpass',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\getpass.py',
+   'PYMODULE'),
+  ('nturl2path',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\nturl2path.py',
+   'PYMODULE'),
+  ('ftplib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ftplib.py',
+   'PYMODULE'),
+  ('netrc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\netrc.py',
+   'PYMODULE'),
+  ('mimetypes',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\mimetypes.py',
+   'PYMODULE'),
+  ('http.cookiejar',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\http\\cookiejar.py',
+   'PYMODULE'),
+  ('http',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\http\\__init__.py',
+   'PYMODULE'),
+  ('ssl',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ssl.py',
+   'PYMODULE'),
+  ('urllib.response',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\urllib\\response.py',
+   'PYMODULE'),
+  ('urllib.error',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\urllib\\error.py',
+   'PYMODULE'),
+  ('hashlib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\hashlib.py',
+   'PYMODULE'),
+  ('bisect',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\bisect.py',
+   'PYMODULE'),
+  ('xml.sax',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\__init__.py',
+   'PYMODULE'),
+  ('xml.sax.handler',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\handler.py',
+   'PYMODULE'),
+  ('xml.sax._exceptions',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\_exceptions.py',
+   'PYMODULE'),
+  ('xml.sax.xmlreader',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\sax\\xmlreader.py',
+   'PYMODULE'),
+  ('http.client',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\http\\client.py',
+   'PYMODULE'),
+  ('decimal',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\decimal.py',
+   'PYMODULE'),
+  ('_pydecimal',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_pydecimal.py',
+   'PYMODULE'),
+  ('contextvars',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\contextvars.py',
+   'PYMODULE'),
+  ('numbers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\numbers.py',
+   'PYMODULE'),
+  ('hmac',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\hmac.py',
+   'PYMODULE'),
+  ('logging',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\logging\\__init__.py',
+   'PYMODULE'),
+  ('pickle',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pickle.py',
+   'PYMODULE'),
+  ('pprint',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pprint.py',
+   'PYMODULE'),
+  ('dataclasses',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\dataclasses.py',
+   'PYMODULE'),
+  ('_compat_pickle',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_compat_pickle.py',
+   'PYMODULE'),
+  ('multiprocessing.context',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\context.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_spawn_win32',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\popen_spawn_win32.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_forkserver',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\popen_forkserver.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_spawn_posix',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\popen_spawn_posix.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_fork',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\popen_fork.py',
+   'PYMODULE'),
+  ('multiprocessing.sharedctypes',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\sharedctypes.py',
+   'PYMODULE'),
+  ('multiprocessing.heap',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\heap.py',
+   'PYMODULE'),
+  ('multiprocessing.pool',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\pool.py',
+   'PYMODULE'),
+  ('multiprocessing.dummy',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\dummy\\__init__.py',
+   'PYMODULE'),
+  ('multiprocessing.dummy.connection',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\dummy\\connection.py',
+   'PYMODULE'),
+  ('queue',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\queue.py',
+   'PYMODULE'),
+  ('multiprocessing.queues',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\queues.py',
+   'PYMODULE'),
+  ('multiprocessing.synchronize',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\synchronize.py',
+   'PYMODULE'),
+  ('multiprocessing.managers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\managers.py',
+   'PYMODULE'),
+  ('multiprocessing.shared_memory',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\shared_memory.py',
+   'PYMODULE'),
+  ('secrets',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\secrets.py',
+   'PYMODULE'),
+  ('multiprocessing.reduction',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\reduction.py',
+   'PYMODULE'),
+  ('multiprocessing.process',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\process.py',
+   'PYMODULE'),
+  ('runpy',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\runpy.py',
+   'PYMODULE'),
+  ('pkgutil',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pkgutil.py',
+   'PYMODULE'),
+  ('zipimport',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\zipimport.py',
+   'PYMODULE'),
+  ('multiprocessing',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\multiprocessing\\__init__.py',
+   'PYMODULE'),
+  ('_py_abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_py_abc.py',
+   'PYMODULE'),
+  ('tracemalloc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\tracemalloc.py',
+   'PYMODULE'),
+  ('stringprep',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\stringprep.py',
+   'PYMODULE'),
+  ('audio_visualizer',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\audio_visualizer.py',
+   'PYMODULE'),
+  ('pyaudiowpatch',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pyaudiowpatch\\__init__.py',
+   'PYMODULE'),
+  ('numpy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core._exceptions',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_exceptions.py',
+   'PYMODULE'),
+  ('numpy._core._dtype_ctypes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_dtype_ctypes.py',
+   'PYMODULE'),
+  ('numpy._pytesttester',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_pytesttester.py',
+   'PYMODULE'),
+  ('numpy.strings',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\strings\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core.strings',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\strings.py',
+   'PYMODULE'),
+  ('numpy._core.umath',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\umath.py',
+   'PYMODULE'),
+  ('numpy._core.overrides',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\overrides.py',
+   'PYMODULE'),
+  ('numpy._utils._inspect',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_utils\\_inspect.py',
+   'PYMODULE'),
+  ('numpy._utils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_utils\\__init__.py',
+   'PYMODULE'),
+  ('numpy._utils._convertions',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_utils\\_convertions.py',
+   'PYMODULE'),
+  ('numpy._core.multiarray',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\multiarray.py',
+   'PYMODULE'),
+  ('numpy.core',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\core\\__init__.py',
+   'PYMODULE'),
+  ('numpy.core._utils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\core\\_utils.py',
+   'PYMODULE'),
+  ('numpy.char',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\char\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core.defchararray',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\defchararray.py',
+   'PYMODULE'),
+  ('numpy._core.numerictypes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\numerictypes.py',
+   'PYMODULE'),
+  ('numpy._core._type_aliases',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_type_aliases.py',
+   'PYMODULE'),
+  ('numpy._core._string_helpers',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_string_helpers.py',
+   'PYMODULE'),
+  ('numpy._core._dtype',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_dtype.py',
+   'PYMODULE'),
+  ('numpy._core.numeric',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\numeric.py',
+   'PYMODULE'),
+  ('numpy._core.fromnumeric',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py',
+   'PYMODULE'),
+  ('numpy._core._methods',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_methods.py',
+   'PYMODULE'),
+  ('numpy._core.arrayprint',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\arrayprint.py',
+   'PYMODULE'),
+  ('numpy._core._asarray',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_asarray.py',
+   'PYMODULE'),
+  ('numpy._core._ufunc_config',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_ufunc_config.py',
+   'PYMODULE'),
+  ('numpy._core.shape_base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\shape_base.py',
+   'PYMODULE'),
+  ('numpy.rec',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\rec\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core.records',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\records.py',
+   'PYMODULE'),
+  ('numpy.typing',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\typing\\__init__.py',
+   'PYMODULE'),
+  ('numpy._typing._add_docstring',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_add_docstring.py',
+   'PYMODULE'),
+  ('numpy._typing._array_like',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_array_like.py',
+   'PYMODULE'),
+  ('numpy._typing._shape',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_shape.py',
+   'PYMODULE'),
+  ('numpy._typing._nested_sequence',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_nested_sequence.py',
+   'PYMODULE'),
+  ('numpy._typing._nbit_base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_nbit_base.py',
+   'PYMODULE'),
+  ('numpy._typing',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\__init__.py',
+   'PYMODULE'),
+  ('numpy._typing._ufunc',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_ufunc.py',
+   'PYMODULE'),
+  ('numpy._typing._scalars',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_scalars.py',
+   'PYMODULE'),
+  ('numpy._typing._nbit',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_nbit.py',
+   'PYMODULE'),
+  ('numpy._typing._dtype_like',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_dtype_like.py',
+   'PYMODULE'),
+  ('numpy._typing._char_codes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_typing\\_char_codes.py',
+   'PYMODULE'),
+  ('numpy.f2py',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\__init__.py',
+   'PYMODULE'),
+  ('numpy.f2py.diagnose',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\diagnose.py',
+   'PYMODULE'),
+  ('numpy.f2py.f2py2e',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\f2py2e.py',
+   'PYMODULE'),
+  ('numpy.f2py.crackfortran',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\crackfortran.py',
+   'PYMODULE'),
+  ('platform',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\platform.py',
+   'PYMODULE'),
+  ('fileinput',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\fileinput.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\_backends\\__init__.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._distutils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\_backends\\_distutils.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._backend',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\_backends\\_backend.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._meson',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\_backends\\_meson.py',
+   'PYMODULE'),
+  ('numpy.f2py.rules',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.use_rules',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\use_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.f90mod_rules',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\f90mod_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.common_rules',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\common_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.func2subr',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\func2subr.py',
+   'PYMODULE'),
+  ('numpy.f2py._isocbind',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\_isocbind.py',
+   'PYMODULE'),
+  ('numpy.f2py.auxfuncs',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\auxfuncs.py',
+   'PYMODULE'),
+  ('numpy.f2py.symbolic',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\symbolic.py',
+   'PYMODULE'),
+  ('numpy.f2py.cb_rules',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\cb_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.capi_maps',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\capi_maps.py',
+   'PYMODULE'),
+  ('numpy.f2py.cfuncs',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\cfuncs.py',
+   'PYMODULE'),
+  ('numpy.f2py.__version__',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\f2py\\__version__.py',
+   'PYMODULE'),
+  ('numpy.matlib',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\matlib.py',
+   'PYMODULE'),
+  ('numpy.matrixlib.defmatrix',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\matrixlib\\defmatrix.py',
+   'PYMODULE'),
+  ('numpy.testing',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\testing\\__init__.py',
+   'PYMODULE'),
+  ('numpy.testing._private.utils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\testing\\_private\\utils.py',
+   'PYMODULE'),
+  ('doctest',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\doctest.py',
+   'PYMODULE'),
+  ('pdb',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pdb.py',
+   'PYMODULE'),
+  ('pydoc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pydoc.py',
+   'PYMODULE'),
+  ('webbrowser',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\webbrowser.py',
+   'PYMODULE'),
+  ('http.server',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\http\\server.py',
+   'PYMODULE'),
+  ('socketserver',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\socketserver.py',
+   'PYMODULE'),
+  ('html',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\html\\__init__.py',
+   'PYMODULE'),
+  ('html.entities',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\html\\entities.py',
+   'PYMODULE'),
+  ('pydoc_data.topics',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pydoc_data\\topics.py',
+   'PYMODULE'),
+  ('pydoc_data',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\pydoc_data\\__init__.py',
+   'PYMODULE'),
+  ('tty',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\tty.py',
+   'PYMODULE'),
+  ('shlex',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\shlex.py',
+   'PYMODULE'),
+  ('glob',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\glob.py',
+   'PYMODULE'),
+  ('code',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\code.py',
+   'PYMODULE'),
+  ('codeop',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\codeop.py',
+   'PYMODULE'),
+  ('bdb',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\bdb.py',
+   'PYMODULE'),
+  ('cmd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\cmd.py',
+   'PYMODULE'),
+  ('__future__',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\__future__.py',
+   'PYMODULE'),
+  ('difflib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\difflib.py',
+   'PYMODULE'),
+  ('unittest.case',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\case.py',
+   'PYMODULE'),
+  ('unittest._log',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\_log.py',
+   'PYMODULE'),
+  ('unittest.util',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\util.py',
+   'PYMODULE'),
+  ('unittest.result',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\result.py',
+   'PYMODULE'),
+  ('sysconfig',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\sysconfig.py',
+   'PYMODULE'),
+  ('_aix_support',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_aix_support.py',
+   'PYMODULE'),
+  ('concurrent.futures',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\concurrent\\futures\\__init__.py',
+   'PYMODULE'),
+  ('concurrent.futures.thread',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\concurrent\\futures\\thread.py',
+   'PYMODULE'),
+  ('concurrent.futures.process',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\concurrent\\futures\\process.py',
+   'PYMODULE'),
+  ('concurrent.futures._base',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\concurrent\\futures\\_base.py',
+   'PYMODULE'),
+  ('concurrent',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\concurrent\\__init__.py',
+   'PYMODULE'),
+  ('numpy.testing._private.extbuild',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\testing\\_private\\extbuild.py',
+   'PYMODULE'),
+  ('numpy.testing.overrides',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\testing\\overrides.py',
+   'PYMODULE'),
+  ('numpy.lib.recfunctions',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\recfunctions.py',
+   'PYMODULE'),
+  ('numpy.lib._iotools',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_iotools.py',
+   'PYMODULE'),
+  ('numpy.ma.mrecords',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ma\\mrecords.py',
+   'PYMODULE'),
+  ('numpy.testing._private',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\testing\\_private\\__init__.py',
+   'PYMODULE'),
+  ('unittest',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\__init__.py',
+   'PYMODULE'),
+  ('unittest.async_case',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\async_case.py',
+   'PYMODULE'),
+  ('asyncio',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\__init__.py',
+   'PYMODULE'),
+  ('asyncio.unix_events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\unix_events.py',
+   'PYMODULE'),
+  ('asyncio.log',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\log.py',
+   'PYMODULE'),
+  ('asyncio.windows_events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\windows_events.py',
+   'PYMODULE'),
+  ('asyncio.windows_utils',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\windows_utils.py',
+   'PYMODULE'),
+  ('asyncio.selector_events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\selector_events.py',
+   'PYMODULE'),
+  ('asyncio.proactor_events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\proactor_events.py',
+   'PYMODULE'),
+  ('asyncio.base_subprocess',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\base_subprocess.py',
+   'PYMODULE'),
+  ('asyncio.threads',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\threads.py',
+   'PYMODULE'),
+  ('asyncio.taskgroups',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\taskgroups.py',
+   'PYMODULE'),
+  ('asyncio.subprocess',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\subprocess.py',
+   'PYMODULE'),
+  ('asyncio.streams',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\streams.py',
+   'PYMODULE'),
+  ('asyncio.queues',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\queues.py',
+   'PYMODULE'),
+  ('asyncio.runners',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\runners.py',
+   'PYMODULE'),
+  ('asyncio.base_events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\base_events.py',
+   'PYMODULE'),
+  ('asyncio.trsock',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\trsock.py',
+   'PYMODULE'),
+  ('asyncio.staggered',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\staggered.py',
+   'PYMODULE'),
+  ('asyncio.timeouts',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\timeouts.py',
+   'PYMODULE'),
+  ('asyncio.tasks',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\tasks.py',
+   'PYMODULE'),
+  ('asyncio.base_tasks',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\base_tasks.py',
+   'PYMODULE'),
+  ('asyncio.locks',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\locks.py',
+   'PYMODULE'),
+  ('asyncio.mixins',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\mixins.py',
+   'PYMODULE'),
+  ('asyncio.sslproto',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\sslproto.py',
+   'PYMODULE'),
+  ('asyncio.transports',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\transports.py',
+   'PYMODULE'),
+  ('asyncio.protocols',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\protocols.py',
+   'PYMODULE'),
+  ('asyncio.futures',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\futures.py',
+   'PYMODULE'),
+  ('asyncio.base_futures',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\base_futures.py',
+   'PYMODULE'),
+  ('asyncio.exceptions',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\exceptions.py',
+   'PYMODULE'),
+  ('asyncio.events',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\events.py',
+   'PYMODULE'),
+  ('asyncio.format_helpers',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\format_helpers.py',
+   'PYMODULE'),
+  ('asyncio.coroutines',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\coroutines.py',
+   'PYMODULE'),
+  ('asyncio.constants',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\constants.py',
+   'PYMODULE'),
+  ('unittest.signals',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\signals.py',
+   'PYMODULE'),
+  ('unittest.main',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\main.py',
+   'PYMODULE'),
+  ('unittest.runner',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\runner.py',
+   'PYMODULE'),
+  ('unittest.loader',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\loader.py',
+   'PYMODULE'),
+  ('unittest.suite',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\unittest\\suite.py',
+   'PYMODULE'),
+  ('numpy.exceptions',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\exceptions.py',
+   'PYMODULE'),
+  ('numpy.ctypeslib',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ctypeslib\\__init__.py',
+   'PYMODULE'),
+  ('numpy.ctypeslib._ctypeslib',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ctypeslib\\_ctypeslib.py',
+   'PYMODULE'),
+  ('numpy._core._internal',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_internal.py',
+   'PYMODULE'),
+  ('numpy.ma',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ma\\__init__.py',
+   'PYMODULE'),
+  ('numpy.ma.extras',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ma\\extras.py',
+   'PYMODULE'),
+  ('numpy.lib.array_utils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\array_utils.py',
+   'PYMODULE'),
+  ('numpy.lib._array_utils_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_array_utils_impl.py',
+   'PYMODULE'),
+  ('numpy.ma.core',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\ma\\core.py',
+   'PYMODULE'),
+  ('numpy.polynomial',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\__init__.py',
+   'PYMODULE'),
+  ('numpy.polynomial._polybase',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\_polybase.py',
+   'PYMODULE'),
+  ('numpy.polynomial.polynomial',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\polynomial.py',
+   'PYMODULE'),
+  ('numpy.polynomial.legendre',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\legendre.py',
+   'PYMODULE'),
+  ('numpy.polynomial.laguerre',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\laguerre.py',
+   'PYMODULE'),
+  ('numpy.polynomial.hermite_e',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\hermite_e.py',
+   'PYMODULE'),
+  ('numpy.polynomial.hermite',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\hermite.py',
+   'PYMODULE'),
+  ('numpy.polynomial.chebyshev',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\chebyshev.py',
+   'PYMODULE'),
+  ('numpy.polynomial.polyutils',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\polynomial\\polyutils.py',
+   'PYMODULE'),
+  ('numpy.random',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\__init__.py',
+   'PYMODULE'),
+  ('numpy.random._pickle',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_pickle.py',
+   'PYMODULE'),
+  ('numpy.dtypes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\dtypes.py',
+   'PYMODULE'),
+  ('numpy.fft',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\fft\\__init__.py',
+   'PYMODULE'),
+  ('numpy.fft._pocketfft',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py',
+   'PYMODULE'),
+  ('numpy.fft._helper',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\fft\\_helper.py',
+   'PYMODULE'),
+  ('numpy.linalg',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\linalg\\__init__.py',
+   'PYMODULE'),
+  ('numpy.linalg._linalg',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\linalg\\_linalg.py',
+   'PYMODULE'),
+  ('numpy._array_api_info',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_array_api_info.py',
+   'PYMODULE'),
+  ('numpy.lib._utils_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_utils_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._ufunclike_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_ufunclike_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._type_check_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_type_check_impl.py',
+   'PYMODULE'),
+  ('numpy._core.getlimits',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\getlimits.py',
+   'PYMODULE'),
+  ('numpy.lib._twodim_base_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_twodim_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._stride_tricks_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_stride_tricks_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._shape_base_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_shape_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._polynomial_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_polynomial_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._npyio_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_npyio_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._format_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_format_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._datasource',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_datasource.py',
+   'PYMODULE'),
+  ('numpy.lib.format',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\format.py',
+   'PYMODULE'),
+  ('numpy.lib._nanfunctions_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_nanfunctions_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._index_tricks_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_index_tricks_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._histograms_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_histograms_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._function_base_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_function_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._arraysetops_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_arraysetops_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._arraypad_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py',
+   'PYMODULE'),
+  ('numpy.lib.scimath',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\scimath.py',
+   'PYMODULE'),
+  ('numpy.lib._scimath_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_scimath_impl.py',
+   'PYMODULE'),
+  ('numpy.matrixlib',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\matrixlib\\__init__.py',
+   'PYMODULE'),
+  ('numpy.lib',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\__init__.py',
+   'PYMODULE'),
+  ('numpy.lib.stride_tricks',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\stride_tricks.py',
+   'PYMODULE'),
+  ('numpy.lib.npyio',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\npyio.py',
+   'PYMODULE'),
+  ('numpy.lib.mixins',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\mixins.py',
+   'PYMODULE'),
+  ('numpy.lib.introspect',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\introspect.py',
+   'PYMODULE'),
+  ('numpy.lib._version',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_version.py',
+   'PYMODULE'),
+  ('numpy.lib._arrayterator_impl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\lib\\_arrayterator_impl.py',
+   'PYMODULE'),
+  ('numpy._core.function_base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\function_base.py',
+   'PYMODULE'),
+  ('numpy._core.printoptions',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\printoptions.py',
+   'PYMODULE'),
+  ('numpy._core.memmap',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\memmap.py',
+   'PYMODULE'),
+  ('numpy._core',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core._add_newdocs_scalars',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_add_newdocs_scalars.py',
+   'PYMODULE'),
+  ('numpy._core._add_newdocs',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_add_newdocs.py',
+   'PYMODULE'),
+  ('numpy._core.einsumfunc',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\einsumfunc.py',
+   'PYMODULE'),
+  ('numpy.__config__',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\__config__.py',
+   'PYMODULE'),
+  ('numpy._distributor_init',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_distributor_init.py',
+   'PYMODULE'),
+  ('numpy._globals',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_globals.py',
+   'PYMODULE'),
+  ('numpy._expired_attrs_2_0',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_expired_attrs_2_0.py',
+   'PYMODULE'),
+  ('numpy.version',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\version.py',
+   'PYMODULE'),
+  ('python_controller',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\python_controller.py',
+   'PYMODULE'),
+  ('shiboken6',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\__init__.py',
+   'PYMODULE'),
+  ('PySide6',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\__init__.py',
+   'PYMODULE'),
+  ('PySide6.support.deprecated',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\support\\deprecated.py',
+   'PYMODULE'),
+  ('PySide6.support',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\support\\__init__.py',
+   'PYMODULE'),
+  ('wmi',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\wmi.py',
+   'PYMODULE'),
+  ('pywintypes',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib\\pywintypes.py',
+   'PYMODULE'),
+  ('pywin32_system32', '-', 'PYMODULE'),
+  ('win32com.client',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\__init__.py',
+   'PYMODULE'),
+  ('winerror',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib\\winerror.py',
+   'PYMODULE'),
+  ('win32com.client.makepy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\makepy.py',
+   'PYMODULE'),
+  ('pywin.dialogs.status',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\dialogs\\status.py',
+   'PYMODULE'),
+  ('pywin.mfc.thread',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\mfc\\thread.py',
+   'PYMODULE'),
+  ('pywin.mfc.object',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\mfc\\object.py',
+   'PYMODULE'),
+  ('pywin.mfc.dialog',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\mfc\\dialog.py',
+   'PYMODULE'),
+  ('pywin.mfc.window',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\mfc\\window.py',
+   'PYMODULE'),
+  ('pywin.mfc',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\mfc\\__init__.py',
+   'PYMODULE'),
+  ('win32con',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib\\win32con.py',
+   'PYMODULE'),
+  ('pywin.dialogs',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\dialogs\\__init__.py',
+   'PYMODULE'),
+  ('pywin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\__init__.py',
+   'PYMODULE'),
+  ('win32com.client.selecttlb',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\selecttlb.py',
+   'PYMODULE'),
+  ('pywin.dialogs.list',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\pywin\\dialogs\\list.py',
+   'PYMODULE'),
+  ('commctrl',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib\\commctrl.py',
+   'PYMODULE'),
+  ('win32com.client.genpy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\genpy.py',
+   'PYMODULE'),
+  ('win32com.client.gencache',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\gencache.py',
+   'PYMODULE'),
+  ('win32com.client.CLSIDToClass',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\CLSIDToClass.py',
+   'PYMODULE'),
+  ('win32com.client.dynamic',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py',
+   'PYMODULE'),
+  ('win32com.client.util',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\util.py',
+   'PYMODULE'),
+  ('win32com.client.build',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\client\\build.py',
+   'PYMODULE'),
+  ('win32com',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\__init__.py',
+   'PYMODULE'),
+  ('win32com.server.util',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\server\\util.py',
+   'PYMODULE'),
+  ('win32com.server.dispatcher',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\server\\dispatcher.py',
+   'PYMODULE'),
+  ('win32traceutil',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib\\win32traceutil.py',
+   'PYMODULE'),
+  ('win32com.util',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\util.py',
+   'PYMODULE'),
+  ('win32com.server.exception',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\server\\exception.py',
+   'PYMODULE'),
+  ('win32com.server.policy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\server\\policy.py',
+   'PYMODULE'),
+  ('win32com.server',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\server\\__init__.py',
+   'PYMODULE'),
+  ('win32com.universal',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32com\\universal.py',
+   'PYMODULE'),
+  ('pythoncom',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pythoncom.py',
+   'PYMODULE'),
+  ('psutil',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\psutil\\__init__.py',
+   'PYMODULE'),
+  ('psutil._pswindows',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\psutil\\_pswindows.py',
+   'PYMODULE'),
+  ('psutil._common',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\psutil\\_common.py',
+   'PYMODULE'),
+  ('psutil._ntuples',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\psutil\\_ntuples.py',
+   'PYMODULE'),
+  ('pynput.keyboard',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\__init__.py',
+   'PYMODULE'),
+  ('pynput._util',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\__init__.py',
+   'PYMODULE'),
+  ('pynput._util.win32_vks',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\win32_vks.py',
+   'PYMODULE'),
+  ('six',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\six.py',
+   'PYMODULE'),
+  ('pynput.mouse',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\__init__.py',
+   'PYMODULE'),
+  ('pynput',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\__init__.py',
+   'PYMODULE'),
+  ('pynput.mouse._xorg',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_xorg.py',
+   'PYMODULE'),
+  ('pynput.mouse._win32',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_win32.py',
+   'PYMODULE'),
+  ('pynput.mouse._dummy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_dummy.py',
+   'PYMODULE'),
+  ('pynput.mouse._darwin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_darwin.py',
+   'PYMODULE'),
+  ('pynput.mouse._base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_base.py',
+   'PYMODULE'),
+  ('pynput.keyboard._xorg',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_xorg.py',
+   'PYMODULE'),
+  ('pynput.keyboard._win32',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_win32.py',
+   'PYMODULE'),
+  ('pynput.keyboard._uinput',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_uinput.py',
+   'PYMODULE'),
+  ('pynput.keyboard._dummy',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_dummy.py',
+   'PYMODULE'),
+  ('pynput.keyboard._darwin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_darwin.py',
+   'PYMODULE'),
+  ('pynput.keyboard._base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\keyboard\\_base.py',
+   'PYMODULE'),
+  ('pynput._util.xorg_keysyms',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\xorg_keysyms.py',
+   'PYMODULE'),
+  ('pynput._util.xorg',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\xorg.py',
+   'PYMODULE'),
+  ('pynput._util.win32',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\win32.py',
+   'PYMODULE'),
+  ('pynput._util.uinput',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\uinput.py',
+   'PYMODULE'),
+  ('pynput._util.darwin_vks',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\darwin_vks.py',
+   'PYMODULE'),
+  ('pynput._util.darwin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_util\\darwin.py',
+   'PYMODULE'),
+  ('ctypes.util',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\util.py',
+   'PYMODULE'),
+  ('ctypes._aix',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\_aix.py',
+   'PYMODULE'),
+  ('ctypes.macholib.dyld',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\macholib\\dyld.py',
+   'PYMODULE'),
+  ('ctypes.macholib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\macholib\\__init__.py',
+   'PYMODULE'),
+  ('ctypes.macholib.dylib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\macholib\\dylib.py',
+   'PYMODULE'),
+  ('ctypes.macholib.framework',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\macholib\\framework.py',
+   'PYMODULE'),
+  ('pynput._info',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\_info.py',
+   'PYMODULE'),
+  ('PIL.Image',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\Image.py',
+   'PYMODULE'),
+  ('PIL.XpmImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\XpmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.XbmImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\XbmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.XVThumbImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\XVThumbImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.WmfImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\WmfImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.WebPImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\WebPImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.TgaImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\TgaImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.SunImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\SunImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.SpiderImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\SpiderImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImageTk',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageTk.py',
+   'PYMODULE'),
+  ('PIL.SgiImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\SgiImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.QoiImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\QoiImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PsdImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PsdImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PixarImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PixarImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PdfImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PdfImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.features',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\features.py',
+   'PYMODULE'),
+  ('PIL.PdfParser',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PdfParser.py',
+   'PYMODULE'),
+  ('PIL.ImageSequence',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageSequence.py',
+   'PYMODULE'),
+  ('PIL.PcxImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PcxImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PcdImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PcdImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PalmImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PalmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MspImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\MspImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MpoImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\MpoImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MpegImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\MpegImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MicImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\MicImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.McIdasImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\McIdasImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.Jpeg2KImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\Jpeg2KImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.IptcImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\IptcImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImtImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImtImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.IcoImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\IcoImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.IcnsImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\IcnsImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.Hdf5StubImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\Hdf5StubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.GribStubImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\GribStubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.GbrImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\GbrImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FtexImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\FtexImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FpxImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\FpxImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FliImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\FliImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FitsImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\FitsImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.EpsImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\EpsImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.DdsImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\DdsImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.DcxImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\DcxImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.CurImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\CurImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.BufrStubImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\BufrStubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.BlpImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\BlpImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.AvifImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\AvifImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImageShow',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageShow.py',
+   'PYMODULE'),
+  ('PIL.ImageColor',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageColor.py',
+   'PYMODULE'),
+  ('PIL.ImageCms',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageCms.py',
+   'PYMODULE'),
+  ('PIL.ImageWin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageWin.py',
+   'PYMODULE'),
+  ('PIL.PngImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PngImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImageChops',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageChops.py',
+   'PYMODULE'),
+  ('fractions',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\fractions.py',
+   'PYMODULE'),
+  ('PIL.PpmImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PpmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.JpegImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\JpegImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.JpegPresets',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\JpegPresets.py',
+   'PYMODULE'),
+  ('PIL.GifImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\GifImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImageOps',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageOps.py',
+   'PYMODULE'),
+  ('PIL.ImageMath',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageMath.py',
+   'PYMODULE'),
+  ('PIL.BmpImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\BmpImagePlugin.py',
+   'PYMODULE'),
+  ('PIL._typing',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_typing.py',
+   'PYMODULE'),
+  ('PIL.TiffImagePlugin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\TiffImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImageQt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageQt.py',
+   'PYMODULE'),
+  ('PIL.ImagePalette',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImagePalette.py',
+   'PYMODULE'),
+  ('PIL.PaletteFile',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\PaletteFile.py',
+   'PYMODULE'),
+  ('PIL.GimpPaletteFile',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\GimpPaletteFile.py',
+   'PYMODULE'),
+  ('PIL.GimpGradientFile',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\GimpGradientFile.py',
+   'PYMODULE'),
+  ('PIL.ImageFilter',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageFilter.py',
+   'PYMODULE'),
+  ('PIL.ImageFile',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageFile.py',
+   'PYMODULE'),
+  ('xml.etree.ElementTree',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\etree\\ElementTree.py',
+   'PYMODULE'),
+  ('xml.etree.cElementTree',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\etree\\cElementTree.py',
+   'PYMODULE'),
+  ('xml.etree.ElementInclude',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\etree\\ElementInclude.py',
+   'PYMODULE'),
+  ('xml.etree.ElementPath',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\etree\\ElementPath.py',
+   'PYMODULE'),
+  ('xml.etree',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\xml\\etree\\__init__.py',
+   'PYMODULE'),
+  ('PIL._util',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_util.py',
+   'PYMODULE'),
+  ('PIL._deprecate',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_deprecate.py',
+   'PYMODULE'),
+  ('PIL._binary',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_binary.py',
+   'PYMODULE'),
+  ('PIL.TiffTags',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\TiffTags.py',
+   'PYMODULE'),
+  ('PIL.ImageMode',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ImageMode.py',
+   'PYMODULE'),
+  ('PIL.ExifTags',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\ExifTags.py',
+   'PYMODULE'),
+  ('PIL',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\__init__.py',
+   'PYMODULE'),
+  ('PIL._version',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_version.py',
+   'PYMODULE'),
+  ('mss',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\__init__.py',
+   'PYMODULE'),
+  ('mss.factory',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\factory.py',
+   'PYMODULE'),
+  ('mss.base',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\base.py',
+   'PYMODULE'),
+  ('mss.models',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\models.py',
+   'PYMODULE'),
+  ('mss.tools',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\tools.py',
+   'PYMODULE'),
+  ('mss.screenshot',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\screenshot.py',
+   'PYMODULE'),
+  ('mss.windows',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\windows.py',
+   'PYMODULE'),
+  ('mss.linux',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\linux.py',
+   'PYMODULE'),
+  ('mss.darwin',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\darwin.py',
+   'PYMODULE'),
+  ('mss.exception',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\mss\\exception.py',
+   'PYMODULE'),
+  ('ctypes.wintypes',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\wintypes.py',
+   'PYMODULE'),
+  ('json',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\json\\__init__.py',
+   'PYMODULE'),
+  ('json.encoder',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\json\\encoder.py',
+   'PYMODULE'),
+  ('json.decoder',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\json\\decoder.py',
+   'PYMODULE'),
+  ('json.scanner',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\json\\scanner.py',
+   'PYMODULE'),
+  ('ctypes',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\__init__.py',
+   'PYMODULE'),
+  ('ctypes._endian',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ctypes\\_endian.py',
+   'PYMODULE'),
+  ('random',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\random.py',
+   'PYMODULE'),
+  ('statistics',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\statistics.py',
+   'PYMODULE'),
+  ('colorsys',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\colorsys.py',
+   'PYMODULE'),
+  ('subprocess',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\subprocess.py',
+   'PYMODULE')],
+ [('python312.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\python312.dll',
+   'BINARY'),
+  ('numpy.libs\\msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy.libs\\msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll',
+   'BINARY'),
+  ('numpy.libs\\libscipy_openblas64_-74a408729250596b0973e69fdd954eea.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-74a408729250596b0973e69fdd954eea.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qsvg.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qsvg.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\generic\\qtuiotouchplugin.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\generic\\qtuiotouchplugin.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qwbmp.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qwbmp.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\platforms\\qdirect2d.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\platforms\\qdirect2d.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qjpeg.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qjpeg.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\platforms\\qoffscreen.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\platforms\\qoffscreen.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\platforms\\qwindows.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\platforms\\qwindows.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qwebp.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qwebp.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\platforms\\qminimal.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\platforms\\qminimal.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\platforminputcontexts\\qtvirtualkeyboardplugin.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\platforminputcontexts\\qtvirtualkeyboardplugin.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qicns.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qicns.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qico.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qico.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qpdf.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qpdf.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qtga.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qtga.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qtiff.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qtiff.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\imageformats\\qgif.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\imageformats\\qgif.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\iconengines\\qsvgicon.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\iconengines\\qsvgicon.dll',
+   'BINARY'),
+  ('PySide6\\opengl32sw.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\opengl32sw.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\networkinformation\\qnetworklistmanager.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\networkinformation\\qnetworklistmanager.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\tls\\qcertonlybackend.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\tls\\qcertonlybackend.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\tls\\qschannelbackend.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\tls\\qschannelbackend.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\tls\\qopensslbackend.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\tls\\qopensslbackend.dll',
+   'BINARY'),
+  ('PySide6\\plugins\\styles\\qmodernwindowsstyle.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\plugins\\styles\\qmodernwindowsstyle.dll',
+   'BINARY'),
+  ('pywin32_system32\\pywintypes312.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pywin32_system32\\pywintypes312.dll',
+   'BINARY'),
+  ('pywin32_system32\\pythoncom312.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pywin32_system32\\pythoncom312.dll',
+   'BINARY'),
+  ('_lzma.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_lzma.pyd',
+   'EXTENSION'),
+  ('_bz2.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_bz2.pyd',
+   'EXTENSION'),
+  ('unicodedata.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\unicodedata.pyd',
+   'EXTENSION'),
+  ('select.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\select.pyd',
+   'EXTENSION'),
+  ('_socket.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_socket.pyd',
+   'EXTENSION'),
+  ('_multiprocessing.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_multiprocessing.pyd',
+   'EXTENSION'),
+  ('pyexpat.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\pyexpat.pyd',
+   'EXTENSION'),
+  ('_ssl.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_ssl.pyd',
+   'EXTENSION'),
+  ('_hashlib.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_hashlib.pyd',
+   'EXTENSION'),
+  ('_decimal.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_decimal.pyd',
+   'EXTENSION'),
+  ('_queue.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_queue.pyd',
+   'EXTENSION'),
+  ('_portaudiowpatch.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\_portaudiowpatch.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\_core\\_multiarray_tests.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_multiarray_tests.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('_ctypes.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_ctypes.pyd',
+   'EXTENSION'),
+  ('numpy\\_core\\_multiarray_umath.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\_core\\_multiarray_umath.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('_wmi.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_wmi.pyd',
+   'EXTENSION'),
+  ('win32\\win32pdh.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\win32pdh.pyd',
+   'EXTENSION'),
+  ('numpy\\linalg\\_umath_linalg.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\linalg\\_umath_linalg.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('_overlapped.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_overlapped.pyd',
+   'EXTENSION'),
+  ('_asyncio.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_asyncio.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\mtrand.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\mtrand.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\bit_generator.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\bit_generator.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_sfc64.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_sfc64.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_philox.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_philox.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_pcg64.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_pcg64.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_mt19937.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_mt19937.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_generator.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_generator.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_common.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_common.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_bounded_integers.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\random\\_bounded_integers.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\fft\\_pocketfft_umath.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy\\fft\\_pocketfft_umath.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('hid.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\hid.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('PySide6\\QtGui.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\QtGui.pyd',
+   'EXTENSION'),
+  ('shiboken6\\Shiboken.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\Shiboken.pyd',
+   'EXTENSION'),
+  ('PySide6\\QtNetwork.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\QtNetwork.pyd',
+   'EXTENSION'),
+  ('PySide6\\QtCore.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\QtCore.pyd',
+   'EXTENSION'),
+  ('PySide6\\QtWidgets.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\QtWidgets.pyd',
+   'EXTENSION'),
+  ('win32\\_win32sysloader.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\_win32sysloader.pyd',
+   'EXTENSION'),
+  ('win32\\win32api.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\win32api.pyd',
+   'EXTENSION'),
+  ('Pythonwin\\win32ui.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\win32ui.pyd',
+   'EXTENSION'),
+  ('win32\\win32event.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\win32event.pyd',
+   'EXTENSION'),
+  ('win32\\win32trace.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\win32trace.pyd',
+   'EXTENSION'),
+  ('psutil\\_psutil_windows.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\psutil\\_psutil_windows.pyd',
+   'EXTENSION'),
+  ('PIL\\_webp.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_webp.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingtk.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_imagingtk.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_avif.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_avif.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingcms.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_imagingcms.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('PIL\\_imagingmath.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_imagingmath.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('_elementtree.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\_elementtree.pyd',
+   'EXTENSION'),
+  ('PIL\\_imaging.cp312-win_amd64.pyd',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PIL\\_imaging.cp312-win_amd64.pyd',
+   'EXTENSION'),
+  ('VCRUNTIME140.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\VCRUNTIME140.dll',
+   'BINARY'),
+  ('VCRUNTIME140_1.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\VCRUNTIME140_1.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Core.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Core.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Svg.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Svg.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Gui.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Gui.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Network.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Network.dll',
+   'BINARY'),
+  ('shiboken6\\MSVCP140.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\MSVCP140.dll',
+   'BINARY'),
+  ('PySide6\\Qt6VirtualKeyboard.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6VirtualKeyboard.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Pdf.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Pdf.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Widgets.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Widgets.dll',
+   'BINARY'),
+  ('libcrypto-3.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\libcrypto-3.dll',
+   'BINARY'),
+  ('libssl-3.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\libssl-3.dll',
+   'BINARY'),
+  ('libffi-8.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs\\libffi-8.dll',
+   'BINARY'),
+  ('PySide6\\pyside6.abi3.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\pyside6.abi3.dll',
+   'BINARY'),
+  ('python3.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\python3.dll',
+   'BINARY'),
+  ('PySide6\\VCRUNTIME140_1.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\VCRUNTIME140_1.dll',
+   'BINARY'),
+  ('PySide6\\MSVCP140.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\MSVCP140.dll',
+   'BINARY'),
+  ('shiboken6\\shiboken6.abi3.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\shiboken6.abi3.dll',
+   'BINARY'),
+  ('PySide6\\VCRUNTIME140.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\VCRUNTIME140.dll',
+   'BINARY'),
+  ('PySide6\\MSVCP140_2.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\MSVCP140_2.dll',
+   'BINARY'),
+  ('shiboken6\\VCRUNTIME140.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\VCRUNTIME140.dll',
+   'BINARY'),
+  ('shiboken6\\VCRUNTIME140_1.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\shiboken6\\VCRUNTIME140_1.dll',
+   'BINARY'),
+  ('Pythonwin\\mfc140u.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin\\mfc140u.dll',
+   'BINARY'),
+  ('PySide6\\MSVCP140_1.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\MSVCP140_1.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Qml.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Qml.dll',
+   'BINARY'),
+  ('PySide6\\Qt6Quick.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6Quick.dll',
+   'BINARY'),
+  ('PySide6\\Qt6QmlMeta.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6QmlMeta.dll',
+   'BINARY'),
+  ('PySide6\\Qt6OpenGL.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6OpenGL.dll',
+   'BINARY'),
+  ('PySide6\\Qt6QmlModels.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6QmlModels.dll',
+   'BINARY'),
+  ('PySide6\\Qt6QmlWorkerScript.dll',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\Qt6QmlWorkerScript.dll',
+   'BINARY')],
+ [],
+ [],
+ [('assets\\minus.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\minus.svg',
+   'DATA'),
+  ('assets\\plus.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\plus.svg',
+   'DATA'),
+  ('assets\\settings.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\settings.svg',
+   'DATA'),
+  ('assets\\toggle_off.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\toggle_off.svg',
+   'DATA'),
+  ('assets\\toggle_on.svg',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\toggle_on.svg',
+   'DATA'),
+  ('audio_visualizer.py',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\audio_visualizer.py',
+   'DATA'),
+  ('python_controller.py',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\python_controller.py',
+   'DATA'),
+  ('rgb_wheel.ico',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\rgb_wheel.ico',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ar.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ar.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_zh_CN.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_zh_CN.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_pt_PT.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_pt_PT.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_it.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_it.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_sl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_sl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_es.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_es.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_he.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_he.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_fr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_fr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ru.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ru.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_hr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_hr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_sk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_sk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_zh_CN.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_zh_CN.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_sl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_sl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_lg.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_lg.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_nn.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_nn.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_da.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_da.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_fi.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_fi.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ru.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ru.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ka.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ka.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_sv.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_sv.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ko.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ko.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_zh_TW.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_zh_TW.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ca.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ca.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ka.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ka.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ar.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ar.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_tr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_tr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_cs.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_cs.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_hu.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_hu.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_da.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_da.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ja.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ja.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_bg.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_bg.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_bg.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_bg.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_es.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_es.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ko.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ko.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_de.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_de.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_gl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_gl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_hr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_hr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_nl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_nl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_fr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_fr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_lv.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_lv.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_en.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_en.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ja.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ja.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_pt_BR.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_pt_BR.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_zh_TW.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_zh_TW.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_pl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_pl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ko.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ko.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_nl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_nl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_sv.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_sv.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_tr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_tr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_zh_CN.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_zh_CN.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_fa.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_fa.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_it.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_it.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_es.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_es.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_hu.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_hu.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_gd.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_gd.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_bg.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_bg.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_cs.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_cs.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_uk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_uk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_fi.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_fi.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_de.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_de.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_pt_BR.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_pt_BR.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ja.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ja.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ka.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ka.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_lv.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_lv.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_sk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_sk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_gl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_gl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_gd.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_gd.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_fr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_fr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_lg.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_lg.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_sk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_sk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_en.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_en.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_nn.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_nn.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_da.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_da.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ar.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ar.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_pl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_pl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_pt_BR.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_pt_BR.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_nn.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_nn.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_en.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_en.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_de.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_de.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_cs.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_cs.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_it.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_it.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_sv.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_sv.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_tr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_tr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_fa.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_fa.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_pl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_pl.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_uk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_uk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_hr.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_hr.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_ca.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_ca.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_uk.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_uk.qm',
+   'DATA'),
+  ('PySide6\\translations\\qtbase_ru.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qtbase_ru.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_zh_TW.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_zh_TW.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_help_hu.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_help_hu.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_ca.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_ca.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_he.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_he.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_lt.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_lt.qm',
+   'DATA'),
+  ('PySide6\\translations\\qt_nl.qm',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PySide6\\translations\\qt_nl.qm',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\WHEEL',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\WHEEL',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\fft\\pocketfft\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\fft\\pocketfft\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\multiarray\\dragon4_LICENSE.txt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\multiarray\\dragon4_LICENSE.txt',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\ma\\LICENSE',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\ma\\LICENSE',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\umath\\svml\\LICENSE',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\umath\\svml\\LICENSE',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\common\\pythoncapi-compat\\COPYING',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\common\\pythoncapi-compat\\COPYING',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\splitmix64\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\splitmix64\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\METADATA',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\METADATA',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\include\\numpy\\libdivide\\LICENSE.txt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\include\\numpy\\libdivide\\LICENSE.txt',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\DELVEWHEEL',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\DELVEWHEEL',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\linalg\\lapack_lite\\LICENSE.txt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\linalg\\lapack_lite\\LICENSE.txt',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\npysort\\x86-simd-sort\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\npysort\\x86-simd-sort\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\distributions\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\distributions\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\INSTALLER',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\INSTALLER',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\REQUESTED',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\REQUESTED',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\pcg64\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\pcg64\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\philox\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\philox\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\RECORD',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\RECORD',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\sfc64\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\sfc64\\LICENSE.md',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\highway\\LICENSE',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\_core\\src\\highway\\LICENSE',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\entry_points.txt',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\entry_points.txt',
+   'DATA'),
+  ('numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\mt19937\\LICENSE.md',
+   'C:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\numpy-2.4.2.dist-info\\licenses\\numpy\\random\\src\\mt19937\\LICENSE.md',
+   'DATA'),
+  ('base_library.zip',
+   'c:\\Users\\Aditya '
+   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\build\\4_Zone_Rgb_Toolkit\\base_library.zip',
+   'DATA')],
+ [('re._parser',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\re\\_parser.py',
+   'PYMODULE'),
+  ('re._constants',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\re\\_constants.py',
+   'PYMODULE'),
+  ('re._compiler',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\re\\_compiler.py',
+   'PYMODULE'),
+  ('re._casefix',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\re\\_casefix.py',
+   'PYMODULE'),
+  ('re',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\re\\__init__.py',
+   'PYMODULE'),
+  ('genericpath',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\genericpath.py',
+   'PYMODULE'),
+  ('abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\abc.py',
+   'PYMODULE'),
+  ('warnings',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\warnings.py',
+   'PYMODULE'),
+  ('posixpath',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\posixpath.py',
+   'PYMODULE'),
+  ('encodings.zlib_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\zlib_codec.py',
+   'PYMODULE'),
+  ('encodings.uu_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\uu_codec.py',
+   'PYMODULE'),
+  ('encodings.utf_8_sig',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_8_sig.py',
+   'PYMODULE'),
+  ('encodings.utf_8',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_8.py',
+   'PYMODULE'),
+  ('encodings.utf_7',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_7.py',
+   'PYMODULE'),
+  ('encodings.utf_32_le',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_32_le.py',
+   'PYMODULE'),
+  ('encodings.utf_32_be',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_32_be.py',
+   'PYMODULE'),
+  ('encodings.utf_32',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_32.py',
+   'PYMODULE'),
+  ('encodings.utf_16_le',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_16_le.py',
+   'PYMODULE'),
+  ('encodings.utf_16_be',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_16_be.py',
+   'PYMODULE'),
+  ('encodings.utf_16',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\utf_16.py',
+   'PYMODULE'),
+  ('encodings.unicode_escape',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\unicode_escape.py',
+   'PYMODULE'),
+  ('encodings.undefined',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\undefined.py',
+   'PYMODULE'),
+  ('encodings.tis_620',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\tis_620.py',
+   'PYMODULE'),
+  ('encodings.shift_jisx0213',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\shift_jisx0213.py',
+   'PYMODULE'),
+  ('encodings.shift_jis_2004',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\shift_jis_2004.py',
+   'PYMODULE'),
+  ('encodings.shift_jis',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\shift_jis.py',
+   'PYMODULE'),
+  ('encodings.rot_13',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\rot_13.py',
+   'PYMODULE'),
+  ('encodings.raw_unicode_escape',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\raw_unicode_escape.py',
+   'PYMODULE'),
+  ('encodings.quopri_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\quopri_codec.py',
+   'PYMODULE'),
+  ('encodings.punycode',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\punycode.py',
+   'PYMODULE'),
+  ('encodings.ptcp154',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\ptcp154.py',
+   'PYMODULE'),
+  ('encodings.palmos',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\palmos.py',
+   'PYMODULE'),
+  ('encodings.oem',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\oem.py',
+   'PYMODULE'),
+  ('encodings.mbcs',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mbcs.py',
+   'PYMODULE'),
+  ('encodings.mac_turkish',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_turkish.py',
+   'PYMODULE'),
+  ('encodings.mac_romanian',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_romanian.py',
+   'PYMODULE'),
+  ('encodings.mac_roman',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_roman.py',
+   'PYMODULE'),
+  ('encodings.mac_latin2',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_latin2.py',
+   'PYMODULE'),
+  ('encodings.mac_iceland',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_iceland.py',
+   'PYMODULE'),
+  ('encodings.mac_greek',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_greek.py',
+   'PYMODULE'),
+  ('encodings.mac_farsi',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_farsi.py',
+   'PYMODULE'),
+  ('encodings.mac_cyrillic',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_cyrillic.py',
+   'PYMODULE'),
+  ('encodings.mac_croatian',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_croatian.py',
+   'PYMODULE'),
+  ('encodings.mac_arabic',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\mac_arabic.py',
+   'PYMODULE'),
+  ('encodings.latin_1',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\latin_1.py',
+   'PYMODULE'),
+  ('encodings.kz1048',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\kz1048.py',
+   'PYMODULE'),
+  ('encodings.koi8_u',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\koi8_u.py',
+   'PYMODULE'),
+  ('encodings.koi8_t',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\koi8_t.py',
+   'PYMODULE'),
+  ('encodings.koi8_r',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\koi8_r.py',
+   'PYMODULE'),
+  ('encodings.johab',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\johab.py',
+   'PYMODULE'),
+  ('encodings.iso8859_9',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_9.py',
+   'PYMODULE'),
+  ('encodings.iso8859_8',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_8.py',
+   'PYMODULE'),
+  ('encodings.iso8859_7',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_7.py',
+   'PYMODULE'),
+  ('encodings.iso8859_6',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_6.py',
+   'PYMODULE'),
+  ('encodings.iso8859_5',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_5.py',
+   'PYMODULE'),
+  ('encodings.iso8859_4',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_4.py',
+   'PYMODULE'),
+  ('encodings.iso8859_3',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_3.py',
+   'PYMODULE'),
+  ('encodings.iso8859_2',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_2.py',
+   'PYMODULE'),
+  ('encodings.iso8859_16',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_16.py',
+   'PYMODULE'),
+  ('encodings.iso8859_15',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_15.py',
+   'PYMODULE'),
+  ('encodings.iso8859_14',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_14.py',
+   'PYMODULE'),
+  ('encodings.iso8859_13',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_13.py',
+   'PYMODULE'),
+  ('encodings.iso8859_11',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_11.py',
+   'PYMODULE'),
+  ('encodings.iso8859_10',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_10.py',
+   'PYMODULE'),
+  ('encodings.iso8859_1',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso8859_1.py',
+   'PYMODULE'),
+  ('encodings.iso2022_kr',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_kr.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp_ext',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp_ext.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp_3',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp_3.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp_2004',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp_2004.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp_2',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp_2.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp_1',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp_1.py',
+   'PYMODULE'),
+  ('encodings.iso2022_jp',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\iso2022_jp.py',
+   'PYMODULE'),
+  ('encodings.idna',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\idna.py',
+   'PYMODULE'),
+  ('encodings.hz',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\hz.py',
+   'PYMODULE'),
+  ('encodings.hp_roman8',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\hp_roman8.py',
+   'PYMODULE'),
+  ('encodings.hex_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\hex_codec.py',
+   'PYMODULE'),
+  ('encodings.gbk',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\gbk.py',
+   'PYMODULE'),
+  ('encodings.gb2312',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\gb2312.py',
+   'PYMODULE'),
+  ('encodings.gb18030',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\gb18030.py',
+   'PYMODULE'),
+  ('encodings.euc_kr',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\euc_kr.py',
+   'PYMODULE'),
+  ('encodings.euc_jp',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\euc_jp.py',
+   'PYMODULE'),
+  ('encodings.euc_jisx0213',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\euc_jisx0213.py',
+   'PYMODULE'),
+  ('encodings.euc_jis_2004',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\euc_jis_2004.py',
+   'PYMODULE'),
+  ('encodings.cp950',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp950.py',
+   'PYMODULE'),
+  ('encodings.cp949',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp949.py',
+   'PYMODULE'),
+  ('encodings.cp932',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp932.py',
+   'PYMODULE'),
+  ('encodings.cp875',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp875.py',
+   'PYMODULE'),
+  ('encodings.cp874',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp874.py',
+   'PYMODULE'),
+  ('encodings.cp869',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp869.py',
+   'PYMODULE'),
+  ('encodings.cp866',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp866.py',
+   'PYMODULE'),
+  ('encodings.cp865',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp865.py',
+   'PYMODULE'),
+  ('encodings.cp864',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp864.py',
+   'PYMODULE'),
+  ('encodings.cp863',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp863.py',
+   'PYMODULE'),
+  ('encodings.cp862',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp862.py',
+   'PYMODULE'),
+  ('encodings.cp861',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp861.py',
+   'PYMODULE'),
+  ('encodings.cp860',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp860.py',
+   'PYMODULE'),
+  ('encodings.cp858',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp858.py',
+   'PYMODULE'),
+  ('encodings.cp857',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp857.py',
+   'PYMODULE'),
+  ('encodings.cp856',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp856.py',
+   'PYMODULE'),
+  ('encodings.cp855',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp855.py',
+   'PYMODULE'),
+  ('encodings.cp852',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp852.py',
+   'PYMODULE'),
+  ('encodings.cp850',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp850.py',
+   'PYMODULE'),
+  ('encodings.cp775',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp775.py',
+   'PYMODULE'),
+  ('encodings.cp737',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp737.py',
+   'PYMODULE'),
+  ('encodings.cp720',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp720.py',
+   'PYMODULE'),
+  ('encodings.cp500',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp500.py',
+   'PYMODULE'),
+  ('encodings.cp437',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp437.py',
+   'PYMODULE'),
+  ('encodings.cp424',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp424.py',
+   'PYMODULE'),
+  ('encodings.cp273',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp273.py',
+   'PYMODULE'),
+  ('encodings.cp1258',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1258.py',
+   'PYMODULE'),
+  ('encodings.cp1257',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1257.py',
+   'PYMODULE'),
+  ('encodings.cp1256',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1256.py',
+   'PYMODULE'),
+  ('encodings.cp1255',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1255.py',
+   'PYMODULE'),
+  ('encodings.cp1254',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1254.py',
+   'PYMODULE'),
+  ('encodings.cp1253',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1253.py',
+   'PYMODULE'),
+  ('encodings.cp1252',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1252.py',
+   'PYMODULE'),
+  ('encodings.cp1251',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1251.py',
+   'PYMODULE'),
+  ('encodings.cp1250',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1250.py',
+   'PYMODULE'),
+  ('encodings.cp1140',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1140.py',
+   'PYMODULE'),
+  ('encodings.cp1125',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1125.py',
+   'PYMODULE'),
+  ('encodings.cp1026',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1026.py',
+   'PYMODULE'),
+  ('encodings.cp1006',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp1006.py',
+   'PYMODULE'),
+  ('encodings.cp037',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\cp037.py',
+   'PYMODULE'),
+  ('encodings.charmap',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\charmap.py',
+   'PYMODULE'),
+  ('encodings.bz2_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\bz2_codec.py',
+   'PYMODULE'),
+  ('encodings.big5hkscs',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\big5hkscs.py',
+   'PYMODULE'),
+  ('encodings.big5',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\big5.py',
+   'PYMODULE'),
+  ('encodings.base64_codec',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\base64_codec.py',
+   'PYMODULE'),
+  ('encodings.ascii',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\ascii.py',
+   'PYMODULE'),
+  ('encodings.aliases',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\aliases.py',
+   'PYMODULE'),
+  ('encodings',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\encodings\\__init__.py',
+   'PYMODULE'),
+  ('linecache',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\linecache.py',
+   'PYMODULE'),
+  ('operator',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\operator.py',
+   'PYMODULE'),
+  ('_weakrefset',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_weakrefset.py',
+   'PYMODULE'),
+  ('weakref',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\weakref.py',
+   'PYMODULE'),
+  ('heapq',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\heapq.py',
+   'PYMODULE'),
+  ('copyreg',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\copyreg.py',
+   'PYMODULE'),
+  ('_collections_abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\_collections_abc.py',
+   'PYMODULE'),
+  ('sre_compile',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\sre_compile.py',
+   'PYMODULE'),
+  ('codecs',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\codecs.py',
+   'PYMODULE'),
+  ('sre_constants',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\sre_constants.py',
+   'PYMODULE'),
+  ('traceback',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\traceback.py',
+   'PYMODULE'),
+  ('reprlib',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\reprlib.py',
+   'PYMODULE'),
+  ('io',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\io.py',
+   'PYMODULE'),
+  ('collections.abc',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\collections\\abc.py',
+   'PYMODULE'),
+  ('collections',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\collections\\__init__.py',
+   'PYMODULE'),
+  ('functools',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\functools.py',
+   'PYMODULE'),
+  ('stat',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\stat.py',
+   'PYMODULE'),
+  ('sre_parse',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\sre_parse.py',
+   'PYMODULE'),
+  ('keyword',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\keyword.py',
+   'PYMODULE'),
+  ('locale',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\locale.py',
+   'PYMODULE'),
+  ('enum',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\enum.py',
+   'PYMODULE'),
+  ('ntpath',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\ntpath.py',
+   'PYMODULE'),
+  ('types',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\types.py',
+   'PYMODULE'),
+  ('os',
+   'C:\\Users\\Aditya '
+   'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\os.py',
+   'PYMODULE')])

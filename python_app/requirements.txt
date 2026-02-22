@@ -1,0 +1,10 @@
+PySide6
+mss
+Pillow
+pynput
+psutil
+WMI
+numpy
+PyAudioWPatch
+hidapi
+pyinstaller
