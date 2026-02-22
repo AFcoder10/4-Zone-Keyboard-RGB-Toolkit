@@ -97,8 +97,8 @@ class AudioVisualizer:
         # Parse CLI arguments (brightness boost fixed at max 30%)
         sensitivity = int(args[0]) if len(args) > 0 else 50
         smoothness = int(args[1]) if len(args) > 1 else 50
-        # brightness boost slider removed – use max boost (30%) with 50% increase
-        self.brightness_mult = slider_to_brightness_mult(30) * 1.5
+        # brightness boost slider removed – use max boost (30%)
+        self.brightness_mult = slider_to_brightness_mult(30)
         flicker_raw = int(args[2]) if len(args) > 2 else 0
         self.attack_factor = slider_to_attack(smoothness)
         self.decay_factor = slider_to_decay(smoothness)
@@ -115,7 +115,7 @@ class AudioVisualizer:
         self.ref_levels = [r * slider_to_ref_mult(sensitivity) for r in BASE_REFS]
         # Note: attack_factor, decay_factor, brightness_mult already set above
 
-        print(f"Sensitivity: {sensitivity}%  |  Smoothness: {smoothness}%  |  Brightness Boost: 30%  |  Reduce Flicker: {flicker_raw}% (window={self.flicker_window} frames)")
+        print(f"Sensitivity: {sensitivity}%  |  Smoothness: {smoothness}%  |  Brightness Boost: 30% (fixed)  |  Reduce Flicker: {flicker_raw}% (window={self.flicker_window} frames)")
         print(f"Zone colors: {self.zone_colors}")
 
         # ── Locate WASAPI loopback ────────────────────────────────────────────
