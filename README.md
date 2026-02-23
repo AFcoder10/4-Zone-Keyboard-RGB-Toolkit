@@ -28,11 +28,9 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 
 ## Installation
 
-1. ![Download Release](assets/1.png)
-2. Unzip the downloaded file.
-3. Open the `.exe` file to run the application.
+1. go to the releases tab and download the latest version 
 
-*Note: Do not move or extract only the `.exe` file. You need to keep all the surrounding files and folders in the directory to run it properly.*
+
 
 ## Troubleshooting
 
