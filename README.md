@@ -32,10 +32,3 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 
 
 
-## Troubleshooting
-
-- **Keyboard Not Found:** Ensure your specific PID is mapped successfully in `python_controller.py`. If you have a different Lenovo model, you may need to add its Product ID hex definition under `L5PKeyboard.PRODUCT_IDS`.
-- **Audio Visualizer Not Reactive:** Ensure your system is outputting desktop audio (WASAPI Loopback captures the default speaker stream). If using specialized headsets, virtual cables, or specific soundboards, the loopback might fail to bind to the active mixer.
-
----
-*Built with ❤️ utilizing Python, PySide6, and the Windows Desktop Duplication API.*
