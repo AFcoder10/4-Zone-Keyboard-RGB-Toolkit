@@ -5,7 +5,7 @@
  False,
  ['C:\\Users\\Aditya '
   'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\assets\\rgb_wheel.ico'],
- None,
+ versioninfo.VSVersionInfo(ffi=versioninfo.FixedFileInfo(filevers=(1, 0, 0, 0), prodvers=(1, 0, 0, 0), mask=0x3f, flags=0x0, OS=0x40004, fileType=1, subtype=0x0, date=(0, 0)), kids=[versioninfo.StringFileInfo([versioninfo.StringTable('040904B0', [versioninfo.StringStruct('CompanyName', 'AFcoder10'), versioninfo.StringStruct('FileDescription', '4 Zone RGB Toolkit'), versioninfo.StringStruct('FileVersion', '1.0.0.0'), versioninfo.StringStruct('InternalName', '4_Zone_Rgb_Toolkit'), versioninfo.StringStruct('LegalCopyright', 'Copyright (c) AFcoder10'), versioninfo.StringStruct('OriginalFilename', '4_Zone_Rgb_Toolkit.exe'), versioninfo.StringStruct('ProductName', '4 Zone RGB Toolkit'), versioninfo.StringStruct('ProductVersion', '1.0.0.0')])]), versioninfo.VarFileInfo([versioninfo.VarStruct('Translation', [1033, 1200])])]),
  False,
  False,
  b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<assembly xmlns='
@@ -1037,7 +1037,7 @@
  [],
  False,
  False,
- 1771933062,
+ 1771936769,
  [('runw.exe',
    'C:\\Users\\Aditya '
    'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',

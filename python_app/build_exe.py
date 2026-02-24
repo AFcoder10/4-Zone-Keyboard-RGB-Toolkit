@@ -26,6 +26,7 @@ def build_standalone_exe():
         "--windowed",
         "--icon=assets/rgb_wheel.ico",
         "--name=4_Zone_Rgb_Toolkit",
+        "--version-file=version_info.txt",
         
         "--add-data=assets/minus.svg;assets",
         "--add-data=assets/plus.svg;assets",
