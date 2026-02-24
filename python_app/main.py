@@ -30,11 +30,45 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction
 import winreg
 from python_controller import L5PKeyboard
+from threading import Lock
+
+# Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
+class LogBuffer:
+    def __init__(self, orig_stream):
+        self.orig = orig_stream
+        self.lock = Lock()
+        self.lines = []
+    def write(self, s):
+        with self.lock:
+            self.lines.append(s)
+        try:
+            self.orig.write(s)
+        except Exception:
+            pass
+    def flush(self):
+        try:
+            self.orig.flush()
+        except Exception:
+            pass
+    def get_text(self):
+        with self.lock:
+            return ''.join(self.lines)
+    def clear(self):
+        with self.lock:
+            self.lines.clear()
+
+# Install global buffers so prints and errors are captured
+_ORIG_STDOUT = sys.stdout
+_ORIG_STDERR = sys.stderr
+_STDOUT_BUFFER = LogBuffer(_ORIG_STDOUT)
+_STDERR_BUFFER = LogBuffer(_ORIG_STDERR)
+sys.stdout = _STDOUT_BUFFER
+sys.stderr = _STDERR_BUFFER
 class CustomTitleBar(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
@@ -85,6 +119,53 @@ class CustomTitleBar(QWidget):
                 return None
     def mouseMoveEvent(self, event: QMouseEvent):
         return
+
+
+class LogsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Application Logs')
+        self.setMinimumSize(700, 400)
+        self.setWindowFlags(self.windowFlags() | Qt.Window)
+        layout = QVBoxLayout(self)
+        self.log_view = QPlainTextEdit()
+        self.log_view.setReadOnly(True)
+        layout.addWidget(self.log_view)
+        button_layout = QHBoxLayout()
+        self.btn_clear = QPushButton('Clear')
+        self.btn_copy = QPushButton('Copy All')
+        self.btn_close = QPushButton('Close')
+        self.btn_clear.clicked.connect(self.clear_logs)
+        self.btn_copy.clicked.connect(self.copy_logs)
+        self.btn_close.clicked.connect(self.close)
+        button_layout.addStretch()
+        button_layout.addWidget(self.btn_clear)
+        button_layout.addWidget(self.btn_copy)
+        button_layout.addWidget(self.btn_close)
+        layout.addLayout(button_layout)
+        self.update_timer = QTimer(self)
+        self.update_timer.timeout.connect(self.refresh)
+        self.update_timer.start(500)
+    def refresh(self):
+        try:
+            text = _STDOUT_BUFFER.get_text() + _STDERR_BUFFER.get_text()
+            self.log_view.setPlainText(text)
+            self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
+        except Exception:
+            pass
+    def clear_logs(self):
+        try:
+            _STDOUT_BUFFER.clear()
+            _STDERR_BUFFER.clear()
+            self.log_view.clear()
+        except Exception:
+            pass
+    def copy_logs(self):
+        try:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(self.log_view.toPlainText())
+        except Exception:
+            pass
 class RGBControllerApp(QMainWindow):
     # ***<module>.RGBControllerApp: Failure: Different bytecode
     def __init__(self):
@@ -157,6 +238,14 @@ class RGBControllerApp(QMainWindow):
         self.btn_clear_cache.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.1); color: #FF5555; border: 1px solid #FF5555; border-radius: 6px; font-weight: bold; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: #FF5555; color: white; }')
         self.btn_clear_cache.clicked.connect(self.clear_cache)
         settings_layout.addWidget(self.btn_clear_cache)
+
+        # Logs viewer button
+        self.btn_view_logs = QPushButton('View Logs')
+        self.btn_view_logs.setFixedHeight(35)
+        self.btn_view_logs.setCursor(Qt.PointingHandCursor)
+        self.btn_view_logs.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #E2E2E2; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
+        self.btn_view_logs.clicked.connect(self.show_logs)
+        settings_layout.addWidget(self.btn_view_logs)
         settings_layout.addStretch()
         self.stack.addWidget(self.settings_view)
         self.tray_icon = QSystemTrayIcon(self)
@@ -491,6 +580,14 @@ class RGBControllerApp(QMainWindow):
             self.on_mode_changed('Static')
             QMessageBox.information(self, 'Cache Cleared', 'The application cache has been successfully reset to default settings.')
             self.toggle_settings()
+    def show_logs(self):
+        try:
+            if not hasattr(self, 'logs_dialog') or self.logs_dialog is None:
+                self.logs_dialog = LogsDialog(self)
+            self.logs_dialog.show()
+            self.logs_dialog.raise_()
+        except Exception:
+            pass
     def apply_preset_from_ui(self, index):
         preset_name = self.preset_combo.itemText(index)
         self.apply_preset_logic(preset_name)
@@ -671,8 +768,12 @@ class RGBControllerApp(QMainWindow):
                 # In Live Audio Visualizer mode, hide vibrance (brightness boost) UI
                 self.vibrance_widget.hide()
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
-                self.speed_label.setStyleSheet('color: #E2E2E5E2;')
+                self.speed_label.setStyleSheet('color: #E2E2E2;')
+                # Make sure the speed control is visible and interactive (it may have been hidden
+                # by Ambient mode). Also hide ambient-only controls.
+                self.speed_widget.show()
                 self.speed_widget.setEnabled(True)
+                self.ambient_speed_widget.hide()
                 # (random mode removed)
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
@@ -771,8 +872,7 @@ class RGBControllerApp(QMainWindow):
                 if self.kb:
                     self.kb.close()
                     self.kb = None
-                script_cmd = os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')
-                
+
                 env = os.environ.copy()
                 env['PYTHONPATH'] = os.pathsep.join(sys.path)
                 sensitivity_val  = str(self.speed_slider.value())
@@ -782,10 +882,35 @@ class RGBControllerApp(QMainWindow):
                 color_args = []
                 for c in self.zone_colors:
                     color_args.extend([str(c[0]), str(c[1]), str(c[2])])
+
+                # When running from a bundled EXE (PyInstaller), there is no separate
+                # audio_visualizer.py file on disk. Use a special flag to tell the
+                # frozen executable to run the visualizer code path instead of
+                # attempting to execute a script file.
+                if getattr(sys, 'frozen', False):
+                    cmd = [sys.executable, '--run-visualizer', sensitivity_val, smoothness_val, flicker_val] + color_args
+                else:
+                    script_cmd = os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')
+                    cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args
+
+                import threading
+                flags = 0
+                if sys.platform == "win32":
+                    flags = subprocess.CREATE_NO_WINDOW
+                
                 self.visualizer_process = subprocess.Popen(
-                    [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args,
-                    env=env
+                    cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+                    text=True, creationflags=flags, bufsize=1
                 )
+                
+                def read_proc(proc):
+                    for line in iter(proc.stdout.readline, ''):
+                        if line:
+                            # Use sys.stdout.write instead of print to avoid recursion or extra newlines
+                            sys.stdout.write(line)
+                            sys.stdout.flush()
+                
+                threading.Thread(target=read_proc, args=(self.visualizer_process,), daemon=True).start()
                 return
             else:
                 if mode_name in self.SOFTWARE_MODES:
@@ -971,14 +1096,29 @@ class RGBControllerApp(QMainWindow):
                 except Exception as e:
                     print(f'Effect calculation error: {e}')
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and 'audio_visualizer.py' in sys.argv[1]:
+    # Support two ways to launch the audio visualizer:
+    # 1) Development: executing the script file directly (audio_visualizer.py)
+    # 2) Bundled EXE: re-invoke the frozen executable with `--run-visualizer` flag
+    if '--run-visualizer' in sys.argv or (len(sys.argv) > 1 and 'audio_visualizer.py' in sys.argv[1]):
+            if '--run-visualizer' in sys.argv:
+                sys.argv.remove('--run-visualizer')
+            if len(sys.argv) > 1 and 'audio_visualizer.py' in sys.argv[1]:
+                sys.argv.remove(sys.argv[1])
             from audio_visualizer import AudioVisualizer
             try:
                 visualizer = AudioVisualizer()
                 visualizer.run()
-            except:
-                pass
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
             sys.exit(0)
+    if sys.platform == 'win32':
+        import ctypes
+        myappid = 'adityafere.4zonergbtoolkit.app.1'
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     window = RGBControllerApp()

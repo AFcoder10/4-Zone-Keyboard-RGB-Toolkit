@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets/minus.svg', 'assets'), ('assets/plus.svg', 'assets'), ('assets/settings.svg', 'assets'), ('assets/toggle_off.svg', 'assets'), ('assets/toggle_on.svg', 'assets'), ('assets/rgb_wheel.ico', '.'), ('python_controller.py', '.'), ('audio_visualizer.py', '.')],
+    datas=[('assets/minus.svg', 'assets'), ('assets/plus.svg', 'assets'), ('assets/settings.svg', 'assets'), ('assets/toggle_off.svg', 'assets'), ('assets/toggle_on.svg', 'assets'), ('assets/rgb_wheel.ico', 'assets'), ('python_controller.py', '.'), ('audio_visualizer.py', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

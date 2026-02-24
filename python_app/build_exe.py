@@ -32,7 +32,7 @@ def build_standalone_exe():
         "--add-data=assets/settings.svg;assets",
         "--add-data=assets/toggle_off.svg;assets",
         "--add-data=assets/toggle_on.svg;assets",
-        "--add-data=assets/rgb_wheel.ico;.",
+        "--add-data=assets/rgb_wheel.ico;assets",
         "--add-data=python_controller.py;.",
         "--add-data=audio_visualizer.py;.",
         

@@ -1,4 +1,4 @@
-('c:\\Users\\Aditya '
+('C:\\Users\\Aditya '
  'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\build\\4_Zone_Rgb_Toolkit\\PYZ-00.pyz',
  [('PIL',
    'C:\\Users\\Aditya '
@@ -497,7 +497,7 @@
    'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib\\asyncio\\windows_utils.py',
    'PYMODULE'),
   ('audio_visualizer',
-   'c:\\Users\\Aditya '
+   'C:\\Users\\Aditya '
    'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\audio_visualizer.py',
    'PYMODULE'),
   ('base64',
@@ -1761,7 +1761,7 @@
    'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\pynput\\mouse\\_xorg.py',
    'PYMODULE'),
   ('python_controller',
-   'c:\\Users\\Aditya '
+   'C:\\Users\\Aditya '
    'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\python_controller.py',
    'PYMODULE'),
   ('pythoncom',
