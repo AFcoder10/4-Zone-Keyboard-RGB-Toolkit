@@ -109,8 +109,19 @@ class AudioVisualizer:
         # slider 100 → window = 30 (heavy averaging, very smooth)
         self.flicker_window = max(1, round(1 + (flicker_raw / 100.0) * 29))
 
-        # Force static white colors regardless of CLI args
-        self.zone_colors = [(255, 255, 255) for _ in range(4)]
+        # Parse zone colors from CLI arguments (argv[3...14])
+        self.zone_colors = []
+        if len(args) >= 15:
+            for i in range(4):
+                try:
+                    r = int(args[3 + i*3])
+                    g = int(args[4 + i*3])
+                    b = int(args[5 + i*3])
+                    self.zone_colors.append((r, g, b))
+                except (ValueError, IndexError):
+                    self.zone_colors.append((255, 252, 247))
+        else:
+            self.zone_colors = [(255, 252, 247) for _ in range(4)]
 
         self.ref_levels = [r * slider_to_ref_mult(sensitivity) for r in BASE_REFS]
         # Note: attack_factor, decay_factor, brightness_mult already set above
