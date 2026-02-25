@@ -1337,7 +1337,14 @@ class RGBControllerApp(QMainWindow):
                     self.kb = None
 
                 env = os.environ.copy()
-                env['PYTHONPATH'] = os.pathsep.join(sys.path)
+                # Avoid propagating stale PyInstaller extraction paths to child
+                # processes. If the parent exits and removes its _MEI folder,
+                # inherited _MEIPASS values can make the child look for
+                # python*.dll in a deleted temp directory.
+                env.pop('_MEIPASS', None)
+                env.pop('_MEIPASS2', None)
+                if not getattr(sys, 'frozen', False):
+                    env['PYTHONPATH'] = os.pathsep.join(sys.path)
                 sensitivity_val  = str(self.speed_slider.value())
                 smoothness_val   = str(self.bright_slider.value())
                 flicker_val      = str(0)
