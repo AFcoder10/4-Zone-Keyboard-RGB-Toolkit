@@ -30,12 +30,19 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit
-from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog
+from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction
 import winreg
 from python_controller import L5PKeyboard
+import threading
 from threading import Lock
+import urllib.request
+import urllib.error
+import tempfile
+import traceback
+
+CURRENT_VERSION = "v1.31"
 
 # Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
 class LogBuffer:
@@ -166,8 +173,42 @@ class LogsDialog(QDialog):
             clipboard.setText(self.log_view.toPlainText())
         except Exception:
             pass
+
+class UpdateDownloader(QThread):
+    progress = Signal(int)
+    finished = Signal(str)
+    error = Signal(str)
+    
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+        
+    def run(self):
+        try:
+            req = urllib.request.Request(self.url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                total_size = int(response.headers.get('content-length', 0))
+                tmp_dir = tempfile.gettempdir()
+                dest_path = os.path.join(tmp_dir, "4_Zone_Rgb_Toolkit_Updated.exe")
+                
+                with open(dest_path, 'wb') as f:
+                    downloaded = 0
+                    while True:
+                        chunk = response.read(65536)
+                        if not chunk: break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = int((downloaded / total_size) * 100)
+                            self.progress.emit(percent)
+                self.finished.emit(dest_path)
+        except Exception as e:
+            self.error.emit(str(e))
+
 class RGBControllerApp(QMainWindow):
     # ***<module>.RGBControllerApp: Failure: Different bytecode
+    update_available = Signal(str, str, str)
+
     def __init__(self):
         # ***<module>.RGBControllerApp.__init__: Failure: Compilation Error
         super().__init__()
@@ -246,6 +287,19 @@ class RGBControllerApp(QMainWindow):
         self.btn_view_logs.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #E2E2E2; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
         self.btn_view_logs.clicked.connect(self.show_logs)
         settings_layout.addWidget(self.btn_view_logs)
+
+        self.btn_clear_update_cache = QPushButton('Clear Update Cache')
+        self.btn_clear_update_cache.setFixedHeight(35)
+        self.btn_clear_update_cache.setCursor(Qt.PointingHandCursor)
+        self.btn_clear_update_cache.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #AAAAAA; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
+        self.btn_clear_update_cache.clicked.connect(self.clear_update_cache)
+        settings_layout.addWidget(self.btn_clear_update_cache)
+        
+        version_label = QLabel(f'Version: {CURRENT_VERSION}')
+        version_label.setAlignment(Qt.AlignCenter)
+        version_label.setStyleSheet('color: #666666; margin-top: 15px; font-size: 11px; font-weight: bold; font-family: "Segoe UI Variable", sans-serif;')
+        settings_layout.addWidget(version_label)
+        
         settings_layout.addStretch()
         self.stack.addWidget(self.settings_view)
         self.tray_icon = QSystemTrayIcon(self)
@@ -502,6 +556,94 @@ class RGBControllerApp(QMainWindow):
         self.force_quit = False
         self.load_settings()
         self.apply_effect()
+
+        self.update_available.connect(self.prompt_update)
+        threading.Thread(target=self.check_for_updates, daemon=True).start()
+
+    def check_for_updates(self):
+        url = "https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases/latest"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode())
+                latest_version = data.get("tag_name", "")
+                if latest_version and latest_version != CURRENT_VERSION:
+                    exe_url = ""
+                    for asset in data.get("assets", []):
+                        if asset.get("name", "").endswith(".exe"):
+                            exe_url = asset.get("browser_download_url")
+                            break
+                    if exe_url:
+                        self.update_available.emit(latest_version, exe_url, data.get("body", "Bug fixes and improvements."))
+        except Exception as e:
+            print("Update check failed:", e)
+
+    def prompt_update(self, latest_version, exe_url, release_notes):
+        reply = QMessageBox.question(self, "Update Available",
+            f"A new version ({latest_version}) is available!\n\nRelease notes:\n{release_notes}\n\nWould you like to install it now?", 
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        
+        if reply == QMessageBox.Yes:
+            self.perform_update_download(exe_url, latest_version)
+
+    def perform_update_download(self, url, version):
+        self.progress_dlg = QProgressDialog("Downloading update...", "Cancel", 0, 100, self)
+        self.progress_dlg.setWindowTitle("Update")
+        self.progress_dlg.setWindowModality(Qt.WindowModal)
+        self.progress_dlg.setAutoClose(True)
+        self.progress_dlg.show()
+        
+        self.downloader = UpdateDownloader(url)
+        self.downloader.progress.connect(self.progress_dlg.setValue)
+        self.downloader.finished.connect(self.apply_update_and_restart)
+        self.downloader.error.connect(lambda e: QMessageBox.critical(self, "Update Failed", f"Failed to download update:\n{e}"))
+        self.downloader.start()
+
+    def apply_update_and_restart(self, downloaded_exe):
+        if hasattr(self, 'progress_dlg'):
+            self.progress_dlg.close()
+            
+        current_exe = sys.executable if getattr(sys, 'frozen', False) else __file__
+        if not getattr(sys, 'frozen', False):
+             QMessageBox.information(self, "Update Downloaded", f"Update downloaded to {downloaded_exe}. Since you are running from source, you must manually replace your files.")
+             return
+             
+        ps_path = os.path.join(tempfile.gettempdir(), "updater.ps1")
+        pid = os.getpid()
+        with open(ps_path, "w") as f:
+            f.write(f'$pid = {pid}\n')
+            f.write('try { Wait-Process -Id $pid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
+            f.write('Start-Sleep -Seconds 1\n')
+            f.write('$dest = "' + current_exe + '"\n')
+            f.write('$src  = "' + downloaded_exe + '"\n')
+            f.write('Copy-Item -Path $src -Destination $dest -Force -ErrorAction SilentlyContinue\n')
+            f.write('Start-Process -FilePath $dest\n')
+            f.write('Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n')
+
+        subprocess.Popen(
+            ["powershell", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", ps_path],
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        self.force_quit = True
+        QApplication.quit()
+
+    def clear_update_cache(self):
+        tmp = tempfile.gettempdir()
+        deleted = 0
+        patterns = ["4_Zone_Rgb_Toolkit_Updated.exe", "updater.ps1", "updater.bat"]
+        for name in patterns:
+            path = os.path.join(tmp, name)
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                    deleted += 1
+                except Exception:
+                    pass
+        if deleted > 0:
+            QMessageBox.information(self, "Update Cache Cleared", f"Removed {deleted} leftover update file(s) from your Temp folder.")
+        else:
+            QMessageBox.information(self, "Update Cache", "No leftover update files found. Nothing to clear!")
+
     def load_settings(self):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
         self.minimize_to_tray_cb.blockSignals(True)
