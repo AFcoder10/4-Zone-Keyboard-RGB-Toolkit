@@ -787,13 +787,24 @@ class RGBControllerApp(QMainWindow):
              
         ps_path = os.path.join(tempfile.gettempdir(), "updater.ps1")
         pid = os.getpid()
+        ppid = os.getppid() # Get parent PID (the PyInstaller bootstrapper)
+        
         with open(ps_path, "w") as f:
             f.write(f'$pid = {pid}\n')
-            f.write('try { Wait-Process -Id $pid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
-            f.write('Start-Sleep -Seconds 1\n')
-            f.write('$dest = "' + current_exe + '"\n')
+            f.write(f'$ppid = {ppid}\n')
             f.write('$src  = "' + downloaded_exe + '"\n')
+            f.write('$dest = "' + current_exe + '"\n')
+            f.write('\n# Wait for both processes to terminate to avoid DLL lock errors\n')
+            f.write('try { Wait-Process -Id $pid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
+            f.write('try { Wait-Process -Id $ppid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
+            f.write('Start-Sleep -Seconds 2\n')
+            f.write('\n# Perform the update\n')
             f.write('Copy-Item -Path $src -Destination $dest -Force -ErrorAction SilentlyContinue\n')
+            f.write('\n# Cleanup and restart\n')
+            f.write('Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n')
+            f.write('\n# Clear PyInstaller environment variables so the new process extracts cleanly\n')
+            f.write('Remove-Item env:_MEIPASS2 -ErrorAction SilentlyContinue\n')
+            f.write('Remove-Item env:_MEIPASS -ErrorAction SilentlyContinue\n')
             f.write('Start-Process -FilePath $dest\n')
             f.write('Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n')
 
