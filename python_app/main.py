@@ -7,6 +7,7 @@ import math
 import random
 import ctypes
 import json
+import webbrowser
 from ctypes.wintypes import MSG, RECT
 try:
     import mss
@@ -42,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.31"
+CURRENT_VERSION = "v1.42"
 
 # Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
 class LogBuffer:
@@ -93,6 +94,29 @@ class CustomTitleBar(QWidget):
         self.btn_settings.setFixedSize(24, 24)
         self.btn_settings.setStyleSheet('\n            QPushButton {\n                background: transparent;\n                border: none;\n                margin-bottom: 2px;\n            }\n            QPushButton:hover {\n                background-color: rgba(255, 255, 255, 30);\n                border-radius: 4px;\n            }\n        ')
         self.btn_settings.clicked.connect(self.parent.toggle_settings)
+        
+        self.btn_help = QPushButton('Help')
+        self.btn_help.setFixedHeight(22)
+        self.btn_help.setCursor(Qt.PointingHandCursor)
+        self.btn_help.setToolTip('Help / Report Issue')
+        self.btn_help.setStyleSheet('''
+            QPushButton {
+                background: transparent;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 4px;
+                color: #00E5FF;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 0 10px;
+                margin-bottom: 2px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 229, 255, 0.1);
+            }
+        ''')
+        self.btn_help.clicked.connect(self.parent.show_help_dialog)
+        
+        layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(spacer)
@@ -173,6 +197,65 @@ class LogsDialog(QDialog):
             clipboard.setText(self.log_view.toPlainText())
         except Exception:
             pass
+
+class KeyboardPreviewWindow(QDialog):
+    def __init__(self, parent_app):
+        super().__init__(parent_app)
+        self.parent_app = parent_app
+        self.setWindowTitle('Keyboard Real-Time Preview')
+        self.setFixedSize(400, 100)
+        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.WindowStaysOnTopHint)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+        self.zone_widgets = []
+        for i in range(4):
+            w = QWidget()
+            w.setStyleSheet("background-color: black; border-radius: 5px; border: 1px solid #333;")
+            layout.addWidget(w)
+            self.zone_widgets.append(w)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_colors)
+        self.timer.start(50)
+
+    def update_colors(self):
+        try:
+            colors = self.parent_app.custom_colors
+            if len(colors) >= 12:
+                for i in range(4):
+                    r = max(0, min(255, int(colors[i*3])))
+                    g = max(0, min(255, int(colors[i*3+1])))
+                    b = max(0, min(255, int(colors[i*3+2])))
+                    self.zone_widgets[i].setStyleSheet(f"background-color: rgb({r},{g},{b}); border-radius: 5px; border: 1px solid #333;")
+        except Exception:
+            pass
+
+class PreviewGroupBox(QGroupBox):
+    def __init__(self, title, preview_callback, parent=None):
+        super().__init__(title, parent)
+        self.btn_preview = QPushButton('Preview', self)
+        self.btn_preview.setFixedHeight(22)
+        self.btn_preview.setCursor(Qt.PointingHandCursor)
+        self.btn_preview.setStyleSheet('''
+            QPushButton {
+                background: transparent;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 4px;
+                color: #00E5FF;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 0 10px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 229, 255, 0.1);
+            }
+        ''')
+        self.btn_preview.clicked.connect(preview_callback)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # Set to 0 to prevent the top edge from clipping outside the widget bounds
+        self.btn_preview.move(self.width() - self.btn_preview.width() - 15, 0)
 
 class UpdateDownloader(QThread):
     progress = Signal(int)
@@ -361,7 +444,7 @@ class RGBControllerApp(QMainWindow):
         split_layout.addLayout(left_layout, stretch=2)
         split_layout.addLayout(right_layout, stretch=1)
         main_layout.addLayout(split_layout)
-        controls_group = QGroupBox('Main Controls')
+        controls_group = PreviewGroupBox('Main Controls', self.toggle_preview)
         controls_layout = QVBoxLayout(controls_group)
         controls_layout.setSpacing(15)
         plus_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'plus.svg').replace('\\', '/')
@@ -426,6 +509,92 @@ class RGBControllerApp(QMainWindow):
         self.vibrance_widget.setLayout(self.vibrance_layout)
         self.vibrance_widget.hide()
         controls_layout.addWidget(self.vibrance_widget)
+
+        # Pomodoro Timer UI
+        self.pomo_widget = QWidget()
+        pomo_layout = QVBoxLayout(self.pomo_widget)
+        pomo_layout.setContentsMargins(10, 5, 10, 5)
+        
+        time_layout = QHBoxLayout()
+        spin_style = """
+            QSpinBox {
+                background-color: #1A1A1E;
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                padding: 5px;
+                font-size: 16px;
+                font-weight: bold;
+                min-width: 60px;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                width: 0px;
+            }
+        """
+        
+        from PySide6.QtWidgets import QSpinBox
+        self.pomo_hours = QSpinBox()
+        self.pomo_hours.setRange(0, 99)
+        self.pomo_hours.setSuffix("h")
+        self.pomo_hours.setStyleSheet(spin_style)
+        
+        self.pomo_minutes = QSpinBox()
+        self.pomo_minutes.setRange(0, 59)
+        self.pomo_minutes.setSuffix("m")
+        self.pomo_minutes.setStyleSheet(spin_style)
+        
+        self.pomo_seconds = QSpinBox()
+        self.pomo_seconds.setRange(0, 59)
+        self.pomo_seconds.setSuffix("s")
+        self.pomo_seconds.setStyleSheet(spin_style)
+        
+        time_layout.addWidget(self.pomo_hours)
+        time_layout.addWidget(self.pomo_minutes)
+        time_layout.addWidget(self.pomo_seconds)
+        pomo_layout.addLayout(time_layout)
+        
+        btn_pomo_layout = QHBoxLayout()
+        self.btn_pomo_start = QPushButton("Start Focus")
+        self.btn_pomo_start.setCursor(Qt.PointingHandCursor)
+        self.btn_pomo_start.setStyleSheet("""
+            QPushButton {
+                background-color: #00E5FF;
+                color: black;
+                font-weight: bold;
+            }
+            QPushButton:disabled {
+                background-color: #2A2A2E;
+                color: #555555;
+            }
+        """)
+        self.btn_pomo_start.clicked.connect(self.start_pomodoro)
+        
+        self.btn_pomo_stop = QPushButton("Stop")
+        self.btn_pomo_stop.setCursor(Qt.PointingHandCursor)
+        self.btn_pomo_stop.setEnabled(False)
+        self.btn_pomo_stop.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 85, 85, 0.1);
+                color: #FF5555;
+                border: 1px solid rgba(255, 85, 85, 0.3);
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 85, 85, 0.2);
+            }
+            QPushButton:disabled {
+                background-color: #2A2A2E;
+                color: #555555;
+                border: 1px solid transparent;
+            }
+        """)
+        self.btn_pomo_stop.clicked.connect(self.stop_pomodoro)
+        
+        btn_pomo_layout.addWidget(self.btn_pomo_start)
+        btn_pomo_layout.addWidget(self.btn_pomo_stop)
+        pomo_layout.addLayout(btn_pomo_layout)
+        
+        self.pomo_widget.hide()
+        controls_layout.addWidget(self.pomo_widget)
         speed_layout = QHBoxLayout()
         self.speed_label = QLabel('Animation Speed: 20%')
         self.speed_label.setFixedWidth(180)
@@ -481,7 +650,7 @@ class RGBControllerApp(QMainWindow):
         self.colors_group = QGroupBox('Zone Colors')
         colors_layout = QGridLayout(self.colors_group)
         colors_layout.setSpacing(10)
-        self.zone_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0]]
+        self.zone_colors = [[255, 252, 247], [255, 252, 247], [255, 252, 247], [255, 252, 247]]
         self.color_buttons = []
         for i in range(4):
             btn = QPushButton()
@@ -491,7 +660,7 @@ class RGBControllerApp(QMainWindow):
             btn.clicked.connect(lambda checked, idx=i: self.pick_color(idx))
             self.color_buttons.append(btn)
             colors_layout.addWidget(btn, 0, i)
-        self.global_color = [255, 255, 255]
+        self.global_color = [255, 252, 247]
         self.global_color_btn = QPushButton()
         self.global_color_btn.setCursor(Qt.PointingHandCursor)
         self.global_color_btn.setFixedHeight(25)
@@ -499,7 +668,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Ambient Screen Color', '[Beta] Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -540,8 +709,16 @@ class RGBControllerApp(QMainWindow):
         self.custom_timer = QTimer(self)
         self.custom_timer.timeout.connect(self.update_custom_effects)
         self.custom_colors = [0] * 12
+        self.transition_ticks = 0
         self.last_activity = time.time()
         self.sct = None
+        self.preview_window = None
+        self.pomo_running = False
+        self.pomo_total_seconds = 0
+        self.pomo_remaining_seconds = 0
+        self.pomo_is_finished = False
+        self.pomo_last_tick = 0
+        self.pomo_flash_on = False
         if HAS_PYNPUT:
             def on_activity(*args, **kwargs):
                 self.last_activity = time.time()
@@ -626,6 +803,14 @@ class RGBControllerApp(QMainWindow):
         )
         self.force_quit = True
         QApplication.quit()
+
+    def toggle_preview(self):
+        if self.preview_window is None or not self.preview_window.isVisible():
+            self.preview_window = KeyboardPreviewWindow(self)
+            self.preview_window.show()
+        else:
+            self.preview_window.close()
+            self.preview_window = None
 
     def clear_update_cache(self):
         tmp = tempfile.gettempdir()
@@ -825,6 +1010,10 @@ class RGBControllerApp(QMainWindow):
         color = QColorDialog.getColor(current_color, self, f'Select Color for Zone {zone_idx + 1}')
         if color.isValid():
             self.zone_colors[zone_idx] = [color.red(), color.green(), color.blue()]
+            # Sync manual pick to custom_colors for smooth transition
+            self.custom_colors[zone_idx * 3] = color.red()
+            self.custom_colors[zone_idx * 3 + 1] = color.green()
+            self.custom_colors[zone_idx * 3 + 2] = color.blue()
             self.update_button_color(self.color_buttons[zone_idx], self.zone_colors[zone_idx])
             self.apply_effect()
     def pick_global_color(self):
@@ -837,6 +1026,10 @@ class RGBControllerApp(QMainWindow):
             self.update_button_color(self.global_color_btn, self.global_color)
             for i in range(4):
                 self.zone_colors[i] = [r, g, b]
+                # Sync manual pick to custom_colors for smooth transition
+                self.custom_colors[i * 3] = r
+                self.custom_colors[i * 3 + 1] = g
+                self.custom_colors[i * 3 + 2] = b
                 self.update_button_color(self.color_buttons[i], [r, g, b])
             self.apply_effect()
     def minimize_app(self):
@@ -864,6 +1057,79 @@ class RGBControllerApp(QMainWindow):
             self.stack.setCurrentIndex(1)
         else:
             self.stack.setCurrentIndex(0)
+
+    def show_help_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Help & Support")
+        dialog.setFixedSize(380, 160)
+        # Match app aesthetic
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #121212;
+                border: 1px solid #333;
+            }
+            QLabel {
+                color: #E2E2E2;
+                font-size: 14px;
+                font-family: 'Segoe UI Variable', sans-serif;
+            }
+        """)
+        
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        label = QLabel("Having issues? Report them on GitHub.")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
+        
+        btn_issues = QPushButton("Report Issue")
+        btn_issues.setCursor(Qt.PointingHandCursor)
+        btn_issues.setFixedHeight(35)
+        btn_issues.setStyleSheet('''
+            QPushButton {
+                background-color: #00E5FF;
+                color: black;
+                font-weight: bold;
+                border-radius: 6px;
+                padding: 0 20px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #00B2CC;
+            }
+        ''')
+        btn_issues.clicked.connect(lambda: webbrowser.open('https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/issues'))
+        btn_issues.clicked.connect(dialog.accept)
+        
+        btn_close = QPushButton("Close")
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.setFixedHeight(35)
+        btn_close.setStyleSheet('''
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.05);
+                color: #E2E2E2;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                padding: 0 20px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        ''')
+        btn_close.clicked.connect(dialog.reject)
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_issues)
+        btn_layout.addWidget(btn_close)
+        btn_layout.addStretch()
+        
+        layout.addLayout(btn_layout)
+        dialog.exec()
     def nativeEvent(self, eventType, message):
         if eventType == b'windows_generic_MSG':
             msg = MSG.from_address(message.__int__())
@@ -875,11 +1141,42 @@ class RGBControllerApp(QMainWindow):
             self.visualizer_process.terminate()
             self.visualizer_process.wait()
             self.visualizer_process = None
+
+    def start_pomodoro(self):
+        h = self.pomo_hours.value()
+        m = self.pomo_minutes.value()
+        s = self.pomo_seconds.value()
+        total = h * 3600 + m * 60 + s
+        if total <= 0:
+            return
+            
+        self.pomo_total_seconds = total
+        self.pomo_remaining_seconds = total
+        self.pomo_running = True
+        self.pomo_is_finished = False
+        self.pomo_last_tick = time.time()
+        
+        self.btn_pomo_start.setEnabled(False)
+        self.btn_pomo_stop.setEnabled(True)
+        self.pomo_hours.setEnabled(False)
+        self.pomo_minutes.setEnabled(False)
+        self.pomo_seconds.setEnabled(False)
+
+    def stop_pomodoro(self):
+        self.pomo_running = False
+        self.pomo_is_finished = False
+        self.btn_pomo_start.setEnabled(True)
+        self.btn_pomo_stop.setEnabled(False)
+        self.pomo_hours.setEnabled(True)
+        self.pomo_minutes.setEnabled(True)
+        self.pomo_seconds.setEnabled(True)
+        # Reset colors when stopping? handled in loop if running=False
+        
     def on_mode_changed(self, mode_name):
         if mode_name is None:
             return
         else:
-            is_zones_enabled = mode_name in ('Static', 'Breath')
+            is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura')
             self.colors_group.setEnabled(is_zones_enabled)
             if is_zones_enabled:
                 self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
@@ -925,7 +1222,19 @@ class RGBControllerApp(QMainWindow):
                 self.vibrance_widget.hide()
                 self.speed_widget.show()
                 self.ambient_speed_widget.hide()
-                # (random mode removed)
+
+            if mode_name == '[Beta] Pomodoro Timer':
+                # Hide all standard controls to isolate timer
+                self.speed_widget.hide()
+                self.bright_widget.hide()
+                self.pomo_widget.show()
+                # Disable zone color pickers during timer? 
+                # (Plan implies manual colors aren't used for progress calculation)
+            else:
+                self.bright_widget.show()
+                self.pomo_widget.hide()
+                if mode_name != 'Ambient Screen Color':
+                    self.speed_widget.show()
             
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
@@ -938,6 +1247,7 @@ class RGBControllerApp(QMainWindow):
                 self.wave_fill_cb.show()
             else:
                 self.wave_fill_cb.hide()
+            self.transition_ticks = 15
             self.apply_effect()
     def closeEvent(self, event):
         if self.minimize_to_tray_cb.isChecked() and (not self.force_quit):
@@ -1209,25 +1519,176 @@ class RGBControllerApp(QMainWindow):
                                 for i in range(12):
                                     target_colors[i] = self.party_colors[i]
                             else:
-                                if 'Ambient Screen Color' in mode_name:
-                                    # Fast mode lowers the smoothing amount so it transitions immediately
-                                    smooth_amount = 0.8 if self.radio_slow.isChecked() else 0.15
-                                    vib_mult = self.vibrance_slider.value() / 10.0
-                                    if self.sct:
-                                        monitor = self.sct.monitors[1]
-                                        sct_img = self.sct.grab(monitor)
-                                        img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-                                        img = img.resize((4, 1), Image.Resampling.LANCZOS)
-                                        pixels = list(img.getdata())
-                                        for i in range(4):
-                                            r, g, b = pixels[i]
-                                            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                                            # Apply user vibrance setting
-                                            r, g, b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
-                                            target_colors[i * 3] = r * 255
-                                            target_colors[i * 3 + 1] = g * 255
-                                            target_colors[i * 3 + 2] = b * 255
+                                if 'Battery Visualizer' in mode_name:
+                                    smooth_amount = 0.5
+                                    if HAS_PSUTIL:
+                                        battery = psutil.sensors_battery()
+                                        if battery:
+                                            percent = battery.percent
+                                            charging = battery.power_plugged
+                                            
+                                            # Determine the base color and active zones count
+                                            if charging:
+                                                if percent >= 100:
+                                                    base_color = [0, 255, 0] # Green when full
+                                                    active_zones_max = 4
+                                                else:
+                                                    base_color = [0, 0, 255] # Blue when charging
+                                                    active_zones_max = (percent // 25) + 1
+                                            else:
+                                                if percent <= 25:
+                                                    base_color = [255, 0, 0] # Red
+                                                    active_zones_max = 1
+                                                elif percent <= 50:
+                                                    base_color = [255, 128, 0] # Orange
+                                                    active_zones_max = 2
+                                                else:
+                                                    base_color = [255, 255, 255] # White
+                                                    active_zones_max = 3 if percent <= 75 else 4
+                                            
+                                            for i in range(4):
+                                                # Percentage within this specific zone's range (0-25 per zone)
+                                                zone_min = i * 25
+                                                zone_max = (i + 1) * 25
+                                                
+                                                if percent >= zone_max:
+                                                    # Fully charged zone
+                                                    brightness_mult = 1.0
+                                                elif percent > zone_min:
+                                                    # Partial zone filling
+                                                    brightness_mult = (percent - zone_min) / 25.0
+                                                else:
+                                                    # Not reached yet
+                                                    brightness_mult = 0.0
+                                                
+                                                # Apply the "tier" color logically
+                                                # Lower zones inherit the color of the current active tier
+                                                if i < active_zones_max:
+                                                    target_colors[i * 3] = base_color[0] * brightness_mult
+                                                    target_colors[i * 3 + 1] = base_color[1] * brightness_mult
+                                                    target_colors[i * 3 + 2] = base_color[2] * brightness_mult
+                                                else:
+                                                    target_colors[i * 3] = 0
+                                                    target_colors[i * 3 + 1] = 0
+                                                    target_colors[i * 3 + 2] = 0
+                                elif 'Mouse-Reactive Aura' in mode_name:
+                                    smooth_amount = 0.8
+                                    try:
+                                        from PySide6.QtGui import QCursor
+                                        
+                                        cursor_pos = QCursor.pos()
+                                        screen = QApplication.primaryScreen()
+                                        if screen:
+                                            screen_width = screen.size().width()
+                                            # Clamp mouse X to screen bounds
+                                            mouse_x = max(0, min(screen_width, cursor_pos.x()))
+                                            
+                                            # Create a point illumination at the mouse position
+                                            for i in range(4):
+                                                # Coordinate of this zone's center on the screen (0.0 to 1.0 range)
+                                                zone_center_ratio = (i + 0.5) / 4.0
+                                                mouse_ratio = mouse_x / screen_width
+                                                
+                                                # Calculate distance (0.0 to 1.0)
+                                                dist = abs(zone_center_ratio - mouse_ratio)
+                                                
+                                                # Intensity falls off based on distance
+                                                # 0.25 is the width of one zone; a 0.4 falloff gives a soft aura
+                                                intensity = max(0.0, 1.0 - (dist / 0.4))
+                                                
+                                                # Use current zone color with intensity
+                                                target_colors[i * 3] = self.zone_colors[i][0] * intensity
+                                                target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
+                                                target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
+                                    except Exception as e:
+                                        print(f"Mouse aura calculation error: {e}")
+                                elif 'Pomodoro Timer' in mode_name:
+                                    if self.pomo_running:
+                                        now = time.time()
+                                        if now - self.pomo_last_tick >= 1.0:
+                                            self.pomo_last_tick = now
+                                            if self.pomo_remaining_seconds > 0:
+                                                self.pomo_remaining_seconds -= 1
+                                                # Update UI live
+                                                h = self.pomo_remaining_seconds // 3600
+                                                m = (self.pomo_remaining_seconds % 3600) // 60
+                                                s = self.pomo_remaining_seconds % 60
+                                                self.pomo_hours.setValue(h)
+                                                self.pomo_minutes.setValue(m)
+                                                self.pomo_seconds.setValue(s)
+                                            else:
+                                                self.pomo_is_finished = True
+                                        
+                                        if self.pomo_is_finished:
+                                            # Sharp blink every half second (not smooth)
+                                            smooth_amount = 0.0 
+                                            self.pomo_flash_on = int(now * 2) % 2 == 0
+                                            f = 1 if self.pomo_flash_on else 0
+                                            for i in range(4):
+                                                target_colors[i*3] = 255 * f
+                                                target_colors[i*3+1] = 252 * f
+                                                target_colors[i*3+2] = 248 * f
+                                        elif self.pomo_remaining_seconds <= 5:
+                                            # Final Countdown (Last 5 Seconds): Smooth pulse every alternate second
+                                            import math
+                                            # Sine wave pulse (period 2s)
+                                            pulse = 0.5 + 0.5 * math.sin(now * math.pi)
+                                            for i in range(4):
+                                                target_colors[i*3] = 255 * pulse
+                                                target_colors[i*3+1] = 252 * pulse
+                                                target_colors[i*3+2] = 248 * pulse
+                                            # Slower smoothing for the "smooth" pulse feel
+                                            smooth_amount = 0.3
+                                        else:
+                                            # Animation completes at 5 seconds remaining
+                                            # progress goes from 0.0 to 1.0 as remaining goes from total to 5
+                                            effective_total = max(1, self.pomo_total_seconds - 5)
+                                            progress = 1.0 - ((self.pomo_remaining_seconds - 5) / effective_total)
+                                            
+                                            # Zonal Draining (Left to Right)
+                                            for i in range(4):
+                                                zone_start = i * 0.25
+                                                zone_end = (i + 1) * 0.25
+                                                
+                                                if progress <= zone_start:
+                                                    intensity = 1.0
+                                                elif progress >= zone_end:
+                                                    intensity = 0.0
+                                                else:
+                                                    # Partial draining
+                                                    intensity = 1.0 - ((progress - zone_start) / 0.25)
+                                                
+                                                target_colors[i * 3] = 255 * intensity
+                                                target_colors[i * 3 + 1] = 252 * intensity
+                                                target_colors[i * 3 + 2] = 248 * intensity
+                                    else:
+                                        for i in range(12):
+                                            target_colors[i] = 0
+                                else:
+                                    if 'Ambient Screen Color' in mode_name:
+                                        # Fast mode lowers the smoothing amount so it transitions immediately
+                                        smooth_amount = 0.8 if self.radio_slow.isChecked() else 0.15
+                                        vib_mult = self.vibrance_slider.value() / 10.0
+                                        if self.sct:
+                                            monitor = self.sct.monitors[1]
+                                            sct_img = self.sct.grab(monitor)
+                                            img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
+                                            img = img.resize((4, 1), Image.Resampling.LANCZOS)
+                                            pixels = list(img.getdata())
+                                            for i in range(4):
+                                                r, g, b = pixels[i]
+                                                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                                                # Apply user vibrance setting
+                                                r, g, b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
+                                                target_colors[i * 3] = r * 255
+                                                target_colors[i * 3 + 1] = g * 255
+                                                target_colors[i * 3 + 2] = b * 255
                     final_colors = []
+                    # Force slower smoothing during mode transitions
+                    if self.transition_ticks > 0:
+                        smooth_amount = 0.9
+                        self.transition_ticks -= 1
+                        
                     bright_mult = self.bright_slider.value() / 100.0
                     for i in range(12):
                         new_val = self.custom_colors[i] * smooth_amount + target_colors[i] * (1.0 - smooth_amount)
