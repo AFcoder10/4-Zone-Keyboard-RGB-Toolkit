@@ -72,6 +72,32 @@ def sanitized_child_env(base_env=None, include_pythonpath=False):
     env.pop('_MEIPASS2', None)
     for key in [k for k in env if k.startswith('_PYI_')]:
         env.pop(key, None)
+
+    # Remove the temp folder from PATH (crucial to avoid "Python DLL not found"
+    # if the child process inherits a PATH pointing to a deleted _MEI folder)
+    if getattr(sys, 'frozen', False):
+        meipass = getattr(sys, '_MEIPASS', None)
+        if meipass:
+            # Find the PATH key (case-insensitive search for Windows compat)
+            path_key = next((k for k in env if k.lower() == 'path'), None)
+            if path_key:
+                path_sep = os.pathsep
+                current_path_list = env[path_key].split(path_sep)
+
+                # Normalize paths for comparison
+                mei_normalized = os.path.normcase(os.path.abspath(meipass))
+
+                new_path_list = []
+                for p in current_path_list:
+                    # Guard against empty paths which abspath might resolve to CWD
+                    if not p.strip():
+                        continue
+                    p_normalized = os.path.normcase(os.path.abspath(p))
+                    if p_normalized != mei_normalized:
+                        new_path_list.append(p)
+
+                env[path_key] = path_sep.join(new_path_list)
+
     if include_pythonpath:
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
     else:
