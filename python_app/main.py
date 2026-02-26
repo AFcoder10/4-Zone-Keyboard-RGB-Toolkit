@@ -43,7 +43,68 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.4"
+CURRENT_VERSION = "v1.42"
+
+def _resolve_original_exe_path():
+    if not getattr(sys, 'frozen', False):
+        return None
+    candidates = []
+    if getattr(sys, 'executable', None):
+        candidates.append(os.path.abspath(sys.executable))
+    if len(sys.argv) > 0 and sys.argv[0]:
+        candidates.append(os.path.abspath(sys.argv[0]))
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            return candidate
+    return candidates[0] if candidates else None
+
+def _ps_escape(value):
+    # Escape content for use in PowerShell double-quoted strings.
+    return str(value).replace('`', '``').replace('"', '`"')
+
+def sanitized_child_env(base_env=None, include_pythonpath=False):
+    env = dict(base_env or os.environ)
+    # PyInstaller one-file processes pass runtime extraction hints through
+    # environment variables. If inherited by child processes after parent
+    # teardown, they can reference deleted _MEI temp folders and trigger
+    # "Failed to load Python DLL" errors.
+    env.pop('_MEIPASS', None)
+    env.pop('_MEIPASS2', None)
+    for key in [k for k in env if k.startswith('_PYI_')]:
+        env.pop(key, None)
+
+    # Remove the temp folder from PATH (crucial to avoid "Python DLL not found"
+    # if the child process inherits a PATH pointing to a deleted _MEI folder)
+    if getattr(sys, 'frozen', False):
+        meipass = getattr(sys, '_MEIPASS', None)
+        if meipass:
+            # Find the PATH key (case-insensitive search for Windows compat)
+            path_key = next((k for k in env if k.lower() == 'path'), None)
+            if path_key:
+                path_sep = os.pathsep
+                current_path_list = env[path_key].split(path_sep)
+
+                # Normalize paths for comparison
+                mei_normalized = os.path.normcase(os.path.abspath(meipass))
+
+                new_path_list = []
+                for p in current_path_list:
+                    # Guard against empty paths which abspath might resolve to CWD
+                    if not p.strip():
+                        continue
+                    p_normalized = os.path.normcase(os.path.abspath(p))
+                    if p_normalized != mei_normalized:
+                        new_path_list.append(p)
+
+                env[path_key] = path_sep.join(new_path_list)
+
+    if include_pythonpath:
+        env['PYTHONPATH'] = os.pathsep.join(sys.path)
+    else:
+        env.pop('PYTHONPATH', None)
+    # Ensure frozen child re-exec starts with a fresh extraction context.
+    env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+    return env
 
 # Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
 class LogBuffer:
@@ -296,6 +357,7 @@ class RGBControllerApp(QMainWindow):
         # ***<module>.RGBControllerApp.__init__: Failure: Compilation Error
         super().__init__()
         self.setWindowTitle('4 Zone Rgb Toolkit')
+        self.original_exe_path = _resolve_original_exe_path()
         self.setMinimumSize(500, 480)
         self.icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'rgb_wheel.ico')
         self.setWindowIcon(QIcon(self.icon_path))
@@ -780,20 +842,22 @@ class RGBControllerApp(QMainWindow):
         if hasattr(self, 'progress_dlg'):
             self.progress_dlg.close()
             
-        current_exe = sys.executable if getattr(sys, 'frozen', False) else __file__
+        current_exe = self.original_exe_path or (sys.executable if getattr(sys, 'frozen', False) else __file__)
         if not getattr(sys, 'frozen', False):
              QMessageBox.information(self, "Update Downloaded", f"Update downloaded to {downloaded_exe}. Since you are running from source, you must manually replace your files.")
              return
-             
+
+        restart_exe = self.original_exe_path or current_exe
         ps_path = os.path.join(tempfile.gettempdir(), "updater.ps1")
         pid = os.getpid()
         ppid = os.getppid() # Get parent PID (the PyInstaller bootstrapper)
-        
+
         with open(ps_path, "w") as f:
             f.write(f'$pid = {pid}\n')
             f.write(f'$ppid = {ppid}\n')
-            f.write('$src  = "' + downloaded_exe + '"\n')
-            f.write('$dest = "' + current_exe + '"\n')
+            f.write('$src  = "' + _ps_escape(downloaded_exe) + '"\n')
+            f.write('$dest = "' + _ps_escape(current_exe) + '"\n')
+            f.write('$restart = "' + _ps_escape(restart_exe) + '"\n')
             f.write('\n# Wait for both processes to terminate to avoid DLL lock errors\n')
             f.write('try { Wait-Process -Id $pid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
             f.write('try { Wait-Process -Id $ppid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n')
@@ -805,17 +869,16 @@ class RGBControllerApp(QMainWindow):
             f.write('\n# Clear PyInstaller environment variables so the new process extracts cleanly\n')
             f.write('Remove-Item env:_MEIPASS2 -ErrorAction SilentlyContinue\n')
             f.write('Remove-Item env:_MEIPASS -ErrorAction SilentlyContinue\n')
-            f.write('Start-Process -FilePath $dest\n')
+            f.write('Get-ChildItem env: | Where-Object {$_.Name -like "_PYI_*"} | ForEach-Object { Remove-Item "env:$($_.Name)" -ErrorAction SilentlyContinue }\n')
+            f.write('$env:PYINSTALLER_RESET_ENVIRONMENT = "1"\n')
+            f.write('if (Test-Path $restart) { Start-Process -FilePath $restart } elseif (Test-Path $dest) { Start-Process -FilePath $dest }\n')
             f.write('Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n')
 
-        env = os.environ.copy()
-        env.pop('_MEIPASS', None)
-        env.pop('_MEIPASS2', None)
-
+        updater_env = sanitized_child_env(os.environ, include_pythonpath=False)
         subprocess.Popen(
             ["powershell", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", ps_path],
             creationflags=subprocess.CREATE_NO_WINDOW,
-            env=env
+            env=updater_env
         )
         self.force_quit = True
         QApplication.quit()
@@ -1341,15 +1404,10 @@ class RGBControllerApp(QMainWindow):
                     self.kb.close()
                     self.kb = None
 
-                env = os.environ.copy()
-                # Avoid propagating stale PyInstaller extraction paths to child
-                # processes. If the parent exits and removes its _MEI folder,
-                # inherited _MEIPASS values can make the child look for
-                # python*.dll in a deleted temp directory.
-                env.pop('_MEIPASS', None)
-                env.pop('_MEIPASS2', None)
-                if not getattr(sys, 'frozen', False):
-                    env['PYTHONPATH'] = os.pathsep.join(sys.path)
+                env = sanitized_child_env(
+                    os.environ,
+                    include_pythonpath=(not getattr(sys, 'frozen', False))
+                )
                 sensitivity_val  = str(self.speed_slider.value())
                 smoothness_val   = str(self.bright_slider.value())
                 flicker_val      = str(0)
