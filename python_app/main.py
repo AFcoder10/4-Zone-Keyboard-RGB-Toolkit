@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.43"
+CURRENT_VERSION = "v1.5"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
