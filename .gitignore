@@ -79,3 +79,6 @@ venv.bak/
 
 # User explicitly ignored
 test.txt
+interactive_keyboard.html
+gen_svg.py
+zone.txt
