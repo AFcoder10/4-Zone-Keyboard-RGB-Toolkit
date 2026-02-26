@@ -730,7 +730,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -782,11 +782,56 @@ class RGBControllerApp(QMainWindow):
         self.pomo_last_tick = 0
         self.pomo_flash_on = False
         if HAS_PYNPUT:
+            # Map keys to their respective zones based on zone.txt
+            self.key_to_zone = {
+                # Zone 1
+                'esc': 0, 'f1': 0, 'f2': 0, 'f3': 0, 'f4': 0,
+                '`': 0, '1': 0, '2': 0, '3': 0, '4': 0,
+                'tab': 0, 'q': 0, 'w': 0, 'e': 0, 's': 0, # Note: 's' is listed in Zone 1, keeping to requested spec
+                'caps lock': 0, 'a': 0, 'd': 0,
+                'shift': 0, 'z': 0, 'x': 0,
+                'ctrl': 0, 'cmd': 0, 'alt': 0, # 'fn' and 'win' usually map to cmd/alt/menu depending on OS
+                # Zone 2
+                'f5': 1, 'f6': 1, 'f7': 1, 'f8': 1, 'f9': 1, 'f10': 1,
+                '5': 1, '6': 1, '7': 1, '8': 1, '9': 1,
+                'r': 1, 't': 1, 'y': 1, 'u': 1, 'i': 1,
+                'f': 1, 'g': 1, 'h': 1, 'j': 1, 'k': 1,
+                'c': 1, 'v': 1, 'b': 1, 'n': 1, 'm': 1, ',': 1,
+                'space': 1, 'alt_r': 1,
+                # Zone 3
+                'f11': 2, 'f12': 2, 'insert': 2, 'print_screen': 2, 'delete': 2,
+                '0': 2, '-': 2, '=': 2, 'backspace': 2,
+                'o': 2, 'p': 2, '[': 2, ']': 2, '\\': 2,
+                'l': 2, ';': 2, "'": 2, 'enter': 2,
+                '.': 2, '/': 2, 'shift_r': 2,
+                'up': 2, 'left': 2, 'down': 2, 'right': 2,
+                # Zone 4
+                'home': 3, 'end': 3, 'page_up': 3, 'page_down': 3,
+                'num_lock': 3, '<106>': 3, '<109>': 3, # Numpad /, * etc.
+                '<96>': 3, '<97>': 3, '<98>': 3, '<99>': 3, '<100>': 3,
+                '<101>': 3, '<102>': 3, '<103>': 3, '<104>': 3, '<105>': 3, '<107>': 3, '<110>': 3 # Numpad 0-9, +, .
+            }
+            
+            # This list will represent the current 'hit' state of each of the 4 zones
+            self.active_typed_zones = [0.0, 0.0, 0.0, 0.0]
+
             def on_activity(*args, **kwargs):
                 self.last_activity = time.time()
+                
+            def on_press(key):
+                self.last_activity = time.time()
+                try:
+                    # Get the string representation of the key
+                    k = key.char.lower() if hasattr(key, 'char') and key.char else key.name.lower()
+                    if k in self.key_to_zone:
+                        self.active_typed_zones[self.key_to_zone[k]] = 1.0
+                except Exception:
+                    # If pynput returns a weird key format we don't recognize
+                    pass
+
             self.mouse_listener = mouse.Listener(on_move=on_activity, on_click=on_activity, on_scroll=on_activity)
             self.mouse_listener.start()
-            self.kbd_listener = keyboard.Listener(on_press=on_activity)
+            self.kbd_listener = keyboard.Listener(on_press=on_press)
             self.kbd_listener.start()
         try:
             self.kb = L5PKeyboard()
@@ -1317,6 +1362,8 @@ class RGBControllerApp(QMainWindow):
             
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
+            elif '[Experimental] Reactive Typing' in mode_name:
+                self.speed_label.setText(f'Fade Speed: {self.speed_slider.value()}%')
             elif 'Live Audio Visualizer' in mode_name:
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
             else:
@@ -1366,6 +1413,10 @@ class RGBControllerApp(QMainWindow):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Lightning' in mode_name:
             self.speed_label.setText(f'Lightning Frequency: {value}%')
+        elif 'Starry Night' in mode_name:
+            self.speed_label.setText(f'Twinkle Speed: {value}%')
+        elif '[Experimental] Reactive Typing' in mode_name:
+            self.speed_label.setText(f'Fade Speed: {value}%')
         elif 'Live Audio Visualizer' in mode_name:
             self.speed_label.setText(f'Visualizer Sensitivity: {value}%')
         else:
@@ -1599,6 +1650,22 @@ class RGBControllerApp(QMainWindow):
                                         self.party_colors.extend([r * 255, g * 255, b * 255])
                                 for i in range(12):
                                     target_colors[i] = self.party_colors[i]
+                            elif '[Experimental] Reactive Typing' in mode_name:
+                                # Speed slider inversely controls fade. Lower speed = higher smooth = slower fade.
+                                # Speed 1 = very slow fade (smooth 0.98), Speed 100 = very fast fade (smooth 0.8)
+                                smooth_amount = 0.99 - (self.speed_slider.value() / 100.0) * 0.15 
+                                
+                                # Decay the active zone state
+                                for i in range(4):
+                                    if hasattr(self, 'active_typed_zones'):
+                                        # Intensity falls off based on the fade speed multiplier
+                                        decay = 0.05 * (self.speed_slider.value() / 50.0)
+                                        self.active_typed_zones[i] = max(0.0, self.active_typed_zones[i] - decay)
+                                        
+                                        intensity = self.active_typed_zones[i]
+                                        target_colors[i * 3] = self.zone_colors[i][0] * intensity
+                                        target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
+                                        target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
                             else:
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
