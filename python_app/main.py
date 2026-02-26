@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.42"
+CURRENT_VERSION = "v1.4"
 
 # Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
 class LogBuffer:
@@ -808,9 +808,14 @@ class RGBControllerApp(QMainWindow):
             f.write('Start-Process -FilePath $dest\n')
             f.write('Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n')
 
+        env = os.environ.copy()
+        env.pop('_MEIPASS', None)
+        env.pop('_MEIPASS2', None)
+
         subprocess.Popen(
             ["powershell", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", ps_path],
-            creationflags=subprocess.CREATE_NO_WINDOW
+            creationflags=subprocess.CREATE_NO_WINDOW,
+            env=env
         )
         self.force_quit = True
         QApplication.quit()

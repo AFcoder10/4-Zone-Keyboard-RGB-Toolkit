@@ -1,0 +1,64 @@
+115 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.1
+116 INFO: Python: 3.12.10
+149 INFO: Platform: Windows-11-10.0.26200-SP0
+150 INFO: Python environment: C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv
+150 INFO: wrote c:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\python_app\4_Zone_Rgb_Toolkit.spec
+155 INFO: Module search paths (PYTHONPATH):
+['c:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app',
+ 'C:\\Users\\Aditya '
+ 'Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\python312.zip',
+ 'C:\\Users\\Aditya Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\DLLs',
+ 'C:\\Users\\Aditya Fere\\AppData\\Local\\Python\\pythoncore-3.12-64\\Lib',
+ 'C:\\Users\\Aditya Fere\\AppData\\Local\\Python\\pythoncore-3.12-64',
+ 'C:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv',
+ 'C:\\Users\\Aditya '
+ 'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages',
+ 'C:\\Users\\Aditya '
+ 'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32',
+ 'C:\\Users\\Aditya '
+ 'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\win32\\lib',
+ 'C:\\Users\\Aditya '
+ 'Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Lib\\site-packages\\Pythonwin',
+ 'c:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app']
+535 INFO: Appending 'datas' from .spec
+536 INFO: checking Analysis
+566 INFO: checking PYZ
+583 INFO: checking PKG
+590 INFO: Bootloader C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+590 INFO: checking EXE
+592 INFO: Building because toc changed
+592 INFO: Building EXE from EXE-00.toc
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\__main__.py", line 321, in <module>
+    run()
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\__main__.py", line 215, in run
+    run_build(pyi_config, spec_file, **vars(args))
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\__main__.py", line 70, in run_build
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\building\build_main.py", line 1275, in main
+    build(specfile, distpath, workpath, clean_build)
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\building\build_main.py", line 1213, in build
+    exec(code, spec_namespace)
+  File "c:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\python_app\4_Zone_Rgb_Toolkit.spec", line 19, in <module>
+    exe = EXE(
+          ^^^^
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\building\api.py", line 675, in __init__
+    self.__postinit__()
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\building\datastruct.py", line 184, in __postinit__
+    self.assemble()
+  File "C:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\.venv\Lib\site-packages\PyInstaller\building\api.py", line 769, in assemble
+    os.remove(self.name)
+PermissionError: [WinError 5] Access is denied: 'c:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\python_app\\dist\\4_Zone_Rgb_Toolkit.exe'
+Traceback (most recent call last):
+  File "c:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\python_app\build_exe.py", line 52, in <module>
+Verifying PyInstaller is installed...
+
+--- COMPILING 4 ZONE RGB TOOLKIT ---
+    build_standalone_exe()
+  File "c:\Users\Aditya Fere\Downloads\4-Zone-Keyboard-RGB-Toolkit\python_app\build_exe.py", line 44, in build_standalone_exe
+    subprocess.check_call(command)
+  File "C:\Users\Aditya Fere\AppData\Local\Python\pythoncore-3.12-64\Lib\subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['C:\\Users\\Aditya Fere\\Downloads\\4-Zone-Keyboard-RGB-Toolkit\\.venv\\Scripts\\python.exe', '-m', 'PyInstaller', '--noconfirm', '--onefile', '--windowed', '--icon=assets/rgb_wheel.ico', '--name=4_Zone_Rgb_Toolkit', '--version-file=version_info.txt', '--add-data=assets/minus.svg;assets', '--add-data=assets/plus.svg;assets', '--add-data=assets/settings.svg;assets', '--add-data=assets/toggle_off.svg;assets', '--add-data=assets/toggle_on.svg;assets', '--add-data=assets/rgb_wheel.ico;assets', '--add-data=python_controller.py;.', '--add-data=audio_visualizer.py;.', 'main.py']' returned non-zero exit status 1.
