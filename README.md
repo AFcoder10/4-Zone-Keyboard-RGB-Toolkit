@@ -8,11 +8,16 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 
 - **Hardware Modes:** Directly control the keyboard's built-in firmware effects including Static, Breath, Smooth, Wave (Left), and Wave (Right).
 - **Advanced Software Engine:** Unlocks custom software-driven effects rendered in real-time, including:
-  - **Smooth Wave (Left / Right):** A butter-smooth sweeping gradient across the keyboard zones. Includes an optional "Fill Mode" toggle to wipe the keyboard one solid color at a time cleanly.
-  - **Lightning:** An atmospheric mode mimicking realistic lightning strikes crashing across the zones dynamically. Includes adjustable frequency and ambient night-sky glows.
-  - **Party:** A wildly fast, high-tempo mode pumping vibrant and completely randomized extreme colors aggressively across the zones! Fully reactive to the speed slider.
-  - **Ambient Screen Color:** Real-time screen capture technology that dynamically mirrors the dominant colors of your display directly onto the keyboard.
-  - **[Beta] Live Audio Visualizer:** Real-time volume meter using live WASAPI Loopback, translating your overall desktop audio loudness into a sweeping horizontal volume indicator.
+  - **Smooth Wave (Left / Right):** A sweeping gradient across the keyboard zones with an optional "Fill Mode".
+  - **Lightning:** An atmospheric night-sky mode mimicking realistic lightning strikes crashing dynamically.
+  - **Party:** A wildly fast, high-tempo mode pumping vibrant and completely randomized extreme colors aggressively!
+  - **[Experimental] Reactive Typing:** Intelligent decaying fade effect where the zones light up dynamically based on your keystrokes.
+  - **[Experimental] Realistic Fire:** Intense, volatile flames flickering across the zones with popping embers and deep red/orange hues.
+  - **Ambient Screen Color:** Dynamically mirrors the dominant colors of your display directly onto the keyboard.
+  - **Battery Visualizer:** Shows laptop battery percentage mapped cleanly across the 4 lighting zones from left to right.
+  - **Mouse-Reactive Aura:** Keyboard lighting gracefully reacts to your mouse cursor movements across the screen.
+  - **[Beta] Pomodoro Timer:** A dedicated focus timer that uses the keyboard lighting zones as an absolute visual countdown progress bar.
+  - **[Beta] Live Audio Visualizer:** A 4-band beat-reactive WASAPI equalizer where each zone pulses to different track frequencies (Sub-Bass, Bass, Mids, Highs).
 - **Custom Presets:** Mix and match modes, speeds, brightness levels, and distinct zone colors, and then save them as named profiles. Switch between limitless configurations with a dropdown.
 - **Micro-Adjustment Controls:** Adjust animation speeds and LED brightness precisely down to 5% increments without dragging the slider.
 - **Seamless Startup Priority:** Choose exactly what preset profile the software will force-load on boot, seamlessly jumping back into your favorite setup automatically.
