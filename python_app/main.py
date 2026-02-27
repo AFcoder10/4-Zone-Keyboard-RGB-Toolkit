@@ -31,7 +31,7 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction
 import winreg
@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.6"
+CURRENT_VERSION = "v1.7"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -869,11 +869,39 @@ class RGBControllerApp(QMainWindow):
             print("Update check failed:", e)
 
     def prompt_update(self, latest_version, exe_url, release_notes):
-        reply = QMessageBox.question(self, "Update Available",
-            f"A new version ({latest_version}) is available!\n\nRelease notes:\n{release_notes}\n\nWould you like to install it now?", 
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Update Available: {latest_version}")
+        dialog.setFixedSize(980, 500)
         
-        if reply == QMessageBox.Yes:
+        layout = QVBoxLayout(dialog)
+        
+        lbl = QLabel(f"A new version of 4 Zone RGB Toolkit ({latest_version}) is available!\n\nRelease Notes:")
+        lbl.setStyleSheet("font-weight: bold; font-size: 18px; color: #E2E2E2;")
+        layout.addWidget(lbl)
+        
+        browser = QTextBrowser()
+        browser.setMarkdown(release_notes)
+        browser.setStyleSheet("background-color: #1E1E1E; color: #E2E2E2; border: 1px solid #333; padding: 15px; font-size: 16px; line-height: 1.5;")
+        layout.addWidget(browser)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        btn_remind = QPushButton("Remind Me Later")
+        btn_remind.setCursor(Qt.PointingHandCursor)
+        btn_remind.setStyleSheet("padding: 8px 15px; background: #333333; color: white; border-radius: 4px;")
+        btn_remind.clicked.connect(dialog.reject)
+        
+        btn_install = QPushButton("Install Now")
+        btn_install.setCursor(Qt.PointingHandCursor)
+        btn_install.setStyleSheet("padding: 8px 15px; background: #00E5FF; color: black; font-weight: bold; border-radius: 4px;")
+        btn_install.clicked.connect(dialog.accept)
+        
+        btn_layout.addWidget(btn_remind)
+        btn_layout.addWidget(btn_install)
+        layout.addLayout(btn_layout)
+        
+        if dialog.exec() == QDialog.Accepted:
             self.perform_update_download(exe_url, latest_version)
 
     def perform_update_download(self, url, version):
@@ -1068,6 +1096,8 @@ class RGBControllerApp(QMainWindow):
             if 'global_color' in p:
                 self.global_color = p['global_color']
                 self.update_button_color(self.global_color_btn, self.global_color)
+            if 'scanner_rainbow' in p:
+                self.scanner_rainbow_cb.setChecked(p['scanner_rainbow'])
             self.mode_list.blockSignals(False)
             self.bright_slider.blockSignals(False)
             self.speed_slider.blockSignals(False)
@@ -1076,7 +1106,7 @@ class RGBControllerApp(QMainWindow):
         name, ok = QInputDialog.getText(self, 'Save Preset', 'Enter a name for this preset:')
         if ok and name.strip():
                 name = name.strip()
-                self.presets[name] = {'mode': self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Static', 'brightness': self.bright_slider.value(), 'vibrance': self.vibrance_slider.value(), 'speed': self.speed_slider.value(), 'colors': list(self.zone_colors), 'global_color': list(self.global_color)}
+                self.presets[name] = {'mode': self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Static', 'brightness': self.bright_slider.value(), 'vibrance': self.vibrance_slider.value(), 'speed': self.speed_slider.value(), 'colors': list(self.zone_colors), 'global_color': list(self.global_color), 'scanner_rainbow': self.scanner_rainbow_cb.isChecked()}
                 self.update_preset_combos()
                 self.save_settings()
                 self.preset_combo.setCurrentText(name)
