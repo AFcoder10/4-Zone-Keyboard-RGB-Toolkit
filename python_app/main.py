@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.5"
+CURRENT_VERSION = "v1.51"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -730,7 +730,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', '[Experimental] Realistic Fire', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -1172,6 +1172,7 @@ class RGBControllerApp(QMainWindow):
                 self.kb.set_solid_color(0, 0, 0)
         except Exception as e:
             pass
+        self.stop_visualizer()
         QApplication.instance().quit()
     def on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
@@ -1366,6 +1367,8 @@ class RGBControllerApp(QMainWindow):
                 self.speed_label.setText(f'Fade Speed: {self.speed_slider.value()}%')
             elif 'Live Audio Visualizer' in mode_name:
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
+            elif '[Experimental] Realistic Fire' in mode_name:
+                self.speed_label.setText(f'Fire Flicker Speed: {self.speed_slider.value()}%')
             else:
                 self.speed_label.setText(f'Animation Speed: {self.speed_slider.value()}%')
             
@@ -1419,6 +1422,8 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Fade Speed: {value}%')
         elif 'Live Audio Visualizer' in mode_name:
             self.speed_label.setText(f'Visualizer Sensitivity: {value}%')
+        elif '[Experimental] Realistic Fire' in mode_name:
+            self.speed_label.setText(f'Fire Flicker Speed: {value}%')
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
@@ -1431,6 +1436,21 @@ class RGBControllerApp(QMainWindow):
         else:
             self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
             # Does not need immediate effect replay - calculates frame by frame
+    def stop_visualizer(self):
+        if hasattr(self, 'visualizer_process') and self.visualizer_process:
+            try:
+                import subprocess
+                # Forcefully kill the process tree (/T) to ensure the actual Python child
+                # spawned by the PyInstaller wrapper is terminated, preventing background leakage.
+                subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.visualizer_process.pid)], 
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                               creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
+                self.visualizer_process.wait(timeout=1.0)
+            except Exception as e:
+                pass
+            finally:
+                self.visualizer_process = None
+
     def apply_effect(self):
         # Stop the custom timer before applying a new effect
         self.custom_timer.stop()
@@ -1666,6 +1686,35 @@ class RGBControllerApp(QMainWindow):
                                         target_colors[i * 3] = self.zone_colors[i][0] * intensity
                                         target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
                                         target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
+                            elif '[Experimental] Realistic Fire' in mode_name:
+                                # Fire flickers intensely and independently per zone
+                                smooth_amount = max(0.01, 0.25 - (self.speed_slider.value() / 100.0) * 0.2)
+                                
+                                if not hasattr(self, 'fire_state'):
+                                    self.fire_state = [random.random() for _ in range(4)]
+                                
+                                for i in range(4):
+                                    # Simulate fire flickering with random jitter (wider swings)
+                                    jitter = (random.random() - 0.5) * 0.9 * speed_mult
+                                    self.fire_state[i] = max(0.1, min(1.0, self.fire_state[i] + jitter))
+                                    
+                                    # Fire colors: Mostly red/orange/yellow
+                                    # R is high, G fluctuates wildly, B is very low
+                                    intensity = self.fire_state[i]
+                                    
+                                    if random.random() < 0.12 * speed_mult:
+                                        # Frequent, powerful bright pops (embers)
+                                        intensity = min(1.0, intensity + 0.6)
+                                        self.fire_state[i] = intensity
+                                        
+                                    # Deep Red Fire: Maximize R, sharply limit G (to keep orange sparse), near zero B
+                                    r = 255 * min(1.0, intensity * 2.0)  # Pushed harder for saturated red
+                                    g = 60 * intensity * (0.3 + 0.6 * random.random()) # Halved G to suppress bright yellow/orange
+                                    b = 5 * intensity * random.random() # Almost completely kill B
+                                    
+                                    target_colors[i * 3] = r
+                                    target_colors[i * 3 + 1] = g
+                                    target_colors[i * 3 + 2] = b
                             else:
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
@@ -1871,8 +1920,21 @@ if __name__ == '__main__':
         except Exception:
             pass
     app = QApplication(sys.argv)
+
+    from PySide6.QtWidgets import QMessageBox
+    import ctypes
+
+    mutex_name = "4ZoneRGBToolkit_SingleInstanceLock"
+    mutex = ctypes.windll.kernel32.CreateMutexW(None, False, mutex_name)
+    last_error = ctypes.windll.kernel32.GetLastError()
+    
+    if last_error == 183: # ERROR_ALREADY_EXISTS
+        QMessageBox.critical(None, "Already Running", "Another instance of 4 Zone RGB Toolkit is already running.")
+        sys.exit(0)
+
     app.setStyle('Fusion')
     window = RGBControllerApp()
     if '--hidden' not in sys.argv:
         window.show()
     sys.exit(app.exec())
+    
