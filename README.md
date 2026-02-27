@@ -4,7 +4,7 @@
 
 A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that allows users to fully customize their keyboard lighting configurations dynamically.
 
-## Features (As of v1.51)
+## Features (As of v1.6)
 
 - **Hardware Modes:** Directly control the keyboard's built-in firmware effects including Static, Breath, Smooth, Wave (Left), and Wave (Right).
 - **Advanced Software Engine:** Unlocks custom software-driven effects rendered in real-time, including:
@@ -13,6 +13,7 @@ A modern, highly optimized hardware and software RGB visualization tool specific
   - **Party:** A wildly fast, high-tempo mode pumping vibrant and completely randomized extreme colors aggressively!
   - **[Experimental] Reactive Typing:** Intelligent decaying fade effect where the zones light up dynamically based on your keystrokes.
   - **[Experimental] Realistic Fire:** Intense, volatile flames flickering across the zones with popping embers and deep red/orange hues.
+  - **Scanner (Cylon):** A bouncing bar of light sweeping left and right across the zones, leaving a fading trail behind it.
   - **Ambient Screen Color:** Dynamically mirrors the dominant colors of your display directly onto the keyboard.
   - **Battery Visualizer:** Shows laptop battery percentage mapped cleanly across the 4 lighting zones from left to right.
   - **Mouse-Reactive Aura:** Keyboard lighting gracefully reacts to your mouse cursor movements across the screen.

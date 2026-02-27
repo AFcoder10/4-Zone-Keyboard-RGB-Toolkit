@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.51"
+CURRENT_VERSION = "v1.6"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -730,7 +730,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', '[Experimental] Realistic Fire', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', '[Experimental] Realistic Fire', 'Scanner (Cylon)', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -742,6 +742,12 @@ class RGBControllerApp(QMainWindow):
         self.wave_fill_cb.setCursor(Qt.PointingHandCursor)
         self.wave_fill_cb.hide()
         right_layout.addWidget(self.wave_fill_cb)
+        
+        self.scanner_rainbow_cb = QCheckBox('Rainbow Sweep')
+        self.scanner_rainbow_cb.setStyleSheet('\n            QCheckBox { color: #E2E2E2; font-size: 13px; font-weight: bold; background: transparent; border: none; }\n            QCheckBox::indicator { width: 18px; height: 18px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; }\n            QCheckBox::indicator:checked { background: #00E5FF; }\n        ')
+        self.scanner_rainbow_cb.setCursor(Qt.PointingHandCursor)
+        self.scanner_rainbow_cb.hide()
+        right_layout.addWidget(self.scanner_rainbow_cb)
         self.presets = {}
         preset_group = QGroupBox('Custom Presets')
         preset_layout = QHBoxLayout(preset_group)
@@ -1301,7 +1307,7 @@ class RGBControllerApp(QMainWindow):
         if mode_name is None:
             return
         else:
-            is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura')
+            is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)')
             self.colors_group.setEnabled(is_zones_enabled)
             if is_zones_enabled:
                 self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
@@ -1311,7 +1317,7 @@ class RGBControllerApp(QMainWindow):
             self.speed_widget.setEnabled(is_speed_enabled)
             self.speed_label.setStyleSheet('color: #E2E2E2;' if is_speed_enabled else 'color: #555555;')
             
-            is_bright_enabled = mode_name not in self.SOFTWARE_MODES and mode_name != 'Off'
+            is_bright_enabled = (mode_name not in self.SOFTWARE_MODES and mode_name != 'Off') or 'Scanner' in mode_name
             # For Live Audio Visualizer, we repurpose the brightness slider as Smoothness
             is_smooth_mode = 'Live Audio Visualizer' in mode_name
             if is_smooth_mode:
@@ -1369,6 +1375,8 @@ class RGBControllerApp(QMainWindow):
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
             elif '[Experimental] Realistic Fire' in mode_name:
                 self.speed_label.setText(f'Fire Flicker Speed: {self.speed_slider.value()}%')
+            elif 'Scanner (Cylon)' in mode_name:
+                self.speed_label.setText(f'Scanner Sweep Speed: {self.speed_slider.value()}%')
             else:
                 self.speed_label.setText(f'Animation Speed: {self.speed_slider.value()}%')
             
@@ -1376,6 +1384,12 @@ class RGBControllerApp(QMainWindow):
                 self.wave_fill_cb.show()
             else:
                 self.wave_fill_cb.hide()
+                
+            if 'Scanner (Cylon)' in mode_name:
+                self.scanner_rainbow_cb.show()
+            else:
+                self.scanner_rainbow_cb.hide()
+                
             self.transition_ticks = 15
             self.apply_effect()
     def closeEvent(self, event):
@@ -1424,6 +1438,8 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Visualizer Sensitivity: {value}%')
         elif '[Experimental] Realistic Fire' in mode_name:
             self.speed_label.setText(f'Fire Flicker Speed: {value}%')
+        elif 'Scanner (Cylon)' in mode_name:
+            self.speed_label.setText(f'Scanner Sweep Speed: {value}%')
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
@@ -1698,8 +1714,6 @@ class RGBControllerApp(QMainWindow):
                                     jitter = (random.random() - 0.5) * 0.9 * speed_mult
                                     self.fire_state[i] = max(0.1, min(1.0, self.fire_state[i] + jitter))
                                     
-                                    # Fire colors: Mostly red/orange/yellow
-                                    # R is high, G fluctuates wildly, B is very low
                                     intensity = self.fire_state[i]
                                     
                                     if random.random() < 0.12 * speed_mult:
@@ -1707,7 +1721,7 @@ class RGBControllerApp(QMainWindow):
                                         intensity = min(1.0, intensity + 0.6)
                                         self.fire_state[i] = intensity
                                         
-                                    # Deep Red Fire: Maximize R, sharply limit G (to keep orange sparse), near zero B
+                                    # Deep Red/Orange Fire: Maximize R, sharply limit G (to keep orange sparse), near zero B
                                     r = 255 * min(1.0, intensity * 2.0)  # Pushed harder for saturated red
                                     g = 60 * intensity * (0.3 + 0.6 * random.random()) # Halved G to suppress bright yellow/orange
                                     b = 5 * intensity * random.random() # Almost completely kill B
@@ -1715,6 +1729,48 @@ class RGBControllerApp(QMainWindow):
                                     target_colors[i * 3] = r
                                     target_colors[i * 3 + 1] = g
                                     target_colors[i * 3 + 2] = b
+                            elif 'Scanner (Cylon)' in mode_name:
+                                # Speed slider controls sweep speed
+                                smooth_amount = 0.85 - (self.speed_slider.value() / 100.0) * 0.4
+                                
+                                if not hasattr(self, 'scanner_pos'):
+                                    self.scanner_pos = 0.0
+                                    self.scanner_dir = 1.0 # 1 for right, -1 for left
+                                    
+                                # Move scanner position
+                                sweep_speed = 0.05 + (self.speed_slider.value() / 100.0) * 0.15
+                                self.scanner_pos += self.scanner_dir * sweep_speed
+                                
+                                # Bounce logic considering there are 4 zones (index 0 to 3)
+                                if self.scanner_pos > 3.0:
+                                    self.scanner_pos = 3.0
+                                    self.scanner_dir = -1.0
+                                elif self.scanner_pos < 0.0:
+                                    self.scanner_pos = 0.0
+                                    self.scanner_dir = 1.0
+                                    
+                                for i in range(4):
+                                    # Calculate distance from current scanner position
+                                    dist = abs(self.scanner_pos - i)
+                                    
+                                    # Gaussian falloff for the trail
+                                    intensity = max(0.0, 1.0 - dist * 0.8)
+                                    
+                                    # Apply brightness slider
+                                    brightness_factor = self.bright_slider.value() / 100.0
+                                    intensity *= brightness_factor
+                                    
+                                    if self.scanner_rainbow_cb.isChecked():
+                                        # Use a sweeping rainbow hue independent of scanner position
+                                        hue = (t * 0.5) % 1.0
+                                        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                                        target_colors[i * 3] = r * 255 * intensity
+                                        target_colors[i * 3 + 1] = g * 255 * intensity
+                                        target_colors[i * 3 + 2] = b * 255 * intensity
+                                    else:
+                                        target_colors[i * 3] = self.zone_colors[i][0] * intensity
+                                        target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
+                                        target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
                             else:
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
