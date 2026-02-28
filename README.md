@@ -4,7 +4,7 @@
 
 A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that allows users to fully customize their keyboard lighting configurations dynamically.
 
-## Features (As of v1.6)
+## Features (As of v1.7)
 
 - **Hardware Modes:** Directly control the keyboard's built-in firmware effects including Static, Breath, Smooth, Wave (Left), and Wave (Right).
 - **Advanced Software Engine:** Unlocks custom software-driven effects rendered in real-time, including:
