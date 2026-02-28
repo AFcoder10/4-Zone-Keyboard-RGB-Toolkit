@@ -56,6 +56,18 @@ BEAT_COOLDOWN      = 0.10  # seconds min between beats per zone
 # slider 100→ ref_mult ≈ 100   (least sensitive)
 BASE_REFS = [6000.0, 4000.0, 2500.0, 1500.0]
 
+
+def parse_int_arg(args, index, default, min_value=None, max_value=None):
+    try:
+        value = int(args[index])
+    except (ValueError, IndexError):
+        value = default
+    if min_value is not None:
+        value = max(min_value, value)
+    if max_value is not None:
+        value = min(max_value, value)
+    return value
+
 def slider_to_ref_mult(val: int) -> float:
     return 10.0 ** ((val - 50) / 25.0)
 
@@ -95,11 +107,11 @@ class AudioVisualizer:
         args = sys.argv[1:]
 
         # Parse CLI arguments (brightness boost fixed at max 30%)
-        sensitivity = int(args[0]) if len(args) > 0 else 50
-        smoothness = int(args[1]) if len(args) > 1 else 50
+        sensitivity = parse_int_arg(args, 0, 50, 0, 100)
+        smoothness = parse_int_arg(args, 1, 50, 0, 100)
         # brightness boost slider removed – use max boost (30%) with 50% increase
         self.brightness_mult = slider_to_brightness_mult(30) * 1.5
-        flicker_raw = int(args[2]) if len(args) > 2 else 0
+        flicker_raw = parse_int_arg(args, 2, 0, 0, 100)
         self.attack_factor = slider_to_attack(smoothness)
         self.decay_factor = slider_to_decay(smoothness)
 
@@ -113,13 +125,10 @@ class AudioVisualizer:
         self.zone_colors = []
         if len(args) >= 15:
             for i in range(4):
-                try:
-                    r = int(args[3 + i*3])
-                    g = int(args[4 + i*3])
-                    b = int(args[5 + i*3])
-                    self.zone_colors.append((r, g, b))
-                except (ValueError, IndexError):
-                    self.zone_colors.append((255, 252, 247))
+                r = parse_int_arg(args, 3 + i*3, 255, 0, 255)
+                g = parse_int_arg(args, 4 + i*3, 252, 0, 255)
+                b = parse_int_arg(args, 5 + i*3, 247, 0, 255)
+                self.zone_colors.append((r, g, b))
         else:
             self.zone_colors = [(255, 252, 247) for _ in range(4)]
 
@@ -188,12 +197,18 @@ class AudioVisualizer:
         self.energy_history = [
             collections.deque(maxlen=BEAT_HISTORY_LONG) for _ in range(4)
         ]
+        self.energy_sums = [0.0] * 4
+        self.short_energy_history = [
+            collections.deque(maxlen=BEAT_HISTORY_SHORT) for _ in range(4)
+        ]
+        self.short_energy_sums = [0.0] * 4
         self.last_beat_time  = [0.0] * 4
         self.brightness      = [0.0] * 4   # internal brightness state (0–1, pre-boost)
         # Rolling window of recent brightness values for flicker reduction
         self.brightness_history = [
             collections.deque(maxlen=self.flicker_window) for _ in range(4)
         ]
+        self.brightness_sums = [0.0] * 4
 
     # ──────────────────────────────────────────────────────────────────────────
     def run(self):
@@ -221,7 +236,7 @@ class AudioVisualizer:
 
                     # 3. Per-band energy + beat detection
                     now    = time.monotonic()
-                    colors = []
+                    colors = [0] * 12
 
                     for i in range(4):
                         idx = self.band_indices[i]
@@ -233,11 +248,19 @@ class AudioVisualizer:
                         norm = min(1.0, energy / (self.ref_levels[i] + 1e-9))
 
                         # Update rolling energy history
-                        self.energy_history[i].append(energy)
-                        hist      = self.energy_history[i]
-                        long_avg  = float(np.mean(hist))
-                        short_win = list(hist)[-BEAT_HISTORY_SHORT:]
-                        short_avg = float(np.mean(short_win)) if short_win else 0.0
+                        hist = self.energy_history[i]
+                        if len(hist) == hist.maxlen:
+                            self.energy_sums[i] -= hist[0]
+                        hist.append(energy)
+                        self.energy_sums[i] += energy
+                        long_avg = self.energy_sums[i] / len(hist)
+
+                        short_hist = self.short_energy_history[i]
+                        if len(short_hist) == short_hist.maxlen:
+                            self.short_energy_sums[i] -= short_hist[0]
+                        short_hist.append(energy)
+                        self.short_energy_sums[i] += energy
+                        short_avg = self.short_energy_sums[i] / len(short_hist)
 
                         # Beat: short-term spike well above long-term average
                         beat = (
@@ -270,17 +293,20 @@ class AudioVisualizer:
                         # mean of all frames in that window as the output.
                         # Window=1  → raw (no smoothing)
                         # Window=30 → 30 frames blended together (very smooth)
-                        self.brightness_history[i].append(self.brightness[i])
-                        smoothed_bv = float(np.mean(self.brightness_history[i]))
+                        bright_hist = self.brightness_history[i]
+                        if len(bright_hist) == bright_hist.maxlen:
+                            self.brightness_sums[i] -= bright_hist[0]
+                        bright_hist.append(self.brightness[i])
+                        self.brightness_sums[i] += self.brightness[i]
+                        smoothed_bv = self.brightness_sums[i] / len(bright_hist)
 
                         # Apply master brightness boost as final output scaling
                         bv = min(1.0, smoothed_bv * self.brightness_mult)
                         base_r, base_g, base_b = self.zone_colors[i]
-                        colors.extend([
-                            int(base_r * bv),
-                            int(base_g * bv),
-                            int(base_b * bv),
-                        ])
+                        base_idx = i * 3
+                        colors[base_idx] = int(base_r * bv)
+                        colors[base_idx + 1] = int(base_g * bv)
+                        colors[base_idx + 2] = int(base_b * bv)
 
                     # 5. Send to keyboard
                     self.kb.set_colors(colors)
@@ -292,11 +318,14 @@ class AudioVisualizer:
         except KeyboardInterrupt:
             print("\nShutting down visualizer...")
         finally:
-            self.kb.set_solid_color(0, 0, 255)
-            self.kb.close()
-            self.stream.stop_stream()
-            self.stream.close()
-            self.p.terminate()
+            if hasattr(self, 'kb'):
+                self.kb.set_solid_color(0, 0, 255)
+                self.kb.close()
+            if hasattr(self, 'stream'):
+                self.stream.stop_stream()
+                self.stream.close()
+            if hasattr(self, 'p'):
+                self.p.terminate()
 
 
 if __name__ == "__main__":
