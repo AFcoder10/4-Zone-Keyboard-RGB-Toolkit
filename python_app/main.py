@@ -43,7 +43,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.7"
+CURRENT_VERSION = "v1.8"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -447,6 +447,43 @@ class RGBControllerApp(QMainWindow):
         
         settings_layout.addStretch()
         self.stack.addWidget(self.settings_view)
+        
+        # --- Pomodoro Fullscreen View ---
+        self.pomo_fullscreen_view = QWidget()
+        self.pomo_fullscreen_view.setStyleSheet("background-color: black;")
+        pomo_fs_layout = QVBoxLayout(self.pomo_fullscreen_view)
+        pomo_fs_layout.setAlignment(Qt.AlignCenter)
+        
+        self.pomo_fs_label = QLabel("00:00:00")
+        self.pomo_fs_label.setStyleSheet("color: white; font-size: 150px; font-weight: bold; font-family: 'Segoe UI Variable';")
+        self.pomo_fs_label.setAlignment(Qt.AlignCenter)
+        
+        self.btn_pomo_fs_stop = QPushButton("Stop Timer")
+        self.btn_pomo_fs_stop.setCursor(Qt.PointingHandCursor)
+        self.btn_pomo_fs_stop.setFixedSize(250, 60)
+        self.btn_pomo_fs_stop.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 85, 85, 0.1);
+                color: #FF5555;
+                border: 2px solid rgba(255, 85, 85, 0.3);
+                border-radius: 12px;
+                font-size: 24px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 85, 85, 0.2);
+            }
+        """)
+        self.btn_pomo_fs_stop.clicked.connect(self.stop_pomodoro)
+        
+        pomo_fs_layout.addStretch()
+        pomo_fs_layout.addWidget(self.pomo_fs_label, alignment=Qt.AlignCenter)
+        pomo_fs_layout.addSpacing(40)
+        pomo_fs_layout.addWidget(self.btn_pomo_fs_stop, alignment=Qt.AlignCenter)
+        pomo_fs_layout.addStretch()
+        
+        self.stack.addWidget(self.pomo_fullscreen_view)
+
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(self.icon_path))
         tray_menu = QMenu()
@@ -730,7 +767,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', '[Experimental] Reactive Typing', '[Experimental] Realistic Fire', 'Scanner (Cylon)', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', '[Beta] Pomodoro Timer', '[Beta] Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -787,58 +824,6 @@ class RGBControllerApp(QMainWindow):
         self.pomo_is_finished = False
         self.pomo_last_tick = 0
         self.pomo_flash_on = False
-        if HAS_PYNPUT:
-            # Map keys to their respective zones based on zone.txt
-            self.key_to_zone = {
-                # Zone 1
-                'esc': 0, 'f1': 0, 'f2': 0, 'f3': 0, 'f4': 0,
-                '`': 0, '1': 0, '2': 0, '3': 0, '4': 0,
-                'tab': 0, 'q': 0, 'w': 0, 'e': 0, 's': 0, # Note: 's' is listed in Zone 1, keeping to requested spec
-                'caps lock': 0, 'a': 0, 'd': 0,
-                'shift': 0, 'z': 0, 'x': 0,
-                'ctrl': 0, 'cmd': 0, 'alt': 0, # 'fn' and 'win' usually map to cmd/alt/menu depending on OS
-                # Zone 2
-                'f5': 1, 'f6': 1, 'f7': 1, 'f8': 1, 'f9': 1, 'f10': 1,
-                '5': 1, '6': 1, '7': 1, '8': 1, '9': 1,
-                'r': 1, 't': 1, 'y': 1, 'u': 1, 'i': 1,
-                'f': 1, 'g': 1, 'h': 1, 'j': 1, 'k': 1,
-                'c': 1, 'v': 1, 'b': 1, 'n': 1, 'm': 1, ',': 1,
-                'space': 1, 'alt_r': 1,
-                # Zone 3
-                'f11': 2, 'f12': 2, 'insert': 2, 'print_screen': 2, 'delete': 2,
-                '0': 2, '-': 2, '=': 2, 'backspace': 2,
-                'o': 2, 'p': 2, '[': 2, ']': 2, '\\': 2,
-                'l': 2, ';': 2, "'": 2, 'enter': 2,
-                '.': 2, '/': 2, 'shift_r': 2,
-                'up': 2, 'left': 2, 'down': 2, 'right': 2,
-                # Zone 4
-                'home': 3, 'end': 3, 'page_up': 3, 'page_down': 3,
-                'num_lock': 3, '<106>': 3, '<109>': 3, # Numpad /, * etc.
-                '<96>': 3, '<97>': 3, '<98>': 3, '<99>': 3, '<100>': 3,
-                '<101>': 3, '<102>': 3, '<103>': 3, '<104>': 3, '<105>': 3, '<107>': 3, '<110>': 3 # Numpad 0-9, +, .
-            }
-            
-            # This list will represent the current 'hit' state of each of the 4 zones
-            self.active_typed_zones = [0.0, 0.0, 0.0, 0.0]
-
-            def on_activity(*args, **kwargs):
-                self.last_activity = time.monotonic()
-                
-            def on_press(key):
-                self.last_activity = time.monotonic()
-                try:
-                    # Get the string representation of the key
-                    k = key.char.lower() if hasattr(key, 'char') and key.char else key.name.lower()
-                    if k in self.key_to_zone:
-                        self.active_typed_zones[self.key_to_zone[k]] = 1.0
-                except Exception:
-                    # If pynput returns a weird key format we don't recognize
-                    pass
-
-            self.mouse_listener = mouse.Listener(on_move=on_activity, on_click=on_activity, on_scroll=on_activity)
-            self.mouse_listener.start()
-            self.kbd_listener = keyboard.Listener(on_press=on_press)
-            self.kbd_listener.start()
         try:
             self.kb = L5PKeyboard()
         except ValueError as e:
@@ -1322,6 +1307,24 @@ class RGBControllerApp(QMainWindow):
         self.pomo_hours.setEnabled(False)
         self.pomo_minutes.setEnabled(False)
         self.pomo_seconds.setEnabled(False)
+        
+        # Switch to fullscreen
+        self.pre_pomo_window_state = self.windowState()
+        self.stack.setCurrentWidget(self.pomo_fullscreen_view)
+        self.title_bar.hide()
+        main_cont = self.findChild(QWidget, 'MainContainer')
+        if main_cont:
+            main_cont.setStyleSheet("""
+                #MainContainer {
+                    background-color: black;
+                    border: none;
+                    border-radius: 0px;
+                }
+            """)
+        self.showFullScreen()
+        
+        # Update label immediately
+        self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
 
     def stop_pomodoro(self):
         self.pomo_running = False
@@ -1331,6 +1334,23 @@ class RGBControllerApp(QMainWindow):
         self.pomo_hours.setEnabled(True)
         self.pomo_minutes.setEnabled(True)
         self.pomo_seconds.setEnabled(True)
+        
+        # Restore normal window view
+        self.stack.setCurrentIndex(0) # Main view
+        self.title_bar.show()
+        main_cont = self.findChild(QWidget, 'MainContainer')
+        if main_cont:
+            main_cont.setStyleSheet("""
+                #MainContainer {
+                    background-color: #0E0E12;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 12px;
+                }
+            """)
+        if hasattr(self, 'pre_pomo_window_state'):
+            self.setWindowState(self.pre_pomo_window_state)
+        else:
+            self.showNormal()
         # Reset colors when stopping? handled in loop if running=False
         
     def on_mode_changed(self, mode_name):
@@ -1384,7 +1404,7 @@ class RGBControllerApp(QMainWindow):
                 self.speed_widget.show()
                 self.ambient_speed_widget.hide()
 
-            if mode_name == '[Beta] Pomodoro Timer':
+            if mode_name == 'Pomodoro Timer':
                 # Hide all standard controls to isolate timer
                 self.speed_widget.hide()
                 self.bright_widget.hide()
@@ -1399,11 +1419,9 @@ class RGBControllerApp(QMainWindow):
             
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
-            elif '[Experimental] Reactive Typing' in mode_name:
-                self.speed_label.setText(f'Fade Speed: {self.speed_slider.value()}%')
             elif 'Live Audio Visualizer' in mode_name:
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
-            elif '[Experimental] Realistic Fire' in mode_name:
+            elif 'Realistic Fire' in mode_name:
                 self.speed_label.setText(f'Fire Flicker Speed: {self.speed_slider.value()}%')
             elif 'Scanner (Cylon)' in mode_name:
                 self.speed_label.setText(f'Scanner Sweep Speed: {self.speed_slider.value()}%')
@@ -1438,12 +1456,6 @@ class RGBControllerApp(QMainWindow):
                     self.kb.set_solid_color(0, 0, 0)
             except Exception as e:
                 print(f'Failed to turn off keyboard LEDs: {e}')
-            if HAS_PYNPUT:
-                try:
-                    self.mouse_listener.stop()
-                    self.kbd_listener.stop()
-                except:
-                    pass
             if hasattr(self, 'tray_icon'):
                 self.tray_icon.hide()
             super().closeEvent(event)
@@ -1462,11 +1474,9 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Lightning Frequency: {value}%')
         elif 'Starry Night' in mode_name:
             self.speed_label.setText(f'Twinkle Speed: {value}%')
-        elif '[Experimental] Reactive Typing' in mode_name:
-            self.speed_label.setText(f'Fade Speed: {value}%')
         elif 'Live Audio Visualizer' in mode_name:
             self.speed_label.setText(f'Visualizer Sensitivity: {value}%')
-        elif '[Experimental] Realistic Fire' in mode_name:
+        elif 'Realistic Fire' in mode_name:
             self.speed_label.setText(f'Fire Flicker Speed: {value}%')
         elif 'Scanner (Cylon)' in mode_name:
             self.speed_label.setText(f'Scanner Sweep Speed: {value}%')
@@ -1716,23 +1726,7 @@ class RGBControllerApp(QMainWindow):
                                         self.party_colors.extend([r * 255, g * 255, b * 255])
                                 for i in range(12):
                                     target_colors[i] = self.party_colors[i]
-                            elif '[Experimental] Reactive Typing' in mode_name:
-                                # Speed slider inversely controls fade. Lower speed = higher smooth = slower fade.
-                                # Speed 1 = very slow fade (smooth 0.98), Speed 100 = very fast fade (smooth 0.8)
-                                smooth_amount = 0.99 - (self.speed_slider.value() / 100.0) * 0.15 
-                                
-                                # Decay the active zone state
-                                for i in range(4):
-                                    if hasattr(self, 'active_typed_zones'):
-                                        # Intensity falls off based on the fade speed multiplier
-                                        decay = 0.05 * (self.speed_slider.value() / 50.0)
-                                        self.active_typed_zones[i] = max(0.0, self.active_typed_zones[i] - decay)
-                                        
-                                        intensity = self.active_typed_zones[i]
-                                        target_colors[i * 3] = self.zone_colors[i][0] * intensity
-                                        target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
-                                        target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
-                            elif '[Experimental] Realistic Fire' in mode_name:
+                            elif 'Realistic Fire' in mode_name:
                                 # Fire flickers intensely and independently per zone
                                 smooth_amount = max(0.01, 0.25 - (self.speed_slider.value() / 100.0) * 0.2)
                                 
@@ -1899,6 +1893,7 @@ class RGBControllerApp(QMainWindow):
                                                 self.pomo_hours.setValue(h)
                                                 self.pomo_minutes.setValue(m)
                                                 self.pomo_seconds.setValue(s)
+                                                self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
                                             else:
                                                 self.pomo_is_finished = True
                                         
