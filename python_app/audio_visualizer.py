@@ -174,6 +174,16 @@ class AudioVisualizer:
         self.kb.set_effect('static')
         self.kb.set_brightness(2)   # max HW brightness; SW controls levels
 
+        # ── Precomputed FFT data ──────────────────────────────────────────────
+        # Create a sample buffer of CHUNK size to compute frequency bins once
+        self.window = np.hanning(CHUNK)
+        freqs = np.fft.rfftfreq(CHUNK, 1.0 / self.rate)
+
+        self.band_indices = []
+        for low, high in BAND_RANGES:
+            idx = np.where((freqs >= low) & (freqs <= high))[0]
+            self.band_indices.append(idx)
+
         # ── Per-zone state ────────────────────────────────────────────────────
         self.energy_history = [
             collections.deque(maxlen=BEAT_HISTORY_LONG) for _ in range(4)
@@ -199,20 +209,22 @@ class AudioVisualizer:
 
                     # Downmix to mono
                     if self.channels > 1:
+                        # Use mean across channels
                         audio_data = audio_data.reshape(-1, self.channels).mean(axis=1)
 
+                    # Ensure exactly CHUNK samples for the precomputed window
+                    if len(audio_data) != CHUNK:
+                        continue
+
                     # 2. FFT
-                    window  = np.hanning(len(audio_data))
-                    fft_mag = np.abs(np.fft.rfft(audio_data * window))
-                    freqs   = np.fft.rfftfreq(len(audio_data), 1.0 / self.rate)
+                    fft_mag = np.abs(np.fft.rfft(audio_data * self.window))
 
                     # 3. Per-band energy + beat detection
                     now    = time.monotonic()
                     colors = []
 
                     for i in range(4):
-                        low, high = BAND_RANGES[i]
-                        idx = np.where((freqs >= low) & (freqs <= high))[0]
+                        idx = self.band_indices[i]
 
                         # RMS energy of this frequency band
                         energy = float(np.sqrt(np.mean(fft_mag[idx] ** 2))) if len(idx) > 0 else 0.0
