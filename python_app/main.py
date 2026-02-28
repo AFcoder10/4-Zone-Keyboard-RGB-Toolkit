@@ -1805,10 +1805,13 @@ class RGBControllerApp(QMainWindow):
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
                                     if HAS_PSUTIL:
-                                        battery = psutil.sensors_battery()
-                                        if battery:
-                                            percent = battery.percent
-                                            charging = battery.power_plugged
+                                        if not hasattr(self, 'last_battery_check') or t - self.last_battery_check > 2.0:
+                                            self.last_battery_check = t
+                                            self.cached_battery = psutil.sensors_battery()
+
+                                        if hasattr(self, 'cached_battery') and self.cached_battery:
+                                            percent = self.cached_battery.percent
+                                            charging = self.cached_battery.power_plugged
                                             
                                             # Determine the base color and active zones count
                                             if charging:
@@ -1860,17 +1863,20 @@ class RGBControllerApp(QMainWindow):
                                         from PySide6.QtGui import QCursor
                                         
                                         cursor_pos = QCursor.pos()
-                                        screen = QApplication.primaryScreen()
-                                        if screen:
-                                            screen_width = screen.size().width()
-                                            # Clamp mouse X to screen bounds
-                                            mouse_x = max(0, min(screen_width, cursor_pos.x()))
+
+                                        if not hasattr(self, 'last_screen_width_check') or t - self.last_screen_width_check > 5.0:
+                                            self.last_screen_width_check = t
+                                            screen = QApplication.primaryScreen()
+                                            self.cached_screen_width = screen.size().width() if screen else 1920
                                             
-                                            # Create a point illumination at the mouse position
-                                            for i in range(4):
+                                        # Clamp mouse X to screen bounds
+                                        mouse_x = max(0, min(self.cached_screen_width, cursor_pos.x()))
+
+                                        # Create a point illumination at the mouse position
+                                        for i in range(4):
                                                 # Coordinate of this zone's center on the screen (0.0 to 1.0 range)
                                                 zone_center_ratio = (i + 0.5) / 4.0
-                                                mouse_ratio = mouse_x / screen_width
+                                                mouse_ratio = mouse_x / max(1, self.cached_screen_width)
                                                 
                                                 # Calculate distance (0.0 to 1.0)
                                                 dist = abs(zone_center_ratio - mouse_ratio)

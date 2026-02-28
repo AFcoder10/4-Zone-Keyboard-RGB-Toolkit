@@ -51,8 +51,7 @@ class L5PKeyboard:
 
     def _build_payload(self):
         # The payload structure must be exactly 33 bytes for the RGB controller
-        for i in range(1, 33):
-            self._payload_buffer[i] = 0
+        self._payload_buffer[1:33] = b'\x00' * 32
 
         self._payload_buffer[1] = 0x16
         
@@ -65,8 +64,7 @@ class L5PKeyboard:
         
         # RGB applies to Static and Breath effects
         if self.effect in ['static', 'breath']:
-            for i in range(12):
-                self._payload_buffer[5 + i] = self.colors[i]
+            self._payload_buffer[5:17] = self.colors
         
         # Wave direction handling
         elif self.effect == 'wave':
