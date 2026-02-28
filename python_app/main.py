@@ -38,6 +38,7 @@ import winreg
 from python_controller import L5PKeyboard
 import threading
 from threading import Lock
+from collections import deque
 import urllib.request
 import urllib.error
 import tempfile
@@ -108,13 +109,18 @@ def sanitized_child_env(base_env=None, include_pythonpath=False):
 
 # Simple in-memory log buffer that mirrors stdout/stderr and retains recent output
 class LogBuffer:
-    def __init__(self, orig_stream):
+    def __init__(self, orig_stream, max_chars=1_000_000):
         self.orig = orig_stream
         self.lock = Lock()
-        self.lines = []
+        self.lines = deque()
+        self.max_chars = max_chars
+        self.current_chars = 0
     def write(self, s):
         with self.lock:
             self.lines.append(s)
+            self.current_chars += len(s)
+            while self.current_chars > self.max_chars and self.lines:
+                self.current_chars -= len(self.lines.popleft())
         try:
             self.orig.write(s)
         except Exception:
@@ -130,6 +136,7 @@ class LogBuffer:
     def clear(self):
         with self.lock:
             self.lines.clear()
+            self.current_chars = 0
 
 # Install global buffers so prints and errors are captured
 _ORIG_STDOUT = sys.stdout
