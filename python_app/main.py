@@ -31,9 +31,9 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser
-from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread
-from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect
+from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread, QPropertyAnimation, QEasingCurve, QVariantAnimation
+from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter
 import winreg
 from python_controller import L5PKeyboard
 import threading
@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.8"
+CURRENT_VERSION = "v1.9"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -145,6 +145,77 @@ _STDOUT_BUFFER = LogBuffer(_ORIG_STDOUT)
 _STDERR_BUFFER = LogBuffer(_ORIG_STDERR)
 sys.stdout = _STDOUT_BUFFER
 sys.stderr = _STDERR_BUFFER
+from PySide6.QtWidgets import QStyleOptionSlider
+
+class FadeDialog(QDialog):
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.setWindowOpacity(0.0)
+        self.fade_in = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_in.setDuration(200)
+        self.fade_in.setStartValue(0.0)
+        self.fade_in.setEndValue(1.0)
+        self.fade_in.setEasingCurve(QEasingCurve.OutCubic)
+        self.fade_in.start()
+
+    def closeEvent(self, event):
+        if not hasattr(self, '_closing'):
+            self._closing = True
+            event.ignore()
+            self.fade_out = QPropertyAnimation(self, b"windowOpacity")
+            self.fade_out.setDuration(150)
+            self.fade_out.setStartValue(1.0)
+            self.fade_out.setEndValue(0.0)
+            self.fade_out.finished.connect(self.close)
+            self.fade_out.start()
+        else:
+            event.accept()
+
+class AnimatedSlider(QSlider):
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            opt = QStyleOptionSlider()
+            self.initStyleOption(opt)
+            sr = self.style().subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
+            if not sr.contains(event.pos()):
+                # Jump to click position smoothly
+                val = self.minimum() + ((self.maximum() - self.minimum()) * event.pos().x()) / self.width()
+                self.set_animated_value(int(val))
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    def set_animated_value(self, val):
+        if not hasattr(self, 'anim'):
+            self.anim = QPropertyAnimation(self, b"value")
+            self.anim.setDuration(150)
+            self.anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.anim.stop()
+        self.anim.setStartValue(self.value())
+        self.anim.setEndValue(val)
+        self.anim.start()
+
+class GlowButton(QPushButton):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.effect = QGraphicsOpacityEffect(self)
+        self.effect.setOpacity(1.0)
+        self.setGraphicsEffect(self.effect)
+        self.anim = QPropertyAnimation(self.effect, b"opacity")
+        self.anim.setDuration(150)
+
+    def mousePressEvent(self, event):
+        self.anim.stop()
+        self.anim.setEndValue(0.5)
+        self.anim.start()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.anim.stop()
+        self.anim.setEndValue(1.0)
+        self.anim.start()
+        super().mouseReleaseEvent(event)
+
 class CustomTitleBar(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
@@ -220,7 +291,7 @@ class CustomTitleBar(QWidget):
         return
 
 
-class LogsDialog(QDialog):
+class LogsDialog(FadeDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle('Application Logs')
@@ -266,7 +337,7 @@ class LogsDialog(QDialog):
         except Exception:
             pass
 
-class KeyboardPreviewWindow(QDialog):
+class KeyboardPreviewWindow(FadeDialog):
     def __init__(self, parent_app):
         super().__init__(parent_app)
         self.parent_app = parent_app
@@ -301,7 +372,7 @@ class KeyboardPreviewWindow(QDialog):
 class PreviewGroupBox(QGroupBox):
     def __init__(self, title, preview_callback, parent=None):
         super().__init__(title, parent)
-        self.btn_preview = QPushButton('Preview', self)
+        self.btn_preview = GlowButton('Preview', self)
         self.btn_preview.setFixedHeight(22)
         self.btn_preview.setCursor(Qt.PointingHandCursor)
         self.btn_preview.setStyleSheet('''
@@ -425,7 +496,7 @@ class RGBControllerApp(QMainWindow):
         self.startup_preset_combo.currentTextChanged.connect(self.save_settings)
         settings_layout.addWidget(self.startup_preset_combo)
         settings_layout.addSpacing(20)
-        self.btn_clear_cache = QPushButton('Clear Cache && Reset')
+        self.btn_clear_cache = GlowButton('Clear Cache && Reset')
         self.btn_clear_cache.setFixedHeight(35)
         self.btn_clear_cache.setCursor(Qt.PointingHandCursor)
         self.btn_clear_cache.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.1); color: #FF5555; border: 1px solid #FF5555; border-radius: 6px; font-weight: bold; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: #FF5555; color: white; }')
@@ -433,14 +504,14 @@ class RGBControllerApp(QMainWindow):
         settings_layout.addWidget(self.btn_clear_cache)
 
         # Logs viewer button
-        self.btn_view_logs = QPushButton('View Logs')
+        self.btn_view_logs = GlowButton('View Logs')
         self.btn_view_logs.setFixedHeight(35)
         self.btn_view_logs.setCursor(Qt.PointingHandCursor)
         self.btn_view_logs.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #E2E2E2; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
         self.btn_view_logs.clicked.connect(self.show_logs)
         settings_layout.addWidget(self.btn_view_logs)
 
-        self.btn_clear_update_cache = QPushButton('Clear Update Cache')
+        self.btn_clear_update_cache = GlowButton('Clear Update Cache')
         self.btn_clear_update_cache.setFixedHeight(35)
         self.btn_clear_update_cache.setCursor(Qt.PointingHandCursor)
         self.btn_clear_update_cache.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #AAAAAA; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
@@ -465,7 +536,7 @@ class RGBControllerApp(QMainWindow):
         self.pomo_fs_label.setStyleSheet("color: white; font-size: 150px; font-weight: bold; font-family: 'Segoe UI Variable';")
         self.pomo_fs_label.setAlignment(Qt.AlignCenter)
         
-        self.btn_pomo_fs_stop = QPushButton("Stop Timer")
+        self.btn_pomo_fs_stop = GlowButton("Stop Timer")
         self.btn_pomo_fs_stop.setCursor(Qt.PointingHandCursor)
         self.btn_pomo_fs_stop.setFixedSize(250, 60)
         self.btn_pomo_fs_stop.setStyleSheet("""
@@ -564,8 +635,8 @@ class RGBControllerApp(QMainWindow):
         self.btn_bright_minus.setFixedSize(24, 24)
         self.btn_bright_minus.setStyleSheet(icon_css)
         self.btn_bright_minus.setCursor(Qt.PointingHandCursor)
-        self.btn_bright_minus.clicked.connect(lambda: self.bright_slider.setValue(max(0, self.bright_slider.value() - 5)))
-        self.bright_slider = QSlider(Qt.Horizontal)
+        self.btn_bright_minus.clicked.connect(lambda: self.bright_slider.set_animated_value(max(0, self.bright_slider.value() - 5)))
+        self.bright_slider = AnimatedSlider(Qt.Horizontal)
         self.bright_slider.setRange(0, 100)
         self.bright_slider.setValue(100)
         self.bright_slider.setTickPosition(QSlider.TicksBelow)
@@ -576,7 +647,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_bright_plus.setFixedSize(24, 24)
         self.btn_bright_plus.setStyleSheet(icon_css)
         self.btn_bright_plus.setCursor(Qt.PointingHandCursor)
-        self.btn_bright_plus.clicked.connect(lambda: self.bright_slider.setValue(min(100, self.bright_slider.value() + 5)))
+        self.btn_bright_plus.clicked.connect(lambda: self.bright_slider.set_animated_value(min(100, self.bright_slider.value() + 5)))
         bright_layout.addWidget(self.bright_label)
         bright_layout.addWidget(self.btn_bright_minus)
         bright_layout.addWidget(self.bright_slider, stretch=1)
@@ -593,8 +664,8 @@ class RGBControllerApp(QMainWindow):
         self.btn_vib_minus.setFixedSize(24, 24)
         self.btn_vib_minus.setStyleSheet(icon_css)
         self.btn_vib_minus.setCursor(Qt.PointingHandCursor)
-        self.btn_vib_minus.clicked.connect(lambda: self.vibrance_slider.setValue(max(5, self.vibrance_slider.value() - 5)))
-        self.vibrance_slider = QSlider(Qt.Horizontal)
+        self.btn_vib_minus.clicked.connect(lambda: self.vibrance_slider.set_animated_value(max(5, self.vibrance_slider.value() - 5)))
+        self.vibrance_slider = AnimatedSlider(Qt.Horizontal)
         self.vibrance_slider.setRange(5, 30) # 0.5x to 3.0x max vibrance
         self.vibrance_slider.setValue(15) 
         self.vibrance_slider.setTickPosition(QSlider.TicksBelow)
@@ -605,7 +676,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_vib_plus.setFixedSize(24, 24)
         self.btn_vib_plus.setStyleSheet(icon_css)
         self.btn_vib_plus.setCursor(Qt.PointingHandCursor)
-        self.btn_vib_plus.clicked.connect(lambda: self.vibrance_slider.setValue(min(30, self.vibrance_slider.value() + 5)))
+        self.btn_vib_plus.clicked.connect(lambda: self.vibrance_slider.set_animated_value(min(30, self.vibrance_slider.value() + 5)))
         self.vibrance_layout.addWidget(self.vibrance_label)
         self.vibrance_layout.addWidget(self.btn_vib_minus)
         self.vibrance_layout.addWidget(self.vibrance_slider, stretch=1)
@@ -660,7 +731,7 @@ class RGBControllerApp(QMainWindow):
         pomo_layout.addLayout(time_layout)
         
         btn_pomo_layout = QHBoxLayout()
-        self.btn_pomo_start = QPushButton("Start Focus")
+        self.btn_pomo_start = GlowButton("Start Focus")
         self.btn_pomo_start.setCursor(Qt.PointingHandCursor)
         self.btn_pomo_start.setStyleSheet("""
             QPushButton {
@@ -709,8 +780,8 @@ class RGBControllerApp(QMainWindow):
         self.btn_speed_minus.setFixedSize(24, 24)
         self.btn_speed_minus.setStyleSheet(icon_css)
         self.btn_speed_minus.setCursor(Qt.PointingHandCursor)
-        self.btn_speed_minus.clicked.connect(lambda: self.speed_slider.setValue(max(1, self.speed_slider.value() - 5)))
-        self.speed_slider = QSlider(Qt.Horizontal)
+        self.btn_speed_minus.clicked.connect(lambda: self.speed_slider.set_animated_value(max(1, self.speed_slider.value() - 5)))
+        self.speed_slider = AnimatedSlider(Qt.Horizontal)
         self.speed_slider.setRange(1, 100)
         self.speed_slider.setValue(20)
         self.speed_slider.setTickPosition(QSlider.TicksBelow)
@@ -721,7 +792,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_speed_plus.setFixedSize(24, 24)
         self.btn_speed_plus.setStyleSheet(icon_css)
         self.btn_speed_plus.setCursor(Qt.PointingHandCursor)
-        self.btn_speed_plus.clicked.connect(lambda: self.speed_slider.setValue(min(100, self.speed_slider.value() + 5)))
+        self.btn_speed_plus.clicked.connect(lambda: self.speed_slider.set_animated_value(min(100, self.speed_slider.value() + 5)))
         speed_layout.addWidget(self.speed_label)
         speed_layout.addWidget(self.btn_speed_minus)
         speed_layout.addWidget(self.speed_slider, stretch=1)
@@ -1205,14 +1276,32 @@ class RGBControllerApp(QMainWindow):
     def on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
             self.restore_app()
+    def switch_view_animated(self, index):
+        if self.stack.currentIndex() == index:
+            return
+        
+        self.stack.setCurrentIndex(index)
+        new_widget = self.stack.currentWidget()
+        
+        effect = QGraphicsOpacityEffect(new_widget)
+        new_widget.setGraphicsEffect(effect)
+        
+        self.fade_anim = QPropertyAnimation(effect, b"opacity")
+        self.fade_anim.setDuration(250)
+        self.fade_anim.setStartValue(0.0)
+        self.fade_anim.setEndValue(1.0)
+        self.fade_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.fade_anim.finished.connect(lambda: new_widget.setGraphicsEffect(None))
+        self.fade_anim.start()
+
     def toggle_settings(self):
         if self.stack.currentIndex() == 0:
-            self.stack.setCurrentIndex(1)
+            self.switch_view_animated(1)
         else:
-            self.stack.setCurrentIndex(0)
+            self.switch_view_animated(0)
 
     def show_help_dialog(self):
-        dialog = QDialog(self)
+        dialog = FadeDialog(self)
         dialog.setWindowTitle("Help & Support")
         dialog.setFixedSize(380, 160)
         # Match app aesthetic
@@ -1239,7 +1328,7 @@ class RGBControllerApp(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
         
-        btn_issues = QPushButton("Report Issue")
+        btn_issues = GlowButton("Report Issue")
         btn_issues.setCursor(Qt.PointingHandCursor)
         btn_issues.setFixedHeight(35)
         btn_issues.setStyleSheet('''
@@ -1317,7 +1406,7 @@ class RGBControllerApp(QMainWindow):
         
         # Switch to fullscreen
         self.pre_pomo_window_state = self.windowState()
-        self.stack.setCurrentWidget(self.pomo_fullscreen_view)
+        self.switch_view_animated(2)
         self.title_bar.hide()
         main_cont = self.findChild(QWidget, 'MainContainer')
         if main_cont:
@@ -1343,7 +1432,7 @@ class RGBControllerApp(QMainWindow):
         self.pomo_seconds.setEnabled(True)
         
         # Restore normal window view
-        self.stack.setCurrentIndex(0) # Main view
+        self.switch_view_animated(0) # Main view
         self.title_bar.show()
         main_cont = self.findChild(QWidget, 'MainContainer')
         if main_cont:
