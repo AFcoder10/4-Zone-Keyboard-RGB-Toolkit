@@ -37,6 +37,8 @@ class L5PKeyboard:
         self.brightness = 1
         self.colors = [0] * 12 # 4 zones * 3 (R, G, B)
         self.wave_direction = 'left' # 'left' or 'right'
+        self._payload_buffer = bytearray(33)
+        self._payload_buffer[0] = 0xCC
 
     def _find_device(self):
         # We search through the connected HID devices
@@ -49,35 +51,36 @@ class L5PKeyboard:
 
     def _build_payload(self):
         # The payload structure must be exactly 33 bytes for the RGB controller
-        payload = [0] * 33
-        payload[0] = 0xCC  # Feature Report ID / Header Byte
-        payload[1] = 0x16
+        for i in range(1, 33):
+            self._payload_buffer[i] = 0
+
+        self._payload_buffer[1] = 0x16
         
         # Effect Type
-        payload[2] = self.EFFECTS.get(self.effect, 0x01)
+        self._payload_buffer[2] = self.EFFECTS.get(self.effect, 0x01)
         
         # Speed and Brightness
-        payload[3] = self.speed
-        payload[4] = self.brightness
+        self._payload_buffer[3] = self.speed
+        self._payload_buffer[4] = self.brightness
         
         # RGB applies to Static and Breath effects
         if self.effect in ['static', 'breath']:
             for i in range(12):
-                payload[5 + i] = self.colors[i]
+                self._payload_buffer[5 + i] = self.colors[i]
         
         # Wave direction handling
         elif self.effect == 'wave':
             if self.wave_direction == 'right':
-                payload[18] = 0x01
+                self._payload_buffer[18] = 0x01
             else: # left
-                payload[19] = 0x01
+                self._payload_buffer[19] = 0x01
                 
-        return payload
+        return self._payload_buffer
 
     def refresh(self):
-        # Convert list to bytearray and send the feature report
+        # Send the feature report using the pre-allocated buffer
         payload = self._build_payload()
-        self.device.send_feature_report(bytearray(payload))
+        self.device.send_feature_report(payload)
 
     def set_effect(self, effect):
         if effect not in self.EFFECTS:

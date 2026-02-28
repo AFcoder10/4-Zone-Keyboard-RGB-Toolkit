@@ -778,7 +778,7 @@ class RGBControllerApp(QMainWindow):
         self.custom_timer.timeout.connect(self.update_custom_effects)
         self.custom_colors = [0] * 12
         self.transition_ticks = 0
-        self.last_activity = time.time()
+        self.last_activity = time.monotonic()
         self.sct = None
         self.preview_window = None
         self.pomo_running = False
@@ -822,10 +822,10 @@ class RGBControllerApp(QMainWindow):
             self.active_typed_zones = [0.0, 0.0, 0.0, 0.0]
 
             def on_activity(*args, **kwargs):
-                self.last_activity = time.time()
+                self.last_activity = time.monotonic()
                 
             def on_press(key):
-                self.last_activity = time.time()
+                self.last_activity = time.monotonic()
                 try:
                     # Get the string representation of the key
                     k = key.char.lower() if hasattr(key, 'char') and key.char else key.name.lower()
@@ -1315,7 +1315,7 @@ class RGBControllerApp(QMainWindow):
         self.pomo_remaining_seconds = total
         self.pomo_running = True
         self.pomo_is_finished = False
-        self.pomo_last_tick = time.time()
+        self.pomo_last_tick = time.monotonic()
         
         self.btn_pomo_start.setEnabled(False)
         self.btn_pomo_stop.setEnabled(True)
@@ -1635,7 +1635,7 @@ class RGBControllerApp(QMainWindow):
                 # (random mode removed) — continue with normal effect updates
                 
                 speed_mult = self.speed_slider.value() / 50.0
-                t = time.time()
+                t = time.monotonic()
                 target_colors = list(self.custom_colors)
                 smooth_amount = 0.5
                 try:
@@ -1887,7 +1887,7 @@ class RGBControllerApp(QMainWindow):
                                         print(f"Mouse aura calculation error: {e}")
                                 elif 'Pomodoro Timer' in mode_name:
                                     if self.pomo_running:
-                                        now = time.time()
+                                        now = time.monotonic()
                                         if now - self.pomo_last_tick >= 1.0:
                                             self.pomo_last_tick = now
                                             if self.pomo_remaining_seconds > 0:
@@ -1956,7 +1956,7 @@ class RGBControllerApp(QMainWindow):
                                             monitor = self.sct.monitors[1]
                                             sct_img = self.sct.grab(monitor)
                                             img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-                                            img = img.resize((4, 1), Image.Resampling.LANCZOS)
+                                            img = img.resize((4, 1), Image.Resampling.BOX)
                                             pixels = list(img.getdata())
                                             for i in range(4):
                                                 r, g, b = pixels[i]
