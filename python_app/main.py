@@ -31,7 +31,7 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread, QPropertyAnimation, QEasingCurve, QVariantAnimation
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter
 import winreg
@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v1.9"
+CURRENT_VERSION = "Beta v2"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -253,8 +253,29 @@ class CustomTitleBar(QWidget):
                 background-color: rgba(0, 229, 255, 0.1);
             }
         ''')
+        self.btn_live_preview = GlowButton('Live Preview')
+        self.btn_live_preview.setFixedHeight(22)
+        self.btn_live_preview.setCursor(Qt.PointingHandCursor)
+        self.btn_live_preview.setStyleSheet('''
+            QPushButton {
+                background: transparent;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 4px;
+                color: #00E5FF;
+                font-size: 11px;
+                font-weight: bold;
+                padding: 0 10px;
+                margin-bottom: 2px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 229, 255, 0.1);
+            }
+        ''')
+        self.btn_live_preview.clicked.connect(self.parent.toggle_preview)
+        
         self.btn_help.clicked.connect(self.parent.show_help_dialog)
         
+        layout.addWidget(self.btn_live_preview)
         layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -369,32 +390,7 @@ class KeyboardPreviewWindow(FadeDialog):
         except Exception:
             pass
 
-class PreviewGroupBox(QGroupBox):
-    def __init__(self, title, preview_callback, parent=None):
-        super().__init__(title, parent)
-        self.btn_preview = GlowButton('Preview', self)
-        self.btn_preview.setFixedHeight(22)
-        self.btn_preview.setCursor(Qt.PointingHandCursor)
-        self.btn_preview.setStyleSheet('''
-            QPushButton {
-                background: transparent;
-                border: 1px solid rgba(255,255,255,0.3);
-                border-radius: 4px;
-                color: #00E5FF;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 0 10px;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 229, 255, 0.1);
-            }
-        ''')
-        self.btn_preview.clicked.connect(preview_callback)
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        # Set to 0 to prevent the top edge from clipping outside the widget bounds
-        self.btn_preview.move(self.width() - self.btn_preview.width() - 15, 0)
 
 class UpdateDownloader(QThread):
     progress = Signal(int)
@@ -621,13 +617,25 @@ class RGBControllerApp(QMainWindow):
         split_layout.addLayout(left_layout, stretch=2)
         split_layout.addLayout(right_layout, stretch=1)
         main_layout.addLayout(split_layout)
-        controls_group = PreviewGroupBox('Main Controls', self.toggle_preview)
-        controls_layout = QVBoxLayout(controls_group)
+        controls_title = QLabel('Main Controls')
+        controls_title.setStyleSheet('color: #00E5FF; font-weight: bold; font-family: "Segoe UI Variable", "Segoe UI", sans-serif; font-size: 16px; margin-left: 12px; margin-top: 8px;')
+        left_layout.addWidget(controls_title)
+
+        controls_group = QFrame()
+        controls_group.setObjectName("MainControlsFrame")
+        controls_group.setStyleSheet("QFrame#MainControlsFrame { border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; background-color: rgba(255, 255, 255, 0.02); }")
+        controls_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        controls_layout = QGridLayout(controls_group)
         controls_layout.setSpacing(15)
+        controls_layout.setColumnStretch(2, 1) # Make slider column stretch
+        controls_layout.setAlignment(Qt.AlignTop)
+        controls_layout.setRowStretch(6, 1) # Add an empty stretching row at the bottom so contents stay at the top
+        
         plus_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'plus.svg').replace('\\', '/')
         minus_icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'minus.svg').replace('\\', '/')
         icon_css = 'QPushButton { background: transparent; border: none; border-radius: 4px; } QPushButton:hover { background: rgba(255, 255, 255, 0.1); }'
-        bright_layout = QHBoxLayout()
+        
+        # Row 0: Brightness
         self.bright_label = QLabel('Brightness: 100%')
         self.bright_label.setFixedWidth(180)
         self.btn_bright_minus = QPushButton()
@@ -648,15 +656,14 @@ class RGBControllerApp(QMainWindow):
         self.btn_bright_plus.setStyleSheet(icon_css)
         self.btn_bright_plus.setCursor(Qt.PointingHandCursor)
         self.btn_bright_plus.clicked.connect(lambda: self.bright_slider.set_animated_value(min(100, self.bright_slider.value() + 5)))
-        bright_layout.addWidget(self.bright_label)
-        bright_layout.addWidget(self.btn_bright_minus)
-        bright_layout.addWidget(self.bright_slider, stretch=1)
-        bright_layout.addWidget(self.btn_bright_plus)
-        self.bright_widget = QWidget()
-        self.bright_widget.setLayout(bright_layout)
-        controls_layout.addWidget(self.bright_widget)
+        controls_layout.addWidget(self.bright_label, 0, 0)
+        controls_layout.addWidget(self.btn_bright_minus, 0, 1)
+        controls_layout.addWidget(self.bright_slider, 0, 2)
+        controls_layout.addWidget(self.btn_bright_plus, 0, 3)
+
+        self.bright_widgets = [self.bright_label, self.btn_bright_minus, self.bright_slider, self.btn_bright_plus]
         
-        self.vibrance_layout = QHBoxLayout()
+        # Row 1: Vibrance
         self.vibrance_label = QLabel('Vibrance: 1.5x')
         self.vibrance_label.setFixedWidth(180)
         self.btn_vib_minus = QPushButton()
@@ -677,15 +684,14 @@ class RGBControllerApp(QMainWindow):
         self.btn_vib_plus.setStyleSheet(icon_css)
         self.btn_vib_plus.setCursor(Qt.PointingHandCursor)
         self.btn_vib_plus.clicked.connect(lambda: self.vibrance_slider.set_animated_value(min(30, self.vibrance_slider.value() + 5)))
-        self.vibrance_layout.addWidget(self.vibrance_label)
-        self.vibrance_layout.addWidget(self.btn_vib_minus)
-        self.vibrance_layout.addWidget(self.vibrance_slider, stretch=1)
-        self.vibrance_layout.addWidget(self.btn_vib_plus)
+        controls_layout.addWidget(self.vibrance_label, 1, 0)
+        controls_layout.addWidget(self.btn_vib_minus, 1, 1)
+        controls_layout.addWidget(self.vibrance_slider, 1, 2)
+        controls_layout.addWidget(self.btn_vib_plus, 1, 3)
         
-        self.vibrance_widget = QWidget()
-        self.vibrance_widget.setLayout(self.vibrance_layout)
-        self.vibrance_widget.hide()
-        controls_layout.addWidget(self.vibrance_widget)
+        self.vibrance_widgets = [self.vibrance_label, self.btn_vib_minus, self.vibrance_slider, self.btn_vib_plus]
+        for w in self.vibrance_widgets:
+            w.hide()
 
         # Pomodoro Timer UI
         self.pomo_widget = QWidget()
@@ -771,8 +777,9 @@ class RGBControllerApp(QMainWindow):
         pomo_layout.addLayout(btn_pomo_layout)
         
         self.pomo_widget.hide()
-        controls_layout.addWidget(self.pomo_widget)
-        speed_layout = QHBoxLayout()
+        controls_layout.addWidget(self.pomo_widget, 2, 0, 1, 4)
+
+        # Row 3: Speed
         self.speed_label = QLabel('Animation Speed: 20%')
         self.speed_label.setFixedWidth(180)
         self.btn_speed_minus = QPushButton()
@@ -793,38 +800,79 @@ class RGBControllerApp(QMainWindow):
         self.btn_speed_plus.setStyleSheet(icon_css)
         self.btn_speed_plus.setCursor(Qt.PointingHandCursor)
         self.btn_speed_plus.clicked.connect(lambda: self.speed_slider.set_animated_value(min(100, self.speed_slider.value() + 5)))
-        speed_layout.addWidget(self.speed_label)
-        speed_layout.addWidget(self.btn_speed_minus)
-        speed_layout.addWidget(self.speed_slider, stretch=1)
-        speed_layout.addWidget(self.btn_speed_plus)
+        controls_layout.addWidget(self.speed_label, 3, 0)
+        controls_layout.addWidget(self.btn_speed_minus, 3, 1)
+        controls_layout.addWidget(self.speed_slider, 3, 2)
+        controls_layout.addWidget(self.btn_speed_plus, 3, 3)
         
-        self.speed_widget = QWidget()
-        self.speed_widget.setLayout(speed_layout)
-        controls_layout.addWidget(self.speed_widget)
+        self.speed_widgets = [self.speed_label, self.btn_speed_minus, self.speed_slider, self.btn_speed_plus]
         
         # Random mode removed — related controls were deleted
         
-        self.ambient_speed_layout = QHBoxLayout()
-        self.ambient_speed_layout.setContentsMargins(145, 0, 0, 0) # align with slider
-        from PySide6.QtWidgets import QRadioButton, QButtonGroup
-        self.radio_slow = QRadioButton("Slow (Smooth)")
-        self.radio_slow.setStyleSheet("color: white;")
-        self.radio_fast = QRadioButton("Fast (Responsive)")
-        self.radio_fast.setStyleSheet("color: white;")
-        self.radio_slow.setChecked(True)
-        self.ambient_speed_group = QButtonGroup()
-        self.ambient_speed_group.addButton(self.radio_slow)
-        self.ambient_speed_group.addButton(self.radio_fast)
-        self.ambient_speed_layout.addWidget(self.radio_slow)
-        self.ambient_speed_layout.addWidget(self.radio_fast)
-        self.ambient_speed_layout.addStretch()
-        self.ambient_speed_widget = QWidget()
-        self.ambient_speed_widget.setLayout(self.ambient_speed_layout)
-        self.ambient_speed_widget.hide()
-        controls_layout.addWidget(self.ambient_speed_widget)
+        self.ambient_fps_layout = QHBoxLayout()
+        self.ambient_fps_label = QLabel('Ambient FPS: 30')
+        self.ambient_fps_label.setFixedWidth(180)
+        self.btn_ambient_fps_minus = QPushButton()
+        self.btn_ambient_fps_minus.setIcon(QIcon(minus_icon_path))
+        self.btn_ambient_fps_minus.setFixedSize(24, 24)
+        self.btn_ambient_fps_minus.setStyleSheet(icon_css)
+        self.btn_ambient_fps_minus.setCursor(Qt.PointingHandCursor)
+        self.btn_ambient_fps_minus.clicked.connect(lambda: self.ambient_fps_slider.set_animated_value(max(5, self.ambient_fps_slider.value() - 5)))
+        self.ambient_fps_slider = AnimatedSlider(Qt.Horizontal)
+        self.ambient_fps_slider.setRange(5, 60)
+        self.ambient_fps_slider.setValue(30)
+        self.ambient_fps_slider.setTickPosition(QSlider.TicksBelow)
+        self.ambient_fps_slider.setTickInterval(5)
+        self.ambient_fps_slider.valueChanged.connect(self.on_ambient_fps_changed)
+        self.btn_ambient_fps_plus = QPushButton()
+        self.btn_ambient_fps_plus.setIcon(QIcon(plus_icon_path))
+        self.btn_ambient_fps_plus.setFixedSize(24, 24)
+        self.btn_ambient_fps_plus.setStyleSheet(icon_css)
+        self.btn_ambient_fps_plus.setCursor(Qt.PointingHandCursor)
+        self.btn_ambient_fps_plus.clicked.connect(lambda: self.ambient_fps_slider.set_animated_value(min(60, self.ambient_fps_slider.value() + 5)))
+        controls_layout.addWidget(self.ambient_fps_label, 4, 0)
+        controls_layout.addWidget(self.btn_ambient_fps_minus, 4, 1)
+        controls_layout.addWidget(self.ambient_fps_slider, 4, 2)
+        controls_layout.addWidget(self.btn_ambient_fps_plus, 4, 3)
+        
+        self.ambient_fps_widgets = [self.ambient_fps_label, self.btn_ambient_fps_minus, self.ambient_fps_slider, self.btn_ambient_fps_plus]
+        for w in self.ambient_fps_widgets:
+            w.hide()
+
+        # Row 5: Flicker Reduction (Audio Visualizer)
+        self.flicker_label = QLabel('Flicker Reduction: 0')
+        self.flicker_label.setFixedWidth(180)
+        self.btn_flicker_minus = QPushButton()
+        self.btn_flicker_minus.setIcon(QIcon(minus_icon_path))
+        self.btn_flicker_minus.setFixedSize(24, 24)
+        self.btn_flicker_minus.setStyleSheet(icon_css)
+        self.btn_flicker_minus.setCursor(Qt.PointingHandCursor)
+        self.btn_flicker_minus.clicked.connect(lambda: self.flicker_slider.set_animated_value(max(0, self.flicker_slider.value() - 5)))
+        self.flicker_slider = AnimatedSlider(Qt.Horizontal)
+        self.flicker_slider.setRange(0, 50)
+        self.flicker_slider.setValue(0)
+        self.flicker_slider.setTickPosition(QSlider.TicksBelow)
+        self.flicker_slider.setTickInterval(5)
+        self.flicker_slider.valueChanged.connect(self.on_flicker_changed)
+        self.btn_flicker_plus = QPushButton()
+        self.btn_flicker_plus.setIcon(QIcon(plus_icon_path))
+        self.btn_flicker_plus.setFixedSize(24, 24)
+        self.btn_flicker_plus.setStyleSheet(icon_css)
+        self.btn_flicker_plus.setCursor(Qt.PointingHandCursor)
+        self.btn_flicker_plus.clicked.connect(lambda: self.flicker_slider.set_animated_value(min(50, self.flicker_slider.value() + 5)))
+        controls_layout.addWidget(self.flicker_label, 5, 0)
+        controls_layout.addWidget(self.btn_flicker_minus, 5, 1)
+        controls_layout.addWidget(self.flicker_slider, 5, 2)
+        controls_layout.addWidget(self.btn_flicker_plus, 5, 3)
+
+        self.flicker_widgets = [self.flicker_label, self.btn_flicker_minus, self.flicker_slider, self.btn_flicker_plus]
+        for w in self.flicker_widgets:
+            w.hide()
+
 
         left_layout.addWidget(controls_group)
         self.colors_group = QGroupBox('Zone Colors')
+        self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
         colors_layout = QGridLayout(self.colors_group)
         colors_layout.setSpacing(10)
         self.zone_colors = [[255, 252, 247], [255, 252, 247], [255, 252, 247], [255, 252, 247]]
@@ -845,7 +893,7 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
@@ -1456,11 +1504,13 @@ class RGBControllerApp(QMainWindow):
             is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)')
             self.colors_group.setEnabled(is_zones_enabled)
             if is_zones_enabled:
-                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
+                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
             else:
-                self.colors_group.setStyleSheet('QGroupBox { color: #555555; }')
+                self.colors_group.setStyleSheet('QGroupBox { color: #555555; font-size: 16px; font-weight: bold; }')
             is_speed_enabled = mode_name not in ['Off', 'Static', '[Beta] CPU Temperature', 'Ambient Screen Color']
-            self.speed_widget.setEnabled(is_speed_enabled)
+            for w in self.speed_widgets:
+                w.setEnabled(is_speed_enabled)
+                
             self.speed_label.setStyleSheet('color: #E2E2E2;' if is_speed_enabled else 'color: #555555;')
             
             is_bright_enabled = (mode_name not in self.SOFTWARE_MODES and mode_name != 'Off') or 'Scanner' in mode_name
@@ -1477,41 +1527,45 @@ class RGBControllerApp(QMainWindow):
             
             if mode_name == 'Ambient Screen Color':
                 # Show vibrance slider only in Ambient Screen Color mode
-                self.vibrance_widget.show()
-                self.speed_widget.hide()
-                self.ambient_speed_widget.show()
+                for w in self.vibrance_widgets: w.show()
+                for w in self.speed_widgets: w.hide()
+                for w in self.ambient_fps_widgets: w.show()
+                for w in self.flicker_widgets: w.hide()
             elif 'Live Audio Visualizer' in mode_name:
                 # In Live Audio Visualizer mode, hide vibrance (brightness boost) UI
-                self.vibrance_widget.hide()
+                for w in self.vibrance_widgets: w.hide()
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
                 self.speed_label.setStyleSheet('color: #E2E2E2;')
                 # Make sure the speed control is visible and interactive (it may have been hidden
                 # by Ambient mode). Also hide ambient-only controls.
-                self.speed_widget.show()
-                self.speed_widget.setEnabled(True)
-                self.ambient_speed_widget.hide()
+                for w in self.speed_widgets: 
+                    w.show()
+                    w.setEnabled(True)
+                for w in self.ambient_fps_widgets: w.hide()
+                for w in self.flicker_widgets: w.show()
                 # (random mode removed)
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
-                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; }')
+                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
             else:
                 # Hide vibrance for all other modes
-                self.vibrance_widget.hide()
-                self.speed_widget.show()
-                self.ambient_speed_widget.hide()
+                for w in self.vibrance_widgets: w.hide()
+                for w in self.speed_widgets: w.show()
+                for w in self.ambient_fps_widgets: w.hide()
+                for w in self.flicker_widgets: w.hide()
 
             if mode_name == 'Pomodoro Timer':
                 # Hide all standard controls to isolate timer
-                self.speed_widget.hide()
-                self.bright_widget.hide()
+                for w in self.speed_widgets: w.hide()
+                for w in self.bright_widgets: w.hide()
                 self.pomo_widget.show()
                 # Disable zone color pickers during timer? 
                 # (Plan implies manual colors aren't used for progress calculation)
             else:
-                self.bright_widget.show()
+                for w in self.bright_widgets: w.show()
                 self.pomo_widget.hide()
                 if mode_name != 'Ambient Screen Color':
-                    self.speed_widget.show()
+                    for w in self.speed_widgets: w.show()
             
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
@@ -1576,6 +1630,10 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Fire Flicker Speed: {value}%')
         elif 'Scanner (Cylon)' in mode_name:
             self.speed_label.setText(f'Scanner Sweep Speed: {value}%')
+        elif 'Aurora Borealis' in mode_name:
+            self.speed_label.setText(f'Aurora Shift Speed: {value}%')
+        elif 'Meteor Shower' in mode_name:
+            self.speed_label.setText(f'Meteor Speed: {value}%')
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
@@ -1588,6 +1646,19 @@ class RGBControllerApp(QMainWindow):
         else:
             self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
             # Does not need immediate effect replay - calculates frame by frame
+
+    def on_ambient_fps_changed(self, value):
+        self.ambient_fps_label.setText(f'Ambient FPS: {value}')
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
+        if 'Ambient Screen Color' in mode_name:
+            # Need to update the interval of the timer to reflect the exact new target framerate
+            self.custom_timer.setInterval(1000 // value)
+            
+    def on_flicker_changed(self, value):
+        self.flicker_label.setText(f'Flicker Reduction: {value}')
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
+        if 'Live Audio Visualizer' in mode_name:
+            self.apply_effect()
     def stop_visualizer(self):
         if hasattr(self, 'visualizer_process') and self.visualizer_process:
             try:
@@ -1633,7 +1704,7 @@ class RGBControllerApp(QMainWindow):
                 )
                 sensitivity_val  = str(self.speed_slider.value())
                 smoothness_val   = str(self.bright_slider.value())
-                flicker_val      = str(0)
+                flicker_val      = str(self.flicker_slider.value())
                 # Pass zone colors as individual R G B args for all 4 zones
                 color_args = []
                 for c in self.zone_colors:
@@ -1891,6 +1962,87 @@ class RGBControllerApp(QMainWindow):
                                         target_colors[i * 3] = self.zone_colors[i][0] * intensity
                                         target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
                                         target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
+                            elif 'Aurora Borealis' in mode_name:
+                                smooth_amount = 0.05
+                                brightness = self.bright_slider.value() / 100.0
+                                speed = (self.speed_slider.value() / 100.0) * 0.5 + 0.1
+                                
+                                # Aurora colors: Deep Purples, Teals, and Greens
+                                aurora_hues = [0.45, 0.55, 0.70, 0.85] # Green to Purple
+                                
+                                for i in range(4):
+                                    # Slowly shifting sine wave across time and space
+                                    wave = math.sin(t * speed + (i * 1.5)) * 0.5 + 0.5
+                                    # Slowly shifting hue index
+                                    hue_idx = (t * speed * 0.3 + (i * 0.2)) % len(aurora_hues)
+                                    h1 = aurora_hues[int(hue_idx)]
+                                    h2 = aurora_hues[(int(hue_idx) + 1) % len(aurora_hues)]
+                                    blend = hue_idx - int(hue_idx)
+                                    
+                                    # Interpolate hue
+                                    final_hue = h1 * (1 - blend) + h2 * blend
+                                    r, g, b = colorsys.hsv_to_rgb(final_hue, 1.0, wave * brightness)
+                                    
+                                    target_colors[i * 3] = int(r * 255)
+                                    target_colors[i * 3 + 1] = int(g * 255)
+                                    target_colors[i * 3 + 2] = int(b * 255)
+                            elif 'Meteor Shower' in mode_name:
+                                smooth_amount = 0.8 # Very fast transition
+                                brightness = self.bright_slider.value() / 100.0
+                                
+                                if not hasattr(self, 'meteor_last_tick'):
+                                    self.meteor_last_tick = time.monotonic()
+                                    self.meteor_pos = -1.0
+                                    self.meteor_dir = 1.0
+                                
+                                # Meteor moves fast, with long periods of darkness
+                                # Speed determines how often a meteor strikes
+                                strike_freq = (self.speed_slider.value() / 100.0) * 2.0 + 0.5
+                                
+                                now = time.monotonic()
+                                dt = now - self.meteor_last_tick
+                                self.meteor_last_tick = now
+                                
+                                # Meteor movement
+                                if self.meteor_pos < -2.0 or self.meteor_pos > 5.0:
+                                    # Random chance to spawn a meteor if one isn't active
+                                    if random.random() < strike_freq * dt:
+                                        self.meteor_dir = random.choice([-1.0, 1.0])
+                                        self.meteor_pos = -1.0 if self.meteor_dir == 1.0 else 4.0
+                                else:
+                                    # Move active meteor very fast
+                                    meteor_speed = 15.0 # Units per second
+                                    self.meteor_pos += self.meteor_dir * meteor_speed * dt
+                                
+                                for i in range(4):
+                                    # Calculate distance to meteor head
+                                    dist = self.meteor_dir * (self.meteor_pos - i)
+                                    
+                                    # Default to off
+                                    r, g, b = 0, 0, 0
+                                    
+                                    # Only light up if meteor has passed this zone (forming a tail behind it)
+                                    if dist > 0 and dist < 3.0: 
+                                        # Sharp falloff for the tail
+                                        intensity = max(0.0, 1.0 - (dist / 2.0)**2)
+                                        # Tail transitions from Yellow -> Orange -> Deep Red based on distance
+                                        if dist < 1.0:
+                                            # Yellowish-Orange
+                                            r, g, b = 255, int(200 * (1.0 - dist * 0.5)), 0
+                                        else:
+                                            # Orange to Red fading out
+                                            r, g, b = 255, int(100 * max(0.0, 1.0 - (dist-1.0)/2.0)), 0
+                                            
+                                        # Apply tail fade intensity
+                                        r, g, b = r * intensity, g * intensity, b * intensity
+                                        
+                                    elif dist > -0.5 and dist <= 0:
+                                        # The glowing head leading the meteor (Bright White/Cyan core)
+                                        r, g, b = 255, 255, 200
+                                    
+                                    target_colors[i * 3] = int(r * brightness)
+                                    target_colors[i * 3 + 1] = int(g * brightness)
+                                    target_colors[i * 3 + 2] = int(b * brightness)
                             else:
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
@@ -2004,7 +2156,6 @@ class RGBControllerApp(QMainWindow):
                                                 target_colors[i*3+2] = 248 * f
                                         elif self.pomo_remaining_seconds <= 5:
                                             # Final Countdown (Last 5 Seconds): Smooth pulse every alternate second
-                                            import math
                                             # Sine wave pulse (period 2s)
                                             pulse = 0.5 + 0.5 * math.sin(now * math.pi)
                                             for i in range(4):
@@ -2041,7 +2192,8 @@ class RGBControllerApp(QMainWindow):
                                 else:
                                     if 'Ambient Screen Color' in mode_name:
                                         # Fast mode lowers the smoothing amount so it transitions immediately
-                                        smooth_amount = 0.8 if self.radio_slow.isChecked() else 0.15
+                                        # Calculate smoothing per frame depending on requested update speed
+                                        smooth_amount = max(0.01, min(1.0, 15.0 / self.ambient_fps_slider.value()))
                                         vib_mult = self.vibrance_slider.value() / 10.0
                                         if self.sct:
                                             monitor = self.sct.monitors[1]
