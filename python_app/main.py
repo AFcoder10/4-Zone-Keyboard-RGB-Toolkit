@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "Beta v2"
+CURRENT_VERSION = "Beta 2 v2"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -629,7 +629,7 @@ class RGBControllerApp(QMainWindow):
         controls_layout.setSpacing(15)
         controls_layout.setColumnStretch(2, 1) # Make slider column stretch
         controls_layout.setAlignment(Qt.AlignTop)
-        controls_layout.setRowStretch(6, 1) # Add an empty stretching row at the bottom so contents stay at the top
+        controls_layout.setRowStretch(7, 1) # Add an empty stretching row at the bottom so contents stay at the top
         
         plus_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'plus.svg').replace('\\', '/')
         minus_icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'minus.svg').replace('\\', '/')
@@ -869,6 +869,77 @@ class RGBControllerApp(QMainWindow):
         for w in self.flicker_widgets:
             w.hide()
 
+        # Wave direction toggle (for hardware Wave mode)
+        self.wave_dir_widget = QWidget()
+        wave_dir_layout = QHBoxLayout(self.wave_dir_widget)
+        wave_dir_layout.setContentsMargins(0, 0, 0, 0)
+        wave_dir_layout.setSpacing(6)
+        self.wave_dir_left_btn = QPushButton('Left')
+        self.wave_dir_right_btn = QPushButton('Right')
+        btn_style = (
+            'QPushButton { padding: 6px 10px; min-width: 48px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; }'
+            'QPushButton:hover { background-color: rgba(0, 229, 255, 0.1); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
+        )
+        for btn in (self.wave_dir_left_btn, self.wave_dir_right_btn):
+            btn.setCheckable(True)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setStyleSheet(btn_style)
+        self.wave_dir_left_btn.setChecked(True)
+        self.wave_dir_left_btn.clicked.connect(lambda: self.set_wave_direction('left'))
+        self.wave_dir_right_btn.clicked.connect(lambda: self.set_wave_direction('right'))
+        wave_dir_layout.addWidget(self.wave_dir_left_btn)
+        wave_dir_layout.addWidget(self.wave_dir_right_btn)
+        wave_dir_layout.addStretch()
+        self.wave_dir_widget.hide()
+
+        # Smooth Wave direction toggle (software Smooth Wave)
+        self.smooth_wave_dir_widget = QWidget()
+        smooth_wave_dir_layout = QHBoxLayout(self.smooth_wave_dir_widget)
+        smooth_wave_dir_layout.setContentsMargins(0, 0, 0, 0)
+        smooth_wave_dir_layout.setSpacing(6)
+        self.smooth_wave_dir_left_btn = QPushButton('Left')
+        self.smooth_wave_dir_right_btn = QPushButton('Right')
+        sw_btn_style = (
+            'QPushButton { padding: 6px 10px; min-width: 48px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; }'
+            'QPushButton:hover { background-color: rgba(0, 229, 255, 0.1); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
+        )
+        for btn in (self.smooth_wave_dir_left_btn, self.smooth_wave_dir_right_btn):
+            btn.setCheckable(True)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setStyleSheet(sw_btn_style)
+        self.smooth_wave_dir_left_btn.setChecked(True)
+        self.smooth_wave_dir_left_btn.clicked.connect(lambda: self.set_smooth_wave_direction('left'))
+        self.smooth_wave_dir_right_btn.clicked.connect(lambda: self.set_smooth_wave_direction('right'))
+        smooth_wave_dir_layout.addWidget(self.smooth_wave_dir_left_btn)
+        smooth_wave_dir_layout.addWidget(self.smooth_wave_dir_right_btn)
+        smooth_wave_dir_layout.addStretch()
+        self.smooth_wave_dir_widget.hide()
+
+        # Fill mode toggle (bottom-right for Smooth Wave)
+        self.wave_fill_cb = QPushButton('Fill Mode')
+        self.wave_fill_cb.setCheckable(True)
+        self.wave_fill_cb.setCursor(Qt.PointingHandCursor)
+        self.wave_fill_cb.setStyleSheet(
+            'QPushButton { padding: 6px 12px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-weight: 600; }'
+            'QPushButton:hover { background-color: rgba(0,229,255,0.08); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
+        )
+        self.wave_fill_cb.clicked.connect(self.apply_effect)
+        self.wave_fill_cb.hide()
+
+        # Bottom controls row: wave dirs left, fill toggle right
+        bottom_row = QWidget()
+        bottom_layout = QHBoxLayout(bottom_row)
+        bottom_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_layout.setSpacing(10)
+        bottom_layout.addWidget(self.wave_dir_widget)
+        bottom_layout.addWidget(self.smooth_wave_dir_widget)
+        bottom_layout.addStretch()
+        bottom_layout.addWidget(self.wave_fill_cb)
+        controls_layout.addWidget(bottom_row, 6, 0, 1, 4)
+
 
         left_layout.addWidget(controls_group)
         self.colors_group = QGroupBox('Zone Colors')
@@ -893,18 +964,23 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         left_layout.addWidget(self.colors_group)
-        self.SOFTWARE_MODES = ['Smooth Wave (Left)', 'Smooth Wave (Right)', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
-        self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave (Left)', 'Wave (Right)']
+        self.SOFTWARE_MODES = ['Smooth Wave', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
+        self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave']
+        self.default_control_settings = {
+            'brightness': 100,
+            'speed': 20,
+            'vibrance': 15,
+            'ambient_fps': 30,
+            'flicker': 0,
+        }
+        self.mode_settings = {m: dict(self.default_control_settings) for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)}
+        self.wave_direction = 'left'
+        self.smooth_wave_direction = 'left'
         self.mode_list = QListWidget()
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
-        self.wave_fill_cb = QCheckBox('Fill Mode')
-        self.wave_fill_cb.setStyleSheet('\n            QCheckBox { color: #E2E2E2; font-size: 13px; font-weight: bold; background: transparent; border: none; }\n            QCheckBox::indicator { width: 18px; height: 18px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; }\n            QCheckBox::indicator:checked { background: #00E5FF; }\n        ')
-        self.wave_fill_cb.setCursor(Qt.PointingHandCursor)
-        self.wave_fill_cb.hide()
-        right_layout.addWidget(self.wave_fill_cb)
         
         self.scanner_rainbow_cb = QCheckBox('Rainbow Sweep')
         self.scanner_rainbow_cb.setStyleSheet('\n            QCheckBox { color: #E2E2E2; font-size: 13px; font-weight: bold; background: transparent; border: none; }\n            QCheckBox::indicator { width: 18px; height: 18px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; }\n            QCheckBox::indicator:checked { background: #00E5FF; }\n        ')
@@ -1162,6 +1238,9 @@ class RGBControllerApp(QMainWindow):
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(False)
             self.presets = {}
+            self.mode_settings = {m: dict(self.default_control_settings) for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)}
+            self.wave_direction = 'left'
+            self.smooth_wave_direction = 'left'
             self.update_preset_combos()
             self.minimize_to_tray_cb.blockSignals(False)
             self.launch_on_start_cb.blockSignals(False)
@@ -1195,12 +1274,21 @@ class RGBControllerApp(QMainWindow):
             self.mode_list.blockSignals(True)
             self.bright_slider.blockSignals(True)
             self.speed_slider.blockSignals(True)
-            items = self.mode_list.findItems(p.get('mode', 'Static'), Qt.MatchExactly)
+            preset_mode = p.get('mode', 'Static')
+            if preset_mode in ('Wave (Left)', 'Wave (Right)'):
+                self.wave_direction = 'left' if 'Left' in preset_mode else 'right'
+                preset_mode = 'Wave'
+            if preset_mode in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
+                self.smooth_wave_direction = 'left' if 'Left' in preset_mode else 'right'
+                preset_mode = 'Smooth Wave'
+            items = self.mode_list.findItems(preset_mode, Qt.MatchExactly)
             if items:
                 self.mode_list.setCurrentItem(items[0])
             self.bright_slider.setValue(p.get('brightness', 100))
             self.vibrance_slider.setValue(p.get('vibrance', 15))
             self.speed_slider.setValue(p.get('speed', 20))
+            self.ambient_fps_slider.setValue(p.get('ambient_fps', self.default_control_settings['ambient_fps']))
+            self.flicker_slider.setValue(p.get('flicker', self.default_control_settings['flicker']))
             self.zone_colors = p.get('colors', [[255, 0, 0]] * 4)
             for i in range(4):
                 self.update_button_color(self.color_buttons[i], self.zone_colors[i])
@@ -1209,15 +1297,47 @@ class RGBControllerApp(QMainWindow):
                 self.update_button_color(self.global_color_btn, self.global_color)
             if 'scanner_rainbow' in p:
                 self.scanner_rainbow_cb.setChecked(p['scanner_rainbow'])
+            if 'wave_dir' in p:
+                self.set_wave_direction(p['wave_dir'])
+            else:
+                if p.get('mode') in ('Wave (Left)', 'Wave (Right)'):
+                    self.set_wave_direction('left' if 'Left' in p.get('mode') else 'right')
+            if 'smooth_wave_dir' in p:
+                self.set_smooth_wave_direction(p['smooth_wave_dir'])
+            else:
+                if p.get('mode') in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
+                    self.set_smooth_wave_direction('left' if 'Left' in p.get('mode') else 'right')
+            mode_key = preset_mode
+            self.mode_settings.setdefault(mode_key, dict(self.default_control_settings))
+            self.mode_settings[mode_key].update({
+                'brightness': self.bright_slider.value(),
+                'vibrance': self.vibrance_slider.value(),
+                'speed': self.speed_slider.value(),
+                'ambient_fps': self.ambient_fps_slider.value(),
+                'flicker': self.flicker_slider.value(),
+            })
             self.mode_list.blockSignals(False)
             self.bright_slider.blockSignals(False)
             self.speed_slider.blockSignals(False)
-            self.on_mode_changed(p.get('mode', 'Static'))
+            self.on_mode_changed(preset_mode)
     def save_new_preset(self):
         name, ok = QInputDialog.getText(self, 'Save Preset', 'Enter a name for this preset:')
         if ok and name.strip():
                 name = name.strip()
-                self.presets[name] = {'mode': self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Static', 'brightness': self.bright_slider.value(), 'vibrance': self.vibrance_slider.value(), 'speed': self.speed_slider.value(), 'colors': list(self.zone_colors), 'global_color': list(self.global_color), 'scanner_rainbow': self.scanner_rainbow_cb.isChecked()}
+                current_mode = self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Static'
+                self.presets[name] = {
+                    'mode': current_mode,
+                    'brightness': self.bright_slider.value(),
+                    'vibrance': self.vibrance_slider.value(),
+                    'speed': self.speed_slider.value(),
+                    'ambient_fps': self.ambient_fps_slider.value(),
+                    'flicker': self.flicker_slider.value(),
+                    'colors': list(self.zone_colors),
+                    'global_color': list(self.global_color),
+                    'scanner_rainbow': self.scanner_rainbow_cb.isChecked(),
+                    'wave_dir': self.wave_direction,
+                    'smooth_wave_dir': self.smooth_wave_direction
+                }
                 self.update_preset_combos()
                 self.save_settings()
                 self.preset_combo.setCurrentText(name)
@@ -1269,6 +1389,45 @@ class RGBControllerApp(QMainWindow):
             winreg.CloseKey(key)
         except Exception as e:
             print(f'Failed to modify startup registry: {e}')
+
+    def load_mode_controls(self, mode_name):
+        settings = self.mode_settings.get(mode_name, dict(self.default_control_settings))
+        self.mode_settings.setdefault(mode_name, dict(settings))
+        slider_map = [
+            (self.bright_slider, 'brightness'),
+            (self.vibrance_slider, 'vibrance'),
+            (self.speed_slider, 'speed'),
+            (self.ambient_fps_slider, 'ambient_fps'),
+            (self.flicker_slider, 'flicker'),
+        ]
+        for slider, key in slider_map:
+            if slider is None:
+                continue
+            slider.blockSignals(True)
+            slider.setValue(settings.get(key, self.default_control_settings.get(key, slider.value())))
+            slider.blockSignals(False)
+
+    def update_mode_setting(self, key, value):
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else None
+        if not mode_name:
+            return
+        if mode_name not in self.mode_settings:
+            self.mode_settings[mode_name] = dict(self.default_control_settings)
+        self.mode_settings[mode_name][key] = value
+
+    def set_wave_direction(self, direction):
+        self.wave_direction = direction
+        self.wave_dir_left_btn.setChecked(direction == 'left')
+        self.wave_dir_right_btn.setChecked(direction == 'right')
+        if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Wave':
+            self.apply_effect()
+
+    def set_smooth_wave_direction(self, direction):
+        self.smooth_wave_direction = direction
+        self.smooth_wave_dir_left_btn.setChecked(direction == 'left')
+        self.smooth_wave_dir_right_btn.setChecked(direction == 'right')
+        if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave':
+            self.apply_effect()
     def update_button_color(self, btn, rgb):
         # ***<module>.RGBControllerApp.update_button_color: Failure: Compilation Error
         r, g, b = rgb
@@ -1501,6 +1660,7 @@ class RGBControllerApp(QMainWindow):
         if mode_name is None:
             return
         else:
+            self.load_mode_controls(mode_name)
             is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)')
             self.colors_group.setEnabled(is_zones_enabled)
             if is_zones_enabled:
@@ -1567,6 +1727,18 @@ class RGBControllerApp(QMainWindow):
                 if mode_name != 'Ambient Screen Color':
                     for w in self.speed_widgets: w.show()
             
+            if mode_name == 'Wave':
+                self.wave_dir_widget.show()
+                self.set_wave_direction(self.wave_direction)
+            else:
+                self.wave_dir_widget.hide()
+
+            if mode_name == 'Smooth Wave':
+                self.smooth_wave_dir_widget.show()
+                self.set_smooth_wave_direction(self.smooth_wave_direction)
+            else:
+                self.smooth_wave_dir_widget.hide()
+
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
             elif 'Live Audio Visualizer' in mode_name:
@@ -1618,6 +1790,7 @@ class RGBControllerApp(QMainWindow):
         else:
             self.bright_label.setText(f'Brightness: {value}%')
             self.apply_effect()
+        self.update_mode_setting('brightness', value)
     def on_speed_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Lightning' in mode_name:
@@ -1637,6 +1810,7 @@ class RGBControllerApp(QMainWindow):
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
+        self.update_mode_setting('speed', value)
     # Random mode removed; handler deleted
     def on_vibrance_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
@@ -1646,6 +1820,7 @@ class RGBControllerApp(QMainWindow):
         else:
             self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
             # Does not need immediate effect replay - calculates frame by frame
+        self.update_mode_setting('vibrance', value)
 
     def on_ambient_fps_changed(self, value):
         self.ambient_fps_label.setText(f'Ambient FPS: {value}')
@@ -1653,12 +1828,14 @@ class RGBControllerApp(QMainWindow):
         if 'Ambient Screen Color' in mode_name:
             # Need to update the interval of the timer to reflect the exact new target framerate
             self.custom_timer.setInterval(1000 // value)
+        self.update_mode_setting('ambient_fps', value)
             
     def on_flicker_changed(self, value):
         self.flicker_label.setText(f'Flicker Reduction: {value}')
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
             self.apply_effect()
+        self.update_mode_setting('flicker', value)
     def stop_visualizer(self):
         if hasattr(self, 'visualizer_process') and self.visualizer_process:
             try:
@@ -1755,20 +1932,15 @@ class RGBControllerApp(QMainWindow):
                             self.kb.set_solid_color(0, 0, 0)
                         return
                     effect = 'static'
-                    wave_dir = 'left'
+                    wave_dir = self.wave_direction
                     if 'Breath' in mode_name:
                         effect = 'breath'
                     else:
                         if 'Smooth' in mode_name:
                             effect = 'smooth'
                         else:
-                            if 'Wave (Left)' in mode_name:
+                            if 'Wave' in mode_name:
                                 effect = 'wave'
-                                wave_dir = 'left'
-                            else:
-                                if 'Wave (Right)' in mode_name:
-                                    effect = 'wave'
-                                    wave_dir = 'right'
                     if self.kb:
                         self.kb.set_effect(effect)
                         hw_bright = 1 if self.bright_slider.value() <= 50 else 2
@@ -1819,7 +1991,7 @@ class RGBControllerApp(QMainWindow):
                     if 'Smooth Wave' in mode_name:
                         smooth_amount = 0.1
                         t *= speed_mult
-                        dir_mult = (-0.15) if 'Left' in mode_name else 0.15
+                        dir_mult = (-0.15) if self.smooth_wave_direction == 'left' else 0.15
                         if self.wave_fill_cb.isChecked():
                             total_cycles = int(t)
                             phase = t % 1.0
@@ -1828,7 +2000,7 @@ class RGBControllerApp(QMainWindow):
                             r_prev, g_prev, b_prev = colorsys.hsv_to_rgb(hue_prev, 1.0, 1.0)
                             r_next, g_next, b_next = colorsys.hsv_to_rgb(hue_next, 1.0, 1.0)
                             for i in range(4):
-                                zone_pos = i * 0.25 if 'Right' not in mode_name else (3 - i) * 0.25
+                                zone_pos = i * 0.25 if self.smooth_wave_direction == 'left' else (3 - i) * 0.25
                                 margin = 0.2
                                 diff = phase - zone_pos
                                 if diff >= margin:
