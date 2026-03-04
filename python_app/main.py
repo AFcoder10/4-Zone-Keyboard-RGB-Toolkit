@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "Beta 2 v2"
+CURRENT_VERSION = "v2"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -806,6 +806,36 @@ class RGBControllerApp(QMainWindow):
         controls_layout.addWidget(self.btn_speed_plus, 3, 3)
         
         self.speed_widgets = [self.speed_label, self.btn_speed_minus, self.speed_slider, self.btn_speed_plus]
+
+        # Row 4: Storm Intensity (Lightning)
+        self.storm_label = QLabel('Storm Intensity: 50%')
+        self.storm_label.setFixedWidth(180)
+        self.btn_storm_minus = QPushButton()
+        self.btn_storm_minus.setIcon(QIcon(minus_icon_path))
+        self.btn_storm_minus.setFixedSize(24, 24)
+        self.btn_storm_minus.setStyleSheet(icon_css)
+        self.btn_storm_minus.setCursor(Qt.PointingHandCursor)
+        self.btn_storm_minus.clicked.connect(lambda: self.storm_slider.set_animated_value(max(1, self.storm_slider.value() - 5)))
+        self.storm_slider = AnimatedSlider(Qt.Horizontal)
+        self.storm_slider.setRange(1, 100)
+        self.storm_slider.setValue(50)
+        self.storm_slider.setTickPosition(QSlider.TicksBelow)
+        self.storm_slider.setTickInterval(5)
+        self.storm_slider.valueChanged.connect(self.on_storm_changed)
+        self.btn_storm_plus = QPushButton()
+        self.btn_storm_plus.setIcon(QIcon(plus_icon_path))
+        self.btn_storm_plus.setFixedSize(24, 24)
+        self.btn_storm_plus.setStyleSheet(icon_css)
+        self.btn_storm_plus.setCursor(Qt.PointingHandCursor)
+        self.btn_storm_plus.clicked.connect(lambda: self.storm_slider.set_animated_value(min(100, self.storm_slider.value() + 5)))
+        controls_layout.addWidget(self.storm_label, 4, 0)
+        controls_layout.addWidget(self.btn_storm_minus, 4, 1)
+        controls_layout.addWidget(self.storm_slider, 4, 2)
+        controls_layout.addWidget(self.btn_storm_plus, 4, 3)
+
+        self.storm_widgets = [self.storm_label, self.btn_storm_minus, self.storm_slider, self.btn_storm_plus]
+        for w in self.storm_widgets:
+            w.hide()
         
         # Random mode removed — related controls were deleted
         
@@ -830,16 +860,16 @@ class RGBControllerApp(QMainWindow):
         self.btn_ambient_fps_plus.setStyleSheet(icon_css)
         self.btn_ambient_fps_plus.setCursor(Qt.PointingHandCursor)
         self.btn_ambient_fps_plus.clicked.connect(lambda: self.ambient_fps_slider.set_animated_value(min(60, self.ambient_fps_slider.value() + 5)))
-        controls_layout.addWidget(self.ambient_fps_label, 4, 0)
-        controls_layout.addWidget(self.btn_ambient_fps_minus, 4, 1)
-        controls_layout.addWidget(self.ambient_fps_slider, 4, 2)
-        controls_layout.addWidget(self.btn_ambient_fps_plus, 4, 3)
+        controls_layout.addWidget(self.ambient_fps_label, 5, 0)
+        controls_layout.addWidget(self.btn_ambient_fps_minus, 5, 1)
+        controls_layout.addWidget(self.ambient_fps_slider, 5, 2)
+        controls_layout.addWidget(self.btn_ambient_fps_plus, 5, 3)
         
         self.ambient_fps_widgets = [self.ambient_fps_label, self.btn_ambient_fps_minus, self.ambient_fps_slider, self.btn_ambient_fps_plus]
         for w in self.ambient_fps_widgets:
             w.hide()
 
-        # Row 5: Flicker Reduction (Audio Visualizer)
+        # Row 6: Flicker Reduction (Audio Visualizer)
         self.flicker_label = QLabel('Flicker Reduction: 0')
         self.flicker_label.setFixedWidth(180)
         self.btn_flicker_minus = QPushButton()
@@ -860,10 +890,10 @@ class RGBControllerApp(QMainWindow):
         self.btn_flicker_plus.setStyleSheet(icon_css)
         self.btn_flicker_plus.setCursor(Qt.PointingHandCursor)
         self.btn_flicker_plus.clicked.connect(lambda: self.flicker_slider.set_animated_value(min(50, self.flicker_slider.value() + 5)))
-        controls_layout.addWidget(self.flicker_label, 5, 0)
-        controls_layout.addWidget(self.btn_flicker_minus, 5, 1)
-        controls_layout.addWidget(self.flicker_slider, 5, 2)
-        controls_layout.addWidget(self.btn_flicker_plus, 5, 3)
+        controls_layout.addWidget(self.flicker_label, 6, 0)
+        controls_layout.addWidget(self.btn_flicker_minus, 6, 1)
+        controls_layout.addWidget(self.flicker_slider, 6, 2)
+        controls_layout.addWidget(self.btn_flicker_plus, 6, 3)
 
         self.flicker_widgets = [self.flicker_label, self.btn_flicker_minus, self.flicker_slider, self.btn_flicker_plus]
         for w in self.flicker_widgets:
@@ -917,6 +947,17 @@ class RGBControllerApp(QMainWindow):
         smooth_wave_dir_layout.addStretch()
         self.smooth_wave_dir_widget.hide()
 
+        # Scanner rainbow toggle (placed bottom-left for Scanner mode)
+        self.scanner_rainbow_cb = QPushButton('Rainbow Sweep')
+        self.scanner_rainbow_cb.setCheckable(True)
+        self.scanner_rainbow_cb.setCursor(Qt.PointingHandCursor)
+        self.scanner_rainbow_cb.setStyleSheet(
+            'QPushButton { padding: 6px 12px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; font-weight: 700; }'
+            'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; }'
+        )
+        self.scanner_rainbow_cb.hide()
+
         # Fill mode toggle (bottom-right for Smooth Wave)
         self.wave_fill_cb = QPushButton('Fill Mode')
         self.wave_fill_cb.setCheckable(True)
@@ -934,11 +975,12 @@ class RGBControllerApp(QMainWindow):
         bottom_layout = QHBoxLayout(bottom_row)
         bottom_layout.setContentsMargins(0, 0, 0, 0)
         bottom_layout.setSpacing(10)
+        bottom_layout.addWidget(self.scanner_rainbow_cb)
         bottom_layout.addWidget(self.wave_dir_widget)
         bottom_layout.addWidget(self.smooth_wave_dir_widget)
         bottom_layout.addStretch()
         bottom_layout.addWidget(self.wave_fill_cb)
-        controls_layout.addWidget(bottom_row, 6, 0, 1, 4)
+        controls_layout.addWidget(bottom_row, 7, 0, 1, 4)
 
 
         left_layout.addWidget(controls_group)
@@ -969,6 +1011,7 @@ class RGBControllerApp(QMainWindow):
         self.default_control_settings = {
             'brightness': 100,
             'speed': 20,
+            'storm_intensity': 50,
             'vibrance': 15,
             'ambient_fps': 30,
             'flicker': 0,
@@ -982,11 +1025,6 @@ class RGBControllerApp(QMainWindow):
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
         
-        self.scanner_rainbow_cb = QCheckBox('Rainbow Sweep')
-        self.scanner_rainbow_cb.setStyleSheet('\n            QCheckBox { color: #E2E2E2; font-size: 13px; font-weight: bold; background: transparent; border: none; }\n            QCheckBox::indicator { width: 18px; height: 18px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; }\n            QCheckBox::indicator:checked { background: #00E5FF; }\n        ')
-        self.scanner_rainbow_cb.setCursor(Qt.PointingHandCursor)
-        self.scanner_rainbow_cb.hide()
-        right_layout.addWidget(self.scanner_rainbow_cb)
         self.presets = {}
         preset_group = QGroupBox('Custom Presets')
         preset_layout = QHBoxLayout(preset_group)
@@ -1015,6 +1053,10 @@ class RGBControllerApp(QMainWindow):
         self.visualizer_process = None
         self.custom_timer = QTimer(self)
         self.custom_timer.timeout.connect(self.update_custom_effects)
+        self.timer_interval_active_ms = 33
+        self.timer_interval_idle_ms = 90
+        self.current_timer_base_ms = self.timer_interval_active_ms
+        self.is_window_active = True
         self.custom_colors = [0] * 12
         self.transition_ticks = 0
         self.last_activity = time.monotonic()
@@ -1248,6 +1290,7 @@ class RGBControllerApp(QMainWindow):
             self.bright_slider.setValue(100)
             self.vibrance_slider.setValue(15)
             self.speed_slider.setValue(20)
+            self.storm_slider.setValue(50)
             self.mode_list.setCurrentRow(0)
             items = self.mode_list.findItems('Static', Qt.MatchExactly)
             if items:
@@ -1287,6 +1330,7 @@ class RGBControllerApp(QMainWindow):
             self.bright_slider.setValue(p.get('brightness', 100))
             self.vibrance_slider.setValue(p.get('vibrance', 15))
             self.speed_slider.setValue(p.get('speed', 20))
+            self.storm_slider.setValue(p.get('storm_intensity', self.default_control_settings['storm_intensity']))
             self.ambient_fps_slider.setValue(p.get('ambient_fps', self.default_control_settings['ambient_fps']))
             self.flicker_slider.setValue(p.get('flicker', self.default_control_settings['flicker']))
             self.zone_colors = p.get('colors', [[255, 0, 0]] * 4)
@@ -1313,6 +1357,7 @@ class RGBControllerApp(QMainWindow):
                 'brightness': self.bright_slider.value(),
                 'vibrance': self.vibrance_slider.value(),
                 'speed': self.speed_slider.value(),
+                'storm_intensity': self.storm_slider.value(),
                 'ambient_fps': self.ambient_fps_slider.value(),
                 'flicker': self.flicker_slider.value(),
             })
@@ -1330,6 +1375,7 @@ class RGBControllerApp(QMainWindow):
                     'brightness': self.bright_slider.value(),
                     'vibrance': self.vibrance_slider.value(),
                     'speed': self.speed_slider.value(),
+                    'storm_intensity': self.storm_slider.value(),
                     'ambient_fps': self.ambient_fps_slider.value(),
                     'flicker': self.flicker_slider.value(),
                     'colors': list(self.zone_colors),
@@ -1397,6 +1443,7 @@ class RGBControllerApp(QMainWindow):
             (self.bright_slider, 'brightness'),
             (self.vibrance_slider, 'vibrance'),
             (self.speed_slider, 'speed'),
+            (self.storm_slider, 'storm_intensity'),
             (self.ambient_fps_slider, 'ambient_fps'),
             (self.flicker_slider, 'flicker'),
         ]
@@ -1470,6 +1517,24 @@ class RGBControllerApp(QMainWindow):
     def restore_app(self):
         self.show()
         self.activateWindow()
+
+    def focusInEvent(self, event):
+        self.is_window_active = True
+        self.update_timer_interval()
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self.is_window_active = False
+        self.update_timer_interval()
+        super().focusOutEvent(event)
+
+    def reset_mode_state(self):
+        self.lightning_strikes = []
+        self.next_lightning_time = 0.0
+        self.party_state = None
+        for attr in ['meteor_last_tick', 'meteor_pos', 'meteor_dir', 'fire_state', 'scanner_pos', 'scanner_dir']:
+            if hasattr(self, attr):
+                delattr(self, attr)
     def tray_quit(self):
         self.force_quit = True
         try:
@@ -1660,6 +1725,9 @@ class RGBControllerApp(QMainWindow):
         if mode_name is None:
             return
         else:
+            if getattr(self, 'current_mode_name', None) != mode_name:
+                self.reset_mode_state()
+            self.current_mode_name = mode_name
             self.load_mode_controls(mode_name)
             is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)')
             self.colors_group.setEnabled(is_zones_enabled)
@@ -1684,6 +1752,12 @@ class RGBControllerApp(QMainWindow):
                 self.bright_slider.setEnabled(is_bright_enabled)
                 self.bright_label.setText(f'Brightness: {self.bright_slider.value()}%')
                 self.bright_label.setStyleSheet('color: #E2E2E2;' if is_bright_enabled else 'color: #555555;')
+
+            if 'Lightning' in mode_name:
+                for w in self.storm_widgets: w.show()
+                self.storm_label.setText(f'Storm Intensity: {self.storm_slider.value()}%')
+            else:
+                for w in self.storm_widgets: w.hide()
             
             if mode_name == 'Ambient Screen Color':
                 # Show vibrance slider only in Ambient Screen Color mode
@@ -1741,6 +1815,8 @@ class RGBControllerApp(QMainWindow):
 
             if 'Lightning' in mode_name:
                 self.speed_label.setText(f'Lightning Frequency: {self.speed_slider.value()}%')
+            elif 'Party' in mode_name:
+                self.speed_label.setText(f'Party Tempo: {self.speed_slider.value()}%')
             elif 'Live Audio Visualizer' in mode_name:
                 self.speed_label.setText(f'Visualizer Sensitivity: {self.speed_slider.value()}%')
             elif 'Realistic Fire' in mode_name:
@@ -1795,6 +1871,8 @@ class RGBControllerApp(QMainWindow):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Lightning' in mode_name:
             self.speed_label.setText(f'Lightning Frequency: {value}%')
+        elif 'Party' in mode_name:
+            self.speed_label.setText(f'Party Tempo: {value}%')
         elif 'Starry Night' in mode_name:
             self.speed_label.setText(f'Twinkle Speed: {value}%')
         elif 'Live Audio Visualizer' in mode_name:
@@ -1811,6 +1889,11 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.apply_effect()
         self.update_mode_setting('speed', value)
+
+    def on_storm_changed(self, value):
+        self.storm_label.setText(f'Storm Intensity: {value}%')
+        self.apply_effect()
+        self.update_mode_setting('storm_intensity', value)
     # Random mode removed; handler deleted
     def on_vibrance_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
@@ -1826,8 +1909,9 @@ class RGBControllerApp(QMainWindow):
         self.ambient_fps_label.setText(f'Ambient FPS: {value}')
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Ambient Screen Color' in mode_name:
-            # Need to update the interval of the timer to reflect the exact new target framerate
-            self.custom_timer.setInterval(1000 // value)
+            # Update timer to reflect the exact new target framerate
+            self.current_timer_base_ms = self.compute_base_timer_interval(mode_name)
+            self.update_timer_interval()
         self.update_mode_setting('ambient_fps', value)
             
     def on_flicker_changed(self, value):
@@ -1922,8 +2006,10 @@ class RGBControllerApp(QMainWindow):
                         self.kb.set_effect('static')
                         self.kb.set_brightness(2)
                     if 'Ambient Screen Color' in mode_name and HAS_MSS:
-                            self.sct = mss.mss()
-                    self.custom_timer.start(33)
+                        self.sct = mss.mss()
+                    base_interval = self.compute_base_timer_interval(mode_name)
+                    self.current_timer_base_ms = base_interval
+                    self.custom_timer.start(self.get_effective_timer_interval())
                     return
                 else:
                     if mode_name == 'Off':
@@ -1954,6 +2040,22 @@ class RGBControllerApp(QMainWindow):
                         for c in self.zone_colors:
                             flat_colors.extend([int(c[0] * b_mult), int(c[1] * b_mult), int(c[2] * b_mult)])
                         self.kb.set_colors(flat_colors)
+    def compute_base_timer_interval(self, mode_name):
+        if 'Ambient Screen Color' in mode_name:
+            fps = max(1, self.ambient_fps_slider.value())
+            return max(5, 1000 // fps)
+        return self.timer_interval_active_ms
+
+    def get_effective_timer_interval(self, base=None):
+        base_interval = base if base is not None else (self.current_timer_base_ms or self.timer_interval_active_ms)
+        if self.is_window_active:
+            return int(base_interval)
+        return int(max(base_interval * 2.5, base_interval + 50, self.timer_interval_idle_ms))
+
+    def update_timer_interval(self):
+        if self.custom_timer.isActive():
+            self.custom_timer.setInterval(self.get_effective_timer_interval())
+
     def get_cpu_temp(self):
         temp = 40.0
         if not HAS_WMI:
@@ -2027,44 +2129,237 @@ class RGBControllerApp(QMainWindow):
                         if 'Lightning' in mode_name:
                             if not hasattr(self, 'lightning_strikes'):
                                 self.lightning_strikes = []
+                            if not hasattr(self, 'next_lightning_time'):
+                                self.next_lightning_time = 0.0
+
+                            speed_factor = max(0.2, self.speed_slider.value() / 100.0)
+                            storm_factor = max(0.05, self.storm_slider.value() / 100.0) if hasattr(self, 'storm_slider') else 0.5
+
+                            storm_wave = 0.35 + 0.15 * math.sin(t * 0.6)
+                            base_r = 4 + int(6 * storm_wave)
+                            base_g = 9 + int(14 * storm_wave)
+                            base_b = 24 + int(32 * storm_wave)
                             for i in range(4):
-                                target_colors[i * 3] = 4
-                                target_colors[i * 3 + 1] = 8
-                                target_colors[i * 3 + 2] = 25
-                            if len(self.lightning_strikes) == 0 and random.random() < 0.04 * speed_mult:
-                                    num_strikes = random.choice([1, 2])
-                                    zones = random.sample(range(4), num_strikes)
-                                    for z in zones:
-                                        duration_ticks = random.randint(1, 6)
-                                        if random.random() > 0.4:
-                                            color = [255, 255, 255]
-                                        else:
-                                            color = [80, 200, 255]
-                                        self.lightning_strikes.append({'zone': z, 'color': color, 'life': duration_ticks})
-                            smooth_amount = 0.92
+                                target_colors[i * 3] = base_r
+                                target_colors[i * 3 + 1] = base_g
+                                target_colors[i * 3 + 2] = base_b
+
+                            if t >= self.next_lightning_time:
+                                spawn_chance = (0.35 + 0.55 * speed_factor) * (0.5 + 1.5 * storm_factor)
+                                spawn_chance = min(0.98, spawn_chance)
+                                if random.random() < spawn_chance:
+                                    primary_zone = random.randrange(4)
+
+                                    strike_type = 'small'
+                                    r = random.random()
+                                    if r > 0.85:
+                                        strike_type = 'huge'
+                                    elif r > 0.45:
+                                        strike_type = 'medium'
+
+                                    if strike_type == 'small':
+                                        branch_count = random.choice([1, 1, 2])
+                                        pre_ticks = random.randint(1, 2)
+                                        flash_ticks = random.randint(1, 2)
+                                        flicker_ticks = random.randint(1, 3)
+                                        after_ticks = random.randint(4, 10)
+                                        bleed_mult = 0.14
+                                        colors = {
+                                            'main': [235, 245, 255],
+                                            'pre': [80, 130, 200],
+                                            'after': [45, 130, 245]
+                                        }
+                                    elif strike_type == 'medium':
+                                        branch_count = random.choice([1, 2, 2, 3])
+                                        pre_ticks = random.randint(2, 3)
+                                        flash_ticks = random.randint(2, 4)
+                                        flicker_ticks = random.randint(3, 6)
+                                        after_ticks = random.randint(8, 18)
+                                        bleed_mult = 0.2
+                                        colors = {
+                                            'main': [255, 255, 255],
+                                            'pre': [95, 150, 215],
+                                            'after': [55, 150, 255]
+                                        }
+                                    else:
+                                        branch_count = random.choice([2, 3, 3, 4])
+                                        pre_ticks = random.randint(3, 5)
+                                        flash_ticks = random.randint(3, 8)
+                                        flicker_ticks = random.randint(6, 14)
+                                        after_ticks = random.randint(15, 40)
+                                        linger_boost = 1.0 + 1.8 * storm_factor
+                                        flash_ticks = max(1, int(round(flash_ticks * linger_boost)))
+                                        flicker_ticks = max(1, int(round(flicker_ticks * linger_boost)))
+                                        after_ticks = max(1, int(round(after_ticks * linger_boost)))
+                                        if random.random() < (0.35 + 0.45 * storm_factor):
+                                            flash_ticks += random.randint(8, 50)
+                                            flicker_ticks += random.randint(10, 60)
+                                            after_ticks += random.randint(10, 50)
+                                        bleed_mult = 0.28
+                                        colors = {
+                                            'main': [255, 255, 255],
+                                            'pre': [110, 175, 235],
+                                            'after': [70, 165, 255]
+                                        }
+
+                                    zones = {primary_zone}
+                                    while len(zones) < branch_count:
+                                        zones.add((primary_zone + random.choice([-1, 1, 2, -2])) % 4)
+
+                                    strike = {
+                                        'zones': list(zones),
+                                        'type': strike_type,
+                                        'stage': 'pre',
+                                        'ticks_left': pre_ticks,
+                                        'flash_ticks': flash_ticks,
+                                        'flicker_ticks': flicker_ticks,
+                                        'after_ticks': after_ticks,
+                                        'after_total': None,
+                                        'main_color': colors['main'],
+                                        'pre_color': colors['pre'],
+                                        'after_color': colors['after'],
+                                        'bleed': bleed_mult
+                                    }
+                                    strike['after_total'] = strike['after_ticks']
+                                    self.lightning_strikes.append(strike)
+
+                                    base_gap = max(0.35, (2.1 - 1.5 * speed_factor) * (1.2 - 0.7 * storm_factor))
+                                    self.next_lightning_time = t + random.uniform(base_gap * 0.6, base_gap * 1.3)
+
+                            smooth_amount = 0.9
                             active_strikes = []
+
                             for strike in self.lightning_strikes:
-                                z = strike['zone']
-                                col = strike['color']
-                                target_colors[z * 3] = col[0]
-                                target_colors[z * 3 + 1] = col[1]
-                                target_colors[z * 3 + 2] = col[2]
-                                smooth_amount = 0.05
-                                strike['life'] -= 1
-                                if strike['life'] > 0:
+                                # Staged strike: pre-flash -> flash -> flicker -> blue afterglow
+                                stage = strike['stage']
+                                color = strike['pre_color']
+                                intensity = 0.3
+
+                                if stage == 'pre':
+                                    intensity = 0.35 + random.random() * 0.25
+                                    strike['ticks_left'] -= 1
+                                    if strike['ticks_left'] <= 0:
+                                        strike['stage'] = 'flash'
+                                        strike['ticks_left'] = strike['flash_ticks']
+                                elif stage == 'flash':
+                                    color = strike['main_color']
+                                    intensity = 1.0
+                                    strike['ticks_left'] -= 1
+                                    if strike['ticks_left'] <= 0:
+                                        strike['stage'] = 'flicker'
+                                        strike['ticks_left'] = strike['flicker_ticks']
+                                elif stage == 'flicker':
+                                    color = [200, 220, 255]
+                                    intensity = random.uniform(0.55, 1.0)
+                                    strike['ticks_left'] -= 1
+                                    if strike['ticks_left'] <= 0:
+                                        strike['stage'] = 'after'
+                                        strike['ticks_left'] = strike['after_ticks']
+                                else:
+                                    color = strike['after_color']
+                                    decay = strike['ticks_left'] / float(strike['after_total'])
+                                    intensity = 0.25 + 0.5 * decay
+                                    strike['ticks_left'] -= 1
+
+                                if stage in ('flash', 'flicker'):
+                                    stage_smooth = 0.05 if strike['type'] != 'huge' else 0.03
+                                else:
+                                    stage_smooth = 0.35 if strike['type'] != 'huge' else 0.3
+                                smooth_amount = min(smooth_amount, stage_smooth)
+
+                                for z in strike['zones']:
+                                    idx = z * 3
+                                    target_colors[idx] = max(target_colors[idx], color[0] * intensity)
+                                    target_colors[idx + 1] = max(target_colors[idx + 1], color[1] * intensity)
+                                    target_colors[idx + 2] = max(target_colors[idx + 2], color[2] * intensity)
+
+                                if stage in ('flash', 'flicker'):
+                                    bleed = strike['bleed'] if stage == 'flash' else strike['bleed'] * 0.55
+                                    for i in range(4):
+                                        idx = i * 3
+                                        target_colors[idx] = max(target_colors[idx], 160 * bleed)
+                                        target_colors[idx + 1] = max(target_colors[idx + 1], 190 * bleed)
+                                        target_colors[idx + 2] = max(target_colors[idx + 2], 255 * bleed)
+
+                                if strike['ticks_left'] > 0:
                                     active_strikes.append(strike)
+
                             self.lightning_strikes = active_strikes
                         else:
                             if 'Party' in mode_name:
-                                smooth_amount = 0.05
-                                if not hasattr(self, 'party_colors') or random.random() < 0.15 * speed_mult:
-                                    self.party_colors = []
-                                    for _ in range(4):
-                                        h = random.random()
-                                        r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
-                                        self.party_colors.extend([r * 255, g * 255, b * 255])
-                                for i in range(12):
-                                    target_colors[i] = self.party_colors[i]
+                                speed_factor = max(0.2, self.speed_slider.value() / 100.0)
+                                bpm = 90 + 120 * speed_factor  # 90–210 BPM mapped to speed
+                                beat_len = 60.0 / bpm
+                                smooth_amount = 0.12
+
+                                if not hasattr(self, 'party_state') or not self.party_state:
+                                    self.party_state = {
+                                        'last_t': t,
+                                        'acc': 0.0,
+                                        'palette': [255, 0, 0] * 4,
+                                        'strobe': 0,
+                                        'zone_pops': [1.0] * 4
+                                    }
+
+                                # Time bookkeeping
+                                dt = max(0.0, t - self.party_state['last_t'])
+                                self.party_state['last_t'] = t
+                                self.party_state['acc'] += dt
+
+                                # Spawn a new beat palette when we cross the beat boundary
+                                while self.party_state['acc'] >= beat_len:
+                                    self.party_state['acc'] -= beat_len
+                                    base_hue = random.random()
+                                    spread = 0.12 + 0.25 * random.random()
+                                    palette = []
+                                    for i in range(4):
+                                        hue = (base_hue + spread * i + random.uniform(-0.05, 0.05)) % 1.0
+                                        sat = 0.8 + 0.2 * random.random()
+                                        val = 0.9 + 0.1 * random.random()
+                                        r, g, b = colorsys.hsv_to_rgb(hue, sat, val)
+                                        palette.extend([r * 255, g * 255, b * 255])
+                                    self.party_state['palette'] = palette
+
+                                    # Chance to trigger a short strobe burst on beat
+                                    if random.random() < 0.18 * speed_factor:
+                                        self.party_state['strobe'] = random.randint(1, 3)
+
+                                # Pulse brightness within the beat (saw wave for pump feel)
+                                beat_phase = self.party_state['acc'] / max(beat_len, 1e-6)
+                                pulse = 0.55 + 0.45 * (1.0 - abs(beat_phase * 2 - 1))
+
+                                # Strobe override when active
+                                if self.party_state['strobe'] > 0:
+                                    smooth_amount = 0.04
+                                    pulse = 1.0
+                                    self.party_state['strobe'] -= 1
+
+                                # Apply palette with pulse and per-zone confetti pops that decay
+                                if 'zone_pops' not in self.party_state:
+                                    self.party_state['zone_pops'] = [1.0] * 4
+                                zone_pops = self.party_state['zone_pops']
+                                decay = 0.82 + 0.12 * speed_factor
+                                max_pop = 1.32
+
+                                for i in range(4):
+                                    base_r = self.party_state['palette'][i * 3]
+                                    base_g = self.party_state['palette'][i * 3 + 1]
+                                    base_b = self.party_state['palette'][i * 3 + 2]
+
+                                    # Decay any prior pop
+                                    zone_pops[i] = 1.0 + (zone_pops[i] - 1.0) * decay
+
+                                    if random.random() < 0.06 * speed_factor:
+                                        zone_pops[i] = max(zone_pops[i], 1.18 + 0.18 * random.random())
+                                        smooth_amount = min(smooth_amount, 0.08)
+
+                                    pop = min(zone_pops[i], max_pop)
+
+                                    target_colors[i * 3] = min(255, base_r * pulse * pop)
+                                    target_colors[i * 3 + 1] = min(255, base_g * pulse * pop)
+                                    target_colors[i * 3 + 2] = min(255, base_b * pulse * pop)
+
+                                self.party_state['zone_pops'] = zone_pops
                             elif 'Realistic Fire' in mode_name:
                                 # Fire flickers intensely and independently per zone
                                 smooth_amount = max(0.01, 0.25 - (self.speed_slider.value() / 100.0) * 0.2)
