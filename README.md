@@ -4,7 +4,7 @@
 
 A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that allows users to fully customize their keyboard lighting configurations dynamically.
 
-## Features (As of v2.0)
+## Features (As of v2.1)
 
 - **Hardware Modes:** Directly control the keyboard's built-in firmware effects including Static, Breath, Smooth, Wave (Left), and Wave (Right).
 - **Advanced Software Engine:** Unlocks custom software-driven effects rendered in real-time, including:
@@ -20,6 +20,8 @@ A modern, highly optimized hardware and software RGB visualization tool specific
   - **Mouse-Reactive Aura:** Keyboard lighting gracefully reacts to your mouse cursor movements across the screen.
   - **Pomodoro Timer:** A dedicated focus timer that uses the keyboard lighting zones as an absolute visual countdown progress bar with fullscreen mode.
   - **Live Audio Visualizer:** A 4-band beat-reactive WASAPI equalizer where each zone pulses to different track frequencies (Sub-Bass, Bass, Mids, Highs).
+    - **New in v2.1 - Color Source Switcher:** Quickly toggle between **Custom Colors** and **Ambient Colors** directly under the Effects menu while staying in Live Audio mode.
+    - **Ambient-in-Window Controls:** When Ambient Colors is selected, the Zone Colors panel is replaced in-place with ambient controls (Vibrance + FPS) for a cleaner workflow.
 - **Intelligent Performance Optimization:**
   - Automatic FPS throttling when window loses focus to reduce CPU usage
   - Adaptive timer intervals based on current effect requirements

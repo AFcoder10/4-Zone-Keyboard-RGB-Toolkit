@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2"
+CURRENT_VERSION = "v2.1"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -614,6 +614,7 @@ class RGBControllerApp(QMainWindow):
         left_layout.setSpacing(15)
         right_layout = QVBoxLayout()
         right_layout.setSpacing(15)
+        self.effects_panel_spacing = right_layout.spacing()
         split_layout.addLayout(left_layout, stretch=2)
         split_layout.addLayout(right_layout, stretch=1)
         main_layout.addLayout(split_layout)
@@ -982,12 +983,53 @@ class RGBControllerApp(QMainWindow):
         bottom_layout.addWidget(self.wave_fill_cb)
         controls_layout.addWidget(bottom_row, 7, 0, 1, 4)
 
-
         left_layout.addWidget(controls_group)
+        
+        # ─── Visualizer Color Mode Buttons (Under effects list in right panel) ─────────
+        self.visualizer_color_mode_custom = True  # Track which mode is active
+        self.visualizer_buttons_group = QWidget()
+        visualizer_buttons_layout = QHBoxLayout(self.visualizer_buttons_group)
+        visualizer_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        visualizer_buttons_layout.setSpacing(4)
+        
+        self.visualizer_custom_btn = QPushButton('Custom Colors')
+        self.visualizer_custom_btn.setCheckable(True)
+        self.visualizer_custom_btn.setChecked(True)
+        self.visualizer_custom_btn.setCursor(Qt.PointingHandCursor)
+        self.visualizer_custom_btn.setStyleSheet(
+            'QPushButton { padding: 4px 8px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; font-size: 11px; font-weight: 600; }'
+            'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
+        )
+        self.visualizer_custom_btn.setMinimumWidth(0)
+        self.visualizer_custom_btn.setFixedHeight(30)
+        self.visualizer_custom_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.visualizer_custom_btn.clicked.connect(self.switch_to_custom_colors)
+        
+        self.visualizer_ambient_btn = QPushButton('Ambient Colors')
+        self.visualizer_ambient_btn.setCheckable(True)
+        self.visualizer_ambient_btn.setCursor(Qt.PointingHandCursor)
+        self.visualizer_ambient_btn.setStyleSheet(
+            'QPushButton { padding: 4px 8px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; font-size: 11px; font-weight: 600; }'
+            'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
+        )
+        self.visualizer_ambient_btn.setMinimumWidth(0)
+        self.visualizer_ambient_btn.setFixedHeight(30)
+        self.visualizer_ambient_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.visualizer_ambient_btn.clicked.connect(self.switch_to_ambient_colors)
+        
+        visualizer_buttons_layout.addWidget(self.visualizer_custom_btn, 1)
+        visualizer_buttons_layout.addWidget(self.visualizer_ambient_btn, 1)
+        
+        # Hide buttons by default (only show in Live Audio Visualizer mode)
+        self.visualizer_buttons_group.hide()
+        
         self.colors_group = QGroupBox('Zone Colors')
         self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
         colors_layout = QGridLayout(self.colors_group)
         colors_layout.setSpacing(10)
+        
         self.zone_colors = [[255, 252, 247], [255, 252, 247], [255, 252, 247], [255, 252, 247]]
         self.color_buttons = []
         for i in range(4):
@@ -1005,6 +1047,52 @@ class RGBControllerApp(QMainWindow):
         self.update_button_color(self.global_color_btn, self.global_color)
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
+        
+        # ─── Ambient Controls Widget for Visualizer ───────────────────────────────────
+        self.visualizer_ambient_controls = QWidget()
+        ambient_controls_layout = QVBoxLayout(self.visualizer_ambient_controls)
+        ambient_controls_layout.setContentsMargins(0, 0, 0, 0)
+        ambient_controls_layout.setSpacing(10)
+        
+        # Vibrance control for visualizer ambient mode
+        vibrance_row = QHBoxLayout()
+        vibrance_row.setSpacing(5)
+        visualizer_vib_label = QLabel('Vibrance:')
+        visualizer_vib_label.setFixedWidth(80)
+        visualizer_vib_slider = AnimatedSlider(Qt.Horizontal)
+        visualizer_vib_slider.setRange(5, 30)
+        visualizer_vib_slider.setValue(self.vibrance_slider.value())
+        visualizer_vib_slider.setTickPosition(QSlider.TicksBelow)
+        visualizer_vib_slider.setTickInterval(5)
+        visualizer_vib_slider.valueChanged.connect(lambda val: self.vibrance_slider.setValue(val))
+        self.vibrance_slider.valueChanged.connect(lambda val: visualizer_vib_slider.setValue(val))
+        vibrance_row.addWidget(visualizer_vib_label)
+        vibrance_row.addWidget(visualizer_vib_slider)
+        ambient_controls_layout.addLayout(vibrance_row)
+        
+        # FPS control for visualizer ambient mode
+        fps_row = QHBoxLayout()
+        fps_row.setSpacing(5)
+        visualizer_fps_label = QLabel('FPS:')
+        visualizer_fps_label.setFixedWidth(80)
+        visualizer_fps_slider = AnimatedSlider(Qt.Horizontal)
+        visualizer_fps_slider.setRange(1, 60)
+        visualizer_fps_slider.setValue(self.ambient_fps_slider.value())
+        visualizer_fps_slider.setTickPosition(QSlider.TicksBelow)
+        visualizer_fps_slider.setTickInterval(10)
+        visualizer_fps_slider.valueChanged.connect(lambda val: self.ambient_fps_slider.setValue(val))
+        self.ambient_fps_slider.valueChanged.connect(lambda val: visualizer_fps_slider.setValue(val))
+        fps_row.addWidget(visualizer_fps_label)
+        fps_row.addWidget(visualizer_fps_slider)
+        ambient_controls_layout.addLayout(fps_row)
+
+        # Keep ambient controls inside the Zone Colors container so this view
+        # replaces the color pickers in-place.
+        colors_layout.addWidget(self.visualizer_ambient_controls, 0, 0, 2, 4)
+        
+        # Hide ambient controls by default
+        self.visualizer_ambient_controls.hide()
+        
         left_layout.addWidget(self.colors_group)
         self.SOFTWARE_MODES = ['Smooth Wave', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave']
@@ -1024,6 +1112,13 @@ class RGBControllerApp(QMainWindow):
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
+        # Live Audio mode uses a compact effects list so the visualizer color
+        # mode buttons can sit directly below by shrinking only the needed amount.
+        self.mode_list_default_min_height = self.mode_list.minimumHeight()
+        self.mode_list_default_max_height = self.mode_list.maximumHeight()
+        self.is_live_audio_menu_compact = False
+        self.visualizer_buttons_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        right_layout.addWidget(self.visualizer_buttons_group)
         
         self.presets = {}
         preset_group = QGroupBox('Custom Presets')
@@ -1509,6 +1604,55 @@ class RGBControllerApp(QMainWindow):
                 self.custom_colors[i * 3 + 2] = b
                 self.update_button_color(self.color_buttons[i], [r, g, b])
             self.apply_effect()
+    
+    def switch_to_custom_colors(self):
+        """Switch to custom zone colors mode in Live Audio Visualizer"""
+        self.visualizer_color_mode_custom = True
+        self.visualizer_custom_btn.setChecked(True)
+        self.visualizer_ambient_btn.setChecked(False)
+        # Show zone colors, hide ambient controls
+        for btn in self.color_buttons:
+            btn.show()
+        self.global_color_btn.show()
+        self.visualizer_ambient_controls.hide()
+    
+    def switch_to_ambient_colors(self):
+        """Switch to ambient screen color mode in Live Audio Visualizer"""
+        self.visualizer_color_mode_custom = False
+        self.visualizer_custom_btn.setChecked(False)
+        self.visualizer_ambient_btn.setChecked(True)
+        # Hide zone colors, show ambient controls
+        for btn in self.color_buttons:
+            btn.hide()
+        self.global_color_btn.hide()
+        self.visualizer_ambient_controls.show()
+
+    def set_live_audio_menu_compact(self, compact: bool):
+        """Shorten effects list just enough to fit visualizer mode buttons below it."""
+        if compact:
+            if self.is_live_audio_menu_compact:
+                return
+            full_height = self.mode_list.height()
+            if full_height <= 1:
+                row_h = self.mode_list.sizeHintForRow(0)
+                if row_h <= 0:
+                    row_h = 34
+                # Estimate visible list height if layout hasn't settled yet.
+                full_height = min(480, row_h * self.mode_list.count() + 2 * self.mode_list.frameWidth() + 8)
+
+            buttons_h = self.visualizer_buttons_group.sizeHint().height()
+            compact_height = max(140, full_height - buttons_h - self.effects_panel_spacing)
+            self.mode_list.setMinimumHeight(compact_height)
+            self.mode_list.setMaximumHeight(compact_height)
+            self.is_live_audio_menu_compact = True
+            return
+
+        if not self.is_live_audio_menu_compact:
+            return
+        self.mode_list.setMinimumHeight(self.mode_list_default_min_height)
+        self.mode_list.setMaximumHeight(self.mode_list_default_max_height)
+        self.is_live_audio_menu_compact = False
+    
     def minimize_app(self):
         if self.minimize_to_tray_cb.isChecked():
             self.hide()
@@ -1781,12 +1925,27 @@ class RGBControllerApp(QMainWindow):
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
                 self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
+                
+                # ─── Show visualizer color mode buttons ─────────────────────────
+                self.visualizer_buttons_group.show()
+                self.set_live_audio_menu_compact(True)
+                # Reset to custom colors mode by default
+                self.switch_to_custom_colors()
             else:
                 # Hide vibrance for all other modes
                 for w in self.vibrance_widgets: w.hide()
                 for w in self.speed_widgets: w.show()
                 for w in self.ambient_fps_widgets: w.hide()
                 for w in self.flicker_widgets: w.hide()
+                
+                # ─── Hide visualizer color mode buttons when leaving Live Audio ───
+                self.visualizer_buttons_group.hide()
+                self.set_live_audio_menu_compact(False)
+                # Show zone colors and hide ambient controls when leaving visualizer
+                for btn in self.color_buttons:
+                    btn.show()
+                self.global_color_btn.show()
+                self.visualizer_ambient_controls.hide()
 
             if mode_name == 'Pomodoro Timer':
                 # Hide all standard controls to isolate timer
@@ -1966,6 +2125,11 @@ class RGBControllerApp(QMainWindow):
                 sensitivity_val  = str(self.speed_slider.value())
                 smoothness_val   = str(self.bright_slider.value())
                 flicker_val      = str(self.flicker_slider.value())
+                # Ambient mode flag and settings
+                ambient_mode_val = '1' if not self.visualizer_color_mode_custom else '0'
+                vibrance_val     = str(self.vibrance_slider.value())
+                fps_val          = str(self.ambient_fps_slider.value())
+                
                 # Pass zone colors as individual R G B args for all 4 zones
                 color_args = []
                 for c in self.zone_colors:
@@ -1976,10 +2140,10 @@ class RGBControllerApp(QMainWindow):
                 # frozen executable to run the visualizer code path instead of
                 # attempting to execute a script file.
                 if getattr(sys, 'frozen', False):
-                    cmd = [sys.executable, '--run-visualizer', sensitivity_val, smoothness_val, flicker_val] + color_args
+                    cmd = [sys.executable, '--run-visualizer', sensitivity_val, smoothness_val, flicker_val] + color_args + [ambient_mode_val, vibrance_val, fps_val]
                 else:
                     script_cmd = os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')
-                    cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args
+                    cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args + [ambient_mode_val, vibrance_val, fps_val]
 
                 import threading
                 flags = 0
