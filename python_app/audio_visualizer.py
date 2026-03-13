@@ -9,9 +9,6 @@ CLI args:
   argv[2]      = smoothness   (0–100, higher = smoother decay / less flickery)
   argv[3]      = flicker      (0–100, higher = more averaging)
   argv[4..15]  = zone colors  R G B  R G B  R G B  R G B  (4 zones × 3 values)
-  argv[16]     = ambient_mode (1 = ambient screen color, 0 = custom colors)
-  argv[17]     = vibrance     (5–30, for ambient mode)
-  argv[18]     = fps          (1–60, for ambient mode)
 
 Frequency-to-Zone mapping:
   Zone 0  |  Sub-Bass  20–150 Hz   ← Kick drum, sub-bass
@@ -27,13 +24,6 @@ import collections
 import numpy as np
 import pyaudiowpatch as pyaudio
 from python_controller import L5PKeyboard
-
-try:
-    import mss
-    from PIL import Image
-    HAS_MSS = True
-except ImportError:
-    HAS_MSS = False
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
 CHUNK  = 1024
@@ -143,23 +133,11 @@ class AudioVisualizer:
         else:
             self.zone_colors = [(255, 252, 247) for _ in range(4)]
 
-        # Parse ambient mode settings (argv[16], [17], [18])
-        self.ambient_mode = parse_int_arg(args, 16, 0, 0, 1)
-        self.vibrance = parse_int_arg(args, 17, 15, 5, 30)
-        self.ambient_fps = parse_int_arg(args, 18, 30, 1, 60)
-        
-        self.sct = None  # Screen capture tool for ambient mode
-
         self.ref_levels = [r * slider_to_ref_mult(sensitivity) for r in BASE_REFS]
         # Note: attack_factor, decay_factor, brightness_mult already set above
 
-        mode_str = "Ambient Screen Color" if self.ambient_mode else "Custom Zone Colors"
         print(f"Sensitivity: {sensitivity}%  |  Smoothness: {smoothness}%  |  Brightness Boost: 30%  |  Reduce Flicker: {flicker_raw}% (window={self.flicker_window} frames)")
-        print(f"Mode: {mode_str}")
-        if self.ambient_mode:
-            print(f"Ambient: Vibrance={self.vibrance/10.0:.1f}x  |  FPS={self.ambient_fps}")
-        else:
-            print(f"Zone colors: {self.zone_colors}")
+        print(f"Zone colors: {self.zone_colors}")
 
         # ── Locate WASAPI loopback ────────────────────────────────────────────
         print("Locating WASAPI Loopback Desktop Audio...")
@@ -205,11 +183,6 @@ class AudioVisualizer:
         self.kb = L5PKeyboard()
         self.kb.set_effect('static')
         self.kb.set_brightness(2)   # max HW brightness; SW controls levels
-
-        # ── Screen capture for ambient mode ────────────────────────────────────
-        if self.ambient_mode and HAS_MSS:
-            self.sct = mss.mss()
-            print("Ambient Screen Color mode enabled")
         
         # ── Precomputed FFT data ──────────────────────────────────────────────
         # Create a sample buffer of CHUNK size to compute frequency bins once
@@ -238,58 +211,10 @@ class AudioVisualizer:
         ]
         self.brightness_sums = [0.0] * 4
 
-    def get_ambient_screen_colors(self):
-        """Capture and return dominant colors for each screen quadrant"""
-        if not self.sct or not HAS_MSS:
-            return self.zone_colors
-        
-        try:
-            # Get primary monitor
-            monitor = self.sct.monitors[1]
-            width, height = monitor['width'], monitor['height']
-            
-            # Capture screen
-            screenshot = self.sct.grab(monitor)
-            img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-            
-            # Divide into 4 zones
-            colors = []
-            zone_width = width // 2
-            zone_height = height // 2
-            zones = [
-                (0, 0, zone_width, zone_height),                          # Top-left
-                (zone_width, 0, width, zone_height),                      # Top-right
-                (0, zone_height, zone_width, height),                     # Bottom-left
-                (zone_width, zone_height, width, height),                 # Bottom-right
-            ]
-            
-            for left, top, right, bottom in zones:
-                zone_img = img.crop((left, top, right, bottom))
-                zone_array = np.array(zone_img, dtype=np.uint32)
-                
-                # Calculate average color with vibrance boost
-                avg_color = zone_array.mean(axis=(0, 1)).astype(np.uint8)
-                
-                # Apply vibrance multiplier
-                vibrance_mult = self.vibrance / 10.0
-                color = tuple(min(255, int(c * vibrance_mult)) for c in avg_color[:3])
-                colors.append(color)
-            
-            return colors
-        except Exception as e:
-            print(f"Ambient capture error: {e}")
-            return self.zone_colors
-
     # ──────────────────────────────────────────────────────────────────────────
     def run(self):
         print("\n>>> VISUALIZER RUNNING — PLAY MUSIC! (Ctrl+C to stop) <<<")
         print("Zones: [Sub-Bass] [Bass] [Mids] [Highs]\n")
-
-        # For ambient mode: track frames for FPS-based updates
-        frame_count = 0
-        frames_per_capture = max(1, int(self.rate / (CHUNK * self.ambient_fps))) if self.ambient_mode else 1
-        current_ambient_colors = self.zone_colors
-        last_ambient_capture = 0.0
 
         try:
             while True:
@@ -310,14 +235,8 @@ class AudioVisualizer:
                     # 2. FFT
                     fft_mag = np.abs(np.fft.rfft(audio_data * self.window))
 
-                    # 3. Update ambient colors if needed
-                    now = time.monotonic()
-                    if self.ambient_mode and self.sct:
-                        if now - last_ambient_capture >= 1.0 / self.ambient_fps:
-                            current_ambient_colors = self.get_ambient_screen_colors()
-                            last_ambient_capture = now
-
-                    # 4. Per-band energy + beat detection
+                    # 3. Per-band energy + beat detection
+                    now    = time.monotonic()
                     colors = [0] * 12
 
                     for i in range(4):
@@ -384,8 +303,7 @@ class AudioVisualizer:
 
                         # Apply master brightness boost as final output scaling
                         bv = min(1.0, smoothed_bv * self.brightness_mult)
-                        # Use ambient colors if in ambient mode, otherwise use zone colors
-                        base_r, base_g, base_b = current_ambient_colors[i]
+                        base_r, base_g, base_b = self.zone_colors[i]
                         base_idx = i * 3
                         colors[base_idx] = int(base_r * bv)
                         colors[base_idx + 1] = int(base_g * bv)
@@ -404,8 +322,6 @@ class AudioVisualizer:
             if hasattr(self, 'kb'):
                 self.kb.set_solid_color(0, 0, 255)
                 self.kb.close()
-            if hasattr(self, 'sct') and self.sct:
-                self.sct.close()
             if hasattr(self, 'stream'):
                 self.stream.stop_stream()
                 self.stream.close()

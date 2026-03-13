@@ -2,51 +2,53 @@
 
 ![Preview](assets/preview.png)
 
-A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that allows users to fully customize their keyboard lighting configurations dynamically.
+A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that lets you customize keyboard lighting dynamically.
 
-### Note
-This software is deprecated and the only updates that will happen is on special requests!
+## What's New in v2.2
 
-## Features (As of v2.1)
+- Added an embedded Live Preview panel below Zone Colors with a local On/Off toggle and smooth collapse animation.
+- Live Preview now remembers its last user-selected state between sessions.
+- Live Preview automatically turns off in hardware modes and Live Audio Visualizer mode, then restores when you return to other software effects.
+- Refined the left-side layout so Main Controls, Zone Colors, and preview space stay cleaner and more stable.
+- Reset This Mode now restores the selected effect immediately without an extra popup.
+- Removed the in-app hardware compatibility warning banner for a cleaner main window.
 
-- **Hardware Modes:** Directly control the keyboard's built-in firmware effects including Static, Breath, Smooth, Wave (Left), and Wave (Right).
-- **Advanced Software Engine:** Unlocks custom software-driven effects rendered in real-time, including:
-  - **Smooth Wave (Left / Right):** A sweeping gradient across the keyboard zones with an optional "Fill Mode".
-  - **Lightning (Enhanced):** Ultra-realistic storm simulation with three strike types (small/medium/huge), ambient glow, pre-flash charge, flickering afterglow, and adjustable Storm Intensity control.
-  - **Party (Enhanced):** Beat-synchronized celebration mode with BPM mapping (90-210), palette transitions, pulsing brightness, strobe bursts, and smooth decaying confetti pops.
-  - **Realistic Fire:** Intense, volatile flames flickering across the zones with popping embers and deep red/orange hues.
-  - **Scanner (Cylon):** A bouncing bar of light sweeping left and right across the zones with optional Rainbow Sweep mode (now accessible via bottom-left toggle).
-  - **Aurora Borealis:** Mesmerizing northern lights effect with slowly shifting purples, teals, and greens flowing across zones.
-  - **Meteor Shower:** Fast-moving meteors with glowing heads and fading orange-to-red tails streaking across the keyboard.
-  - **Ambient Screen Color:** Dynamically mirrors the dominant colors of your display directly onto the keyboard with adjustable vibrance and FPS.
-  - **Battery Visualizer:** Shows laptop battery percentage mapped cleanly across the 4 lighting zones from left to right with charging animations.
-  - **Mouse-Reactive Aura:** Keyboard lighting gracefully reacts to your mouse cursor movements across the screen.
-  - **Pomodoro Timer:** A dedicated focus timer that uses the keyboard lighting zones as an absolute visual countdown progress bar with fullscreen mode.
-  - **Live Audio Visualizer:** A 4-band beat-reactive WASAPI equalizer where each zone pulses to different track frequencies (Sub-Bass, Bass, Mids, Highs).
-    - **New in v2.1 - Color Source Switcher:** Quickly toggle between **Custom Colors** and **Ambient Colors** directly under the Effects menu while staying in Live Audio mode.
-    - **Ambient-in-Window Controls:** When Ambient Colors is selected, the Zone Colors panel is replaced in-place with ambient controls (Vibrance + FPS) for a cleaner workflow.
-- **Intelligent Performance Optimization:**
-  - Automatic FPS throttling when window loses focus to reduce CPU usage
-  - Adaptive timer intervals based on current effect requirements
-  - Clean state management that resets effects when switching modes
-- **Custom Presets:** Mix and match modes, speeds, brightness levels, storm intensity, and distinct zone colors, and then save them as named profiles. Switch between limitless configurations with a dropdown.
-- **Micro-Adjustment Controls:** Adjust animation speeds, LED brightness, and storm intensity precisely down to 5% increments without dragging the slider.
-- **Seamless Startup Priority:** Choose exactly what preset profile the software will force-load on boot, seamlessly jumping back into your favorite setup automatically.
-- **Tray & System Integration:** Can run silently in the system tray or cleanly inject itself into the Windows Startup registry sequence.
-- **Safety First:** Gracefully blacks out the keyboard LEDs automatically whenever the software is completely shut down.
+## Features
+
+- **Hardware Modes:** Direct control over the keyboard's built-in firmware effects, including Off, Static, Breath, Smooth, and Wave with selectable direction.
+- **Advanced Software Engine:** Custom software-driven effects rendered in real time, including:
+  - **Smooth Wave:** A sweeping gradient with optional Fill Mode and palette choices: **RGBW**, **Pastel**, and **Custom 4-Color**.
+  - **Lightning:** Staged storm strikes with flicker, afterglow, and adjustable Storm Intensity.
+  - **Party:** Tempo-driven color bursts with pulsing brightness.
+  - **Realistic Fire, Scanner (Cylon), Aurora Borealis, Meteor Shower, Ambient Screen Color, Battery Visualizer, Mouse-Reactive Aura, and Pomodoro Timer.**
+  - **Live Audio Visualizer:** A 4-band WASAPI-driven visualizer that uses your selected zone colors with Sensitivity, Smoothness, and Flicker Reduction controls.
+- **Presets and Mode Memory:**
+  - Import and export custom presets with JSON files.
+  - Remember per-mode settings such as Wave direction, Smooth Wave direction, Fill Mode state, Smooth Wave palette selection, and Scanner Rainbow Sweep.
+  - Restore the last selected mode and preview preference on launch.
+- **Workflow Polish:**
+  - Embedded effect descriptions under the mode list.
+  - Responsive preset toolbar behavior in tighter window widths.
+  - Adaptive control label widths so rows stay aligned across modes.
+  - Zone Colors stay anchored more cleanly while controls change between effects.
+- **Performance and Safety:**
+  - Automatic FPS throttling when the window loses focus.
+  - Cleaner effect state resets when switching modes.
+  - Stronger Live Audio visualizer shutdown fallback handling.
+  - Keyboard LEDs turn off on shutdown.
 
 ## Hardware Compatibility
 
 **Officially Tested & Supported:**
 - Lenovo Legion Series (2020-2024 models)
 - Lenovo LOQ Series
-- *Must have a 4-Zone RGB Keyboard.*
+- Must have a 4-Zone RGB keyboard.
 
-> **⚠️ Note:** Using this software on unsupported hardware (e.g., Per-Key RGB keyboards, or non-Lenovo devices) may result in unexpected behavior, failure to locate the controller, or crashes.
+> Note: Using this software on unsupported hardware, such as per-key RGB keyboards or non-Lenovo devices, may result in unexpected behavior, failure to locate the controller, or crashes.
 
 ## Installation
 
-1. Go to the Releases tab and download the latest version 
+1. Go to the Releases tab and download the latest version.
 
 
 
