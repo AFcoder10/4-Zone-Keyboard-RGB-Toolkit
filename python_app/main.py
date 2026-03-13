@@ -31,7 +31,7 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame, QFileDialog
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread, QPropertyAnimation, QEasingCurve, QVariantAnimation
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter
 import winreg
@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.1"
+CURRENT_VERSION = "v2.2"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -253,29 +253,9 @@ class CustomTitleBar(QWidget):
                 background-color: rgba(0, 229, 255, 0.1);
             }
         ''')
-        self.btn_live_preview = GlowButton('Live Preview')
-        self.btn_live_preview.setFixedHeight(22)
-        self.btn_live_preview.setCursor(Qt.PointingHandCursor)
-        self.btn_live_preview.setStyleSheet('''
-            QPushButton {
-                background: transparent;
-                border: 1px solid rgba(255,255,255,0.3);
-                border-radius: 4px;
-                color: #00E5FF;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 0 10px;
-                margin-bottom: 2px;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 229, 255, 0.1);
-            }
-        ''')
-        self.btn_live_preview.clicked.connect(self.parent.toggle_preview)
         
         self.btn_help.clicked.connect(self.parent.show_help_dialog)
         
-        layout.addWidget(self.btn_live_preview)
         layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -358,20 +338,19 @@ class LogsDialog(FadeDialog):
         except Exception:
             pass
 
-class KeyboardPreviewWindow(FadeDialog):
-    def __init__(self, parent_app):
-        super().__init__(parent_app)
+class KeyboardPreviewWidget(QWidget):
+    def __init__(self, parent_app, parent=None):
+        super().__init__(parent)
         self.parent_app = parent_app
-        self.setWindowTitle('Keyboard Real-Time Preview')
-        self.setFixedSize(400, 100)
-        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.WindowStaysOnTopHint)
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
         self.zone_widgets = []
-        for i in range(4):
-            w = QWidget()
-            w.setStyleSheet("background-color: black; border-radius: 5px; border: 1px solid #333;")
+        for _ in range(4):
+            w = QFrame()
+            w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            w.setMinimumHeight(64)
+            w.setStyleSheet('background-color: black; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);')
             layout.addWidget(w)
             self.zone_widgets.append(w)
         self.timer = QTimer(self)
@@ -383,12 +362,28 @@ class KeyboardPreviewWindow(FadeDialog):
             colors = self.parent_app.custom_colors
             if len(colors) >= 12:
                 for i in range(4):
-                    r = max(0, min(255, int(colors[i*3])))
-                    g = max(0, min(255, int(colors[i*3+1])))
-                    b = max(0, min(255, int(colors[i*3+2])))
-                    self.zone_widgets[i].setStyleSheet(f"background-color: rgb({r},{g},{b}); border-radius: 5px; border: 1px solid #333;")
+                    r = max(0, min(255, int(colors[i * 3])))
+                    g = max(0, min(255, int(colors[i * 3 + 1])))
+                    b = max(0, min(255, int(colors[i * 3 + 2])))
+                    self.zone_widgets[i].setStyleSheet(
+                        f'background-color: rgb({r},{g},{b}); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);'
+                    )
         except Exception:
             pass
+
+
+class KeyboardPreviewWindow(FadeDialog):
+    def __init__(self, parent_app):
+        super().__init__(parent_app)
+        self.parent_app = parent_app
+        self.setWindowTitle('Keyboard Real-Time Preview')
+        self.setFixedSize(400, 100)
+        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.WindowStaysOnTopHint)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(0)
+        self.preview_widget = KeyboardPreviewWidget(parent_app, self)
+        layout.addWidget(self.preview_widget)
 
 
 
@@ -580,57 +575,46 @@ class RGBControllerApp(QMainWindow):
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet('color: #666666; margin-bottom: 12px; font-size: 12px; font-weight: 500; font-family: \'Segoe UI Variable\', sans-serif;')
         main_layout.addWidget(subtitle)
-        self.disclaimer_widget = QWidget()
-        self.disclaimer_widget.setStyleSheet('\n            QWidget {\n                background-color: rgba(255, 170, 0, 0.05);\n                border: 1px solid rgba(255, 170, 0, 0.2);\n                border-radius: 8px;\n            }\n            QLabel { background: transparent; border: none; }\n        ')
-        disclaimer_layout = QHBoxLayout(self.disclaimer_widget)
-        disclaimer_layout.setContentsMargins(10, 8, 10, 8)
-        warn_icon = QLabel('⚠️')
-        warn_icon.setStyleSheet('font-size: 20px; color: #FFAA00;')
-        disclaimer_text_layout = QVBoxLayout()
-        disclaimer_text_layout.setSpacing(2)
-        disclaimer_title = QLabel('Hardware Compatibility Notice')
-        disclaimer_title.setStyleSheet('color: #FFAA00; font-weight: bold; font-size: 13px;')
-        disclaimer_body = QLabel('This software is specifically built and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. Using it on unsupported hardware may result in unexpected behavior.')
-        disclaimer_body.setWordWrap(True)
-        disclaimer_body.setStyleSheet('color: #CCCCCC; font-size: 11px;')
-        self.dnd_checkbox = QCheckBox('Do not show again')
-        self.dnd_checkbox.setStyleSheet('QCheckBox { color: #888888; font-size: 11px; font-weight: 500; background: transparent; border: none; }')
-        self.dnd_checkbox.toggled.connect(self.save_dnd_preference)
-        disclaimer_text_layout.addWidget(disclaimer_title)
-        disclaimer_text_layout.addWidget(disclaimer_body)
-        disclaimer_text_layout.addWidget(self.dnd_checkbox)
-        self.btn_close_disclaimer = QPushButton('✕')
-        self.btn_close_disclaimer.setFixedSize(24, 24)
-        self.btn_close_disclaimer.setCursor(Qt.PointingHandCursor)
-        self.btn_close_disclaimer.setStyleSheet('QPushButton { color: #FFAA00; background: transparent; border: none; font-size: 16px; font-weight: bold; } QPushButton:hover { color: #FFFFFF; background: rgba(255,255,255,0.1); border-radius: 4px; }')
-        self.btn_close_disclaimer.clicked.connect(self.close_disclaimer)
-        disclaimer_layout.addWidget(warn_icon, 0, Qt.AlignTop)
-        disclaimer_layout.addLayout(disclaimer_text_layout, stretch=1)
-        disclaimer_layout.addWidget(self.btn_close_disclaimer, 0, Qt.AlignTop)
-        main_layout.addWidget(self.disclaimer_widget)
         split_layout = QHBoxLayout()
         split_layout.setSpacing(15)
         left_layout = QVBoxLayout()
-        left_layout.setSpacing(15)
+        left_layout.setSpacing(5)
+        # Lift the Main Controls section up by an additional 25px total.
+        left_layout.insertSpacing(0, -25)
         right_layout = QVBoxLayout()
         right_layout.setSpacing(15)
-        self.effects_panel_spacing = right_layout.spacing()
         split_layout.addLayout(left_layout, stretch=2)
         split_layout.addLayout(right_layout, stretch=1)
         main_layout.addLayout(split_layout)
         controls_title = QLabel('Main Controls')
-        controls_title.setStyleSheet('color: #00E5FF; font-weight: bold; font-family: "Segoe UI Variable", "Segoe UI", sans-serif; font-size: 16px; margin-left: 12px; margin-top: 8px;')
+        controls_title.setStyleSheet('color: #00E5FF; font-weight: bold; font-family: "Segoe UI Variable", "Segoe UI", sans-serif; font-size: 16px; margin-left: 12px; margin-top: -2px;')
         left_layout.addWidget(controls_title)
 
         controls_group = QFrame()
         controls_group.setObjectName("MainControlsFrame")
         controls_group.setStyleSheet("QFrame#MainControlsFrame { border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; background-color: rgba(255, 255, 255, 0.02); }")
-        controls_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        controls_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.controls_slot = QWidget()
+        self.controls_slot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.controls_slot.setMinimumHeight(185)
+        controls_slot_layout = QVBoxLayout(self.controls_slot)
+        controls_slot_layout.setContentsMargins(0, 0, 0, 0)
+        controls_slot_layout.setSpacing(0)
+        controls_slot_layout.addWidget(controls_group)
+        controls_slot_layout.addStretch(1)
         controls_layout = QGridLayout(controls_group)
-        controls_layout.setSpacing(15)
+        controls_layout.setHorizontalSpacing(8)
+        controls_layout.setVerticalSpacing(12)
+        controls_layout.setContentsMargins(14, 12, 14, 10)
         controls_layout.setColumnStretch(2, 1) # Make slider column stretch
         controls_layout.setAlignment(Qt.AlignTop)
-        controls_layout.setRowStretch(7, 1) # Add an empty stretching row at the bottom so contents stay at the top
+
+        def add_control_row(row, label, minus_btn, slider, plus_btn):
+            label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+            controls_layout.addWidget(label, row, 0, Qt.AlignVCenter | Qt.AlignLeft)
+            controls_layout.addWidget(minus_btn, row, 1, Qt.AlignVCenter)
+            controls_layout.addWidget(slider, row, 2, Qt.AlignVCenter)
+            controls_layout.addWidget(plus_btn, row, 3, Qt.AlignVCenter)
         
         plus_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'plus.svg').replace('\\', '/')
         minus_icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'minus.svg').replace('\\', '/')
@@ -638,7 +622,6 @@ class RGBControllerApp(QMainWindow):
         
         # Row 0: Brightness
         self.bright_label = QLabel('Brightness: 100%')
-        self.bright_label.setFixedWidth(180)
         self.btn_bright_minus = QPushButton()
         self.btn_bright_minus.setIcon(QIcon(minus_icon_path))
         self.btn_bright_minus.setFixedSize(24, 24)
@@ -657,16 +640,12 @@ class RGBControllerApp(QMainWindow):
         self.btn_bright_plus.setStyleSheet(icon_css)
         self.btn_bright_plus.setCursor(Qt.PointingHandCursor)
         self.btn_bright_plus.clicked.connect(lambda: self.bright_slider.set_animated_value(min(100, self.bright_slider.value() + 5)))
-        controls_layout.addWidget(self.bright_label, 0, 0)
-        controls_layout.addWidget(self.btn_bright_minus, 0, 1)
-        controls_layout.addWidget(self.bright_slider, 0, 2)
-        controls_layout.addWidget(self.btn_bright_plus, 0, 3)
+        add_control_row(0, self.bright_label, self.btn_bright_minus, self.bright_slider, self.btn_bright_plus)
 
         self.bright_widgets = [self.bright_label, self.btn_bright_minus, self.bright_slider, self.btn_bright_plus]
         
         # Row 1: Vibrance
         self.vibrance_label = QLabel('Vibrance: 1.5x')
-        self.vibrance_label.setFixedWidth(180)
         self.btn_vib_minus = QPushButton()
         self.btn_vib_minus.setIcon(QIcon(minus_icon_path))
         self.btn_vib_minus.setFixedSize(24, 24)
@@ -685,10 +664,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_vib_plus.setStyleSheet(icon_css)
         self.btn_vib_plus.setCursor(Qt.PointingHandCursor)
         self.btn_vib_plus.clicked.connect(lambda: self.vibrance_slider.set_animated_value(min(30, self.vibrance_slider.value() + 5)))
-        controls_layout.addWidget(self.vibrance_label, 1, 0)
-        controls_layout.addWidget(self.btn_vib_minus, 1, 1)
-        controls_layout.addWidget(self.vibrance_slider, 1, 2)
-        controls_layout.addWidget(self.btn_vib_plus, 1, 3)
+        add_control_row(1, self.vibrance_label, self.btn_vib_minus, self.vibrance_slider, self.btn_vib_plus)
         
         self.vibrance_widgets = [self.vibrance_label, self.btn_vib_minus, self.vibrance_slider, self.btn_vib_plus]
         for w in self.vibrance_widgets:
@@ -782,7 +758,6 @@ class RGBControllerApp(QMainWindow):
 
         # Row 3: Speed
         self.speed_label = QLabel('Animation Speed: 20%')
-        self.speed_label.setFixedWidth(180)
         self.btn_speed_minus = QPushButton()
         self.btn_speed_minus.setIcon(QIcon(minus_icon_path))
         self.btn_speed_minus.setFixedSize(24, 24)
@@ -801,16 +776,12 @@ class RGBControllerApp(QMainWindow):
         self.btn_speed_plus.setStyleSheet(icon_css)
         self.btn_speed_plus.setCursor(Qt.PointingHandCursor)
         self.btn_speed_plus.clicked.connect(lambda: self.speed_slider.set_animated_value(min(100, self.speed_slider.value() + 5)))
-        controls_layout.addWidget(self.speed_label, 3, 0)
-        controls_layout.addWidget(self.btn_speed_minus, 3, 1)
-        controls_layout.addWidget(self.speed_slider, 3, 2)
-        controls_layout.addWidget(self.btn_speed_plus, 3, 3)
+        add_control_row(3, self.speed_label, self.btn_speed_minus, self.speed_slider, self.btn_speed_plus)
         
         self.speed_widgets = [self.speed_label, self.btn_speed_minus, self.speed_slider, self.btn_speed_plus]
 
         # Row 4: Storm Intensity (Lightning)
         self.storm_label = QLabel('Storm Intensity: 50%')
-        self.storm_label.setFixedWidth(180)
         self.btn_storm_minus = QPushButton()
         self.btn_storm_minus.setIcon(QIcon(minus_icon_path))
         self.btn_storm_minus.setFixedSize(24, 24)
@@ -829,10 +800,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_storm_plus.setStyleSheet(icon_css)
         self.btn_storm_plus.setCursor(Qt.PointingHandCursor)
         self.btn_storm_plus.clicked.connect(lambda: self.storm_slider.set_animated_value(min(100, self.storm_slider.value() + 5)))
-        controls_layout.addWidget(self.storm_label, 4, 0)
-        controls_layout.addWidget(self.btn_storm_minus, 4, 1)
-        controls_layout.addWidget(self.storm_slider, 4, 2)
-        controls_layout.addWidget(self.btn_storm_plus, 4, 3)
+        add_control_row(4, self.storm_label, self.btn_storm_minus, self.storm_slider, self.btn_storm_plus)
 
         self.storm_widgets = [self.storm_label, self.btn_storm_minus, self.storm_slider, self.btn_storm_plus]
         for w in self.storm_widgets:
@@ -842,7 +810,6 @@ class RGBControllerApp(QMainWindow):
         
         self.ambient_fps_layout = QHBoxLayout()
         self.ambient_fps_label = QLabel('Ambient FPS: 30')
-        self.ambient_fps_label.setFixedWidth(180)
         self.btn_ambient_fps_minus = QPushButton()
         self.btn_ambient_fps_minus.setIcon(QIcon(minus_icon_path))
         self.btn_ambient_fps_minus.setFixedSize(24, 24)
@@ -861,10 +828,7 @@ class RGBControllerApp(QMainWindow):
         self.btn_ambient_fps_plus.setStyleSheet(icon_css)
         self.btn_ambient_fps_plus.setCursor(Qt.PointingHandCursor)
         self.btn_ambient_fps_plus.clicked.connect(lambda: self.ambient_fps_slider.set_animated_value(min(60, self.ambient_fps_slider.value() + 5)))
-        controls_layout.addWidget(self.ambient_fps_label, 5, 0)
-        controls_layout.addWidget(self.btn_ambient_fps_minus, 5, 1)
-        controls_layout.addWidget(self.ambient_fps_slider, 5, 2)
-        controls_layout.addWidget(self.btn_ambient_fps_plus, 5, 3)
+        add_control_row(5, self.ambient_fps_label, self.btn_ambient_fps_minus, self.ambient_fps_slider, self.btn_ambient_fps_plus)
         
         self.ambient_fps_widgets = [self.ambient_fps_label, self.btn_ambient_fps_minus, self.ambient_fps_slider, self.btn_ambient_fps_plus]
         for w in self.ambient_fps_widgets:
@@ -872,7 +836,6 @@ class RGBControllerApp(QMainWindow):
 
         # Row 6: Flicker Reduction (Audio Visualizer)
         self.flicker_label = QLabel('Flicker Reduction: 0')
-        self.flicker_label.setFixedWidth(180)
         self.btn_flicker_minus = QPushButton()
         self.btn_flicker_minus.setIcon(QIcon(minus_icon_path))
         self.btn_flicker_minus.setFixedSize(24, 24)
@@ -891,14 +854,21 @@ class RGBControllerApp(QMainWindow):
         self.btn_flicker_plus.setStyleSheet(icon_css)
         self.btn_flicker_plus.setCursor(Qt.PointingHandCursor)
         self.btn_flicker_plus.clicked.connect(lambda: self.flicker_slider.set_animated_value(min(50, self.flicker_slider.value() + 5)))
-        controls_layout.addWidget(self.flicker_label, 6, 0)
-        controls_layout.addWidget(self.btn_flicker_minus, 6, 1)
-        controls_layout.addWidget(self.flicker_slider, 6, 2)
-        controls_layout.addWidget(self.btn_flicker_plus, 6, 3)
+        add_control_row(6, self.flicker_label, self.btn_flicker_minus, self.flicker_slider, self.btn_flicker_plus)
 
         self.flicker_widgets = [self.flicker_label, self.btn_flicker_minus, self.flicker_slider, self.btn_flicker_plus]
         for w in self.flicker_widgets:
             w.hide()
+
+        self.control_value_labels = [
+            self.bright_label,
+            self.vibrance_label,
+            self.speed_label,
+            self.storm_label,
+            self.ambient_fps_label,
+            self.flicker_label,
+        ]
+        self.sync_control_label_widths()
 
         # Wave direction toggle (for hardware Wave mode)
         self.wave_dir_widget = QWidget()
@@ -957,6 +927,7 @@ class RGBControllerApp(QMainWindow):
             'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
             'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; }'
         )
+        self.scanner_rainbow_cb.clicked.connect(self.on_scanner_rainbow_toggled)
         self.scanner_rainbow_cb.hide()
 
         # Fill mode toggle (bottom-right for Smooth Wave)
@@ -968,8 +939,21 @@ class RGBControllerApp(QMainWindow):
             'QPushButton:hover { background-color: rgba(0,229,255,0.08); }'
             'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
         )
-        self.wave_fill_cb.clicked.connect(self.apply_effect)
+        self.wave_fill_cb.clicked.connect(self.on_wave_fill_toggled)
         self.wave_fill_cb.hide()
+
+        self.smooth_wave_palette_combo = QComboBox()
+        self.smooth_wave_palette_combo.addItems(['RGBW', 'Pastel', 'Custom 4-Color'])
+        self.smooth_wave_palette_combo.setCurrentText('RGBW')
+        self.smooth_wave_palette_combo.setFixedWidth(150)
+        self.smooth_wave_palette_combo.setCursor(Qt.PointingHandCursor)
+        self.smooth_wave_palette_combo.setStyleSheet(
+            'QComboBox { background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 8px; font-weight: 600; }'
+            'QComboBox::drop-down { border: none; width: 20px; }'
+            'QComboBox QAbstractItemView { background-color: #1A1A1E; color: #E2E2E2; selection-background-color: #00E5FF; selection-color: #0E0E12; }'
+        )
+        self.smooth_wave_palette_combo.currentTextChanged.connect(self.on_smooth_wave_palette_changed)
+        self.smooth_wave_palette_combo.hide()
 
         # Bottom controls row: wave dirs left, fill toggle right
         bottom_row = QWidget()
@@ -980,55 +964,21 @@ class RGBControllerApp(QMainWindow):
         bottom_layout.addWidget(self.wave_dir_widget)
         bottom_layout.addWidget(self.smooth_wave_dir_widget)
         bottom_layout.addStretch()
+        bottom_layout.addWidget(self.smooth_wave_palette_combo)
         bottom_layout.addWidget(self.wave_fill_cb)
-        controls_layout.addWidget(bottom_row, 7, 0, 1, 4)
+        controls_layout.addWidget(bottom_row, 7, 0, 1, 4, Qt.AlignVCenter)
 
-        left_layout.addWidget(controls_group)
-        
-        # ─── Visualizer Color Mode Buttons (Under effects list in right panel) ─────────
-        self.visualizer_color_mode_custom = True  # Track which mode is active
-        self.visualizer_buttons_group = QWidget()
-        visualizer_buttons_layout = QHBoxLayout(self.visualizer_buttons_group)
-        visualizer_buttons_layout.setContentsMargins(0, 0, 0, 0)
-        visualizer_buttons_layout.setSpacing(4)
-        
-        self.visualizer_custom_btn = QPushButton('Custom Colors')
-        self.visualizer_custom_btn.setCheckable(True)
-        self.visualizer_custom_btn.setChecked(True)
-        self.visualizer_custom_btn.setCursor(Qt.PointingHandCursor)
-        self.visualizer_custom_btn.setStyleSheet(
-            'QPushButton { padding: 4px 8px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; font-size: 11px; font-weight: 600; }'
-            'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
-            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
-        )
-        self.visualizer_custom_btn.setMinimumWidth(0)
-        self.visualizer_custom_btn.setFixedHeight(30)
-        self.visualizer_custom_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.visualizer_custom_btn.clicked.connect(self.switch_to_custom_colors)
-        
-        self.visualizer_ambient_btn = QPushButton('Ambient Colors')
-        self.visualizer_ambient_btn.setCheckable(True)
-        self.visualizer_ambient_btn.setCursor(Qt.PointingHandCursor)
-        self.visualizer_ambient_btn.setStyleSheet(
-            'QPushButton { padding: 4px 8px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; font-size: 11px; font-weight: 600; }'
-            'QPushButton:hover { background-color: rgba(0,229,255,0.12); }'
-            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }'
-        )
-        self.visualizer_ambient_btn.setMinimumWidth(0)
-        self.visualizer_ambient_btn.setFixedHeight(30)
-        self.visualizer_ambient_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.visualizer_ambient_btn.clicked.connect(self.switch_to_ambient_colors)
-        
-        visualizer_buttons_layout.addWidget(self.visualizer_custom_btn, 1)
-        visualizer_buttons_layout.addWidget(self.visualizer_ambient_btn, 1)
-        
-        # Hide buttons by default (only show in Live Audio Visualizer mode)
-        self.visualizer_buttons_group.hide()
+        left_layout.addWidget(self.controls_slot)
+        left_layout.addSpacing(-52)
         
         self.colors_group = QGroupBox('Zone Colors')
-        self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
+        self.colors_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.colors_group.setStyleSheet(
+            'QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; padding-top: 22px; }'
+        )
         colors_layout = QGridLayout(self.colors_group)
-        colors_layout.setSpacing(10)
+        colors_layout.setSpacing(8)
+        colors_layout.setContentsMargins(10, 4, 10, 10)
         
         self.zone_colors = [[255, 252, 247], [255, 252, 247], [255, 252, 247], [255, 252, 247]]
         self.color_buttons = []
@@ -1048,52 +998,59 @@ class RGBControllerApp(QMainWindow):
         self.global_color_btn.clicked.connect(self.pick_global_color)
         colors_layout.addWidget(self.global_color_btn, 1, 0, 1, 4)
         
-        # ─── Ambient Controls Widget for Visualizer ───────────────────────────────────
-        self.visualizer_ambient_controls = QWidget()
-        ambient_controls_layout = QVBoxLayout(self.visualizer_ambient_controls)
-        ambient_controls_layout.setContentsMargins(0, 0, 0, 0)
-        ambient_controls_layout.setSpacing(10)
-        
-        # Vibrance control for visualizer ambient mode
-        vibrance_row = QHBoxLayout()
-        vibrance_row.setSpacing(5)
-        visualizer_vib_label = QLabel('Vibrance:')
-        visualizer_vib_label.setFixedWidth(80)
-        visualizer_vib_slider = AnimatedSlider(Qt.Horizontal)
-        visualizer_vib_slider.setRange(5, 30)
-        visualizer_vib_slider.setValue(self.vibrance_slider.value())
-        visualizer_vib_slider.setTickPosition(QSlider.TicksBelow)
-        visualizer_vib_slider.setTickInterval(5)
-        visualizer_vib_slider.valueChanged.connect(lambda val: self.vibrance_slider.setValue(val))
-        self.vibrance_slider.valueChanged.connect(lambda val: visualizer_vib_slider.setValue(val))
-        vibrance_row.addWidget(visualizer_vib_label)
-        vibrance_row.addWidget(visualizer_vib_slider)
-        ambient_controls_layout.addLayout(vibrance_row)
-        
-        # FPS control for visualizer ambient mode
-        fps_row = QHBoxLayout()
-        fps_row.setSpacing(5)
-        visualizer_fps_label = QLabel('FPS:')
-        visualizer_fps_label.setFixedWidth(80)
-        visualizer_fps_slider = AnimatedSlider(Qt.Horizontal)
-        visualizer_fps_slider.setRange(1, 60)
-        visualizer_fps_slider.setValue(self.ambient_fps_slider.value())
-        visualizer_fps_slider.setTickPosition(QSlider.TicksBelow)
-        visualizer_fps_slider.setTickInterval(10)
-        visualizer_fps_slider.valueChanged.connect(lambda val: self.ambient_fps_slider.setValue(val))
-        self.ambient_fps_slider.valueChanged.connect(lambda val: visualizer_fps_slider.setValue(val))
-        fps_row.addWidget(visualizer_fps_label)
-        fps_row.addWidget(visualizer_fps_slider)
-        ambient_controls_layout.addLayout(fps_row)
-
-        # Keep ambient controls inside the Zone Colors container so this view
-        # replaces the color pickers in-place.
-        colors_layout.addWidget(self.visualizer_ambient_controls, 0, 0, 2, 4)
-        
-        # Hide ambient controls by default
-        self.visualizer_ambient_controls.hide()
-        
         left_layout.addWidget(self.colors_group)
+
+        self.preview_panel = QFrame()
+        self.preview_panel.setObjectName('EmbeddedPreviewFrame')
+        self.preview_panel.setStyleSheet(
+            'QFrame#EmbeddedPreviewFrame { border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; background-color: rgba(255, 255, 255, 0.02); }'
+        )
+        self.preview_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        preview_panel_layout = QVBoxLayout(self.preview_panel)
+        preview_panel_layout.setContentsMargins(12, 10, 12, 12)
+        preview_panel_layout.setSpacing(8)
+
+        self.preview_header_widget = QWidget(self.preview_panel)
+        preview_header_layout = QHBoxLayout(self.preview_header_widget)
+        preview_header_layout.setContentsMargins(0, 0, 0, 0)
+        preview_header_layout.setSpacing(8)
+        preview_title = QLabel('Live Preview')
+        preview_title.setStyleSheet('color: #00E5FF; font-size: 13px; font-weight: bold;')
+        self.btn_preview_toggle_small = QPushButton('On')
+        self.btn_preview_toggle_small.setCheckable(True)
+        self.btn_preview_toggle_small.setChecked(True)
+        self.btn_preview_toggle_small.setCursor(Qt.PointingHandCursor)
+        self.btn_preview_toggle_small.setFixedSize(44, 22)
+        self.btn_preview_toggle_small.setStyleSheet(
+            'QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #8F97A3; border: 1px solid rgba(255,255,255,0.10); border-radius: 11px; font-size: 10px; font-weight: 700; padding: 0 6px; }'
+            'QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: #E2E2E2; }'
+            'QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; }'
+        )
+        self.btn_preview_toggle_small.setToolTip('Toggle live preview')
+        self.btn_preview_toggle_small.clicked.connect(self.set_preview_visible)
+        preview_header_layout.addWidget(preview_title)
+        preview_header_layout.addStretch()
+        preview_header_layout.addWidget(self.btn_preview_toggle_small)
+        preview_panel_layout.addWidget(self.preview_header_widget)
+
+        self.embedded_preview = KeyboardPreviewWidget(self, self.preview_panel)
+        self.embedded_preview.setMinimumHeight(0)
+        self.embedded_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        preview_panel_layout.addWidget(self.embedded_preview, 1)
+        self.preview_opacity_effect = QGraphicsOpacityEffect(self.embedded_preview)
+        self.embedded_preview.setGraphicsEffect(self.preview_opacity_effect)
+        self.preview_opacity_effect.setOpacity(1.0)
+        self.preview_anim = QVariantAnimation(self)
+        self.preview_anim.setDuration(220)
+        self.preview_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.preview_anim.valueChanged.connect(self.on_preview_anim_value)
+        self.preview_anim.finished.connect(self.on_preview_anim_finished)
+        self.preview_anim_start_height = 0
+        self.preview_enabled = True
+        self.preview_user_enabled = True
+        self.preview_forced_by_mode = False
+
+        left_layout.addWidget(self.preview_panel)
         self.SOFTWARE_MODES = ['Smooth Wave', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave']
         self.default_control_settings = {
@@ -1103,8 +1060,13 @@ class RGBControllerApp(QMainWindow):
             'vibrance': 15,
             'ambient_fps': 30,
             'flicker': 0,
+            'wave_fill': False,
+            'scanner_rainbow': False,
+            'smooth_wave_palette': 'RGBW',
+            'wave_direction': 'left',
+            'smooth_wave_direction': 'left',
         }
-        self.mode_settings = {m: dict(self.default_control_settings) for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)}
+        self.mode_settings = self.build_default_mode_settings()
         self.wave_direction = 'left'
         self.smooth_wave_direction = 'left'
         self.mode_list = QListWidget()
@@ -1112,18 +1074,21 @@ class RGBControllerApp(QMainWindow):
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
-        # Live Audio mode uses a compact effects list so the visualizer color
-        # mode buttons can sit directly below by shrinking only the needed amount.
-        self.mode_list_default_min_height = self.mode_list.minimumHeight()
-        self.mode_list_default_max_height = self.mode_list.maximumHeight()
-        self.is_live_audio_menu_compact = False
-        self.visualizer_buttons_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        right_layout.addWidget(self.visualizer_buttons_group)
+
+        self.mode_description_label = QLabel('Select an effect to see a quick description.')
+        self.mode_description_label.setWordWrap(True)
+        self.mode_description_label.setStyleSheet('color: #8F97A3; font-size: 11px; line-height: 1.4; padding: 2px 2px 0 2px;')
+        self.mode_description_label.setMinimumHeight(48)
+        self.mode_description_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        right_layout.addWidget(self.mode_description_label)
         
         self.presets = {}
         preset_group = QGroupBox('Custom Presets')
-        preset_layout = QHBoxLayout(preset_group)
-        preset_layout.setSpacing(10)
+        self.preset_group = preset_group
+        self.preset_layout = QGridLayout(preset_group)
+        self.preset_layout.setContentsMargins(10, 8, 10, 8)
+        self.preset_layout.setHorizontalSpacing(8)
+        self.preset_layout.setVerticalSpacing(6)
         self.preset_combo = QComboBox()
         self.preset_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.preset_combo.setStyleSheet('\n            QComboBox { background-color: #1A1A1E; color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 6px; }\n            QComboBox::drop-down { border: none; }\n        ')
@@ -1140,9 +1105,27 @@ class RGBControllerApp(QMainWindow):
         self.btn_delete_preset.setCursor(Qt.PointingHandCursor)
         self.btn_delete_preset.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); } QPushButton:hover { background-color: rgba(255, 85, 85, 0.2); border: 1px solid #FF5555; }')
         self.btn_delete_preset.clicked.connect(self.delete_preset)
-        preset_layout.addWidget(self.preset_combo)
-        preset_layout.addWidget(self.btn_save_preset)
-        preset_layout.addWidget(self.btn_delete_preset)
+        tool_btn_css = 'QPushButton { background-color: rgba(255, 255, 255, 0.05); color: #E2E2E2; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); padding: 0 10px; font-weight: 600; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.12); border: 1px solid #00E5FF; }'
+        self.btn_import_presets = QPushButton('Import')
+        self.btn_import_presets.setFixedHeight(30)
+        self.btn_import_presets.setCursor(Qt.PointingHandCursor)
+        self.btn_import_presets.setStyleSheet(tool_btn_css)
+        self.btn_import_presets.clicked.connect(self.import_presets)
+        self.btn_export_presets = QPushButton('Export')
+        self.btn_export_presets.setFixedHeight(30)
+        self.btn_export_presets.setCursor(Qt.PointingHandCursor)
+        self.btn_export_presets.setStyleSheet(tool_btn_css)
+        self.btn_export_presets.clicked.connect(self.export_presets)
+        self.update_preset_toolbar_layout(force=True)
+
+        self.btn_reset_mode = QPushButton('Reset This Mode')
+        self.btn_reset_mode.setCursor(Qt.PointingHandCursor)
+        self.btn_reset_mode.setStyleSheet(
+            'QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #E2E2E2; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px; font-weight: 700; }'
+            'QPushButton:hover { background-color: rgba(255, 170, 0, 0.10); border: 1px solid rgba(255, 170, 0, 0.45); color: #FFD27A; }'
+        )
+        self.btn_reset_mode.clicked.connect(self.reset_current_mode_settings)
+        right_layout.addWidget(self.btn_reset_mode)
         right_layout.addWidget(preset_group)
         self.kb = None
         self.visualizer_process = None
@@ -1286,13 +1269,118 @@ class RGBControllerApp(QMainWindow):
         self.force_quit = True
         QApplication.quit()
 
-    def toggle_preview(self):
-        if self.preview_window is None or not self.preview_window.isVisible():
-            self.preview_window = KeyboardPreviewWindow(self)
-            self.preview_window.show()
+    def _get_preview_open_height(self):
+        if not hasattr(self, 'preview_panel'):
+            return 88
+        panel_layout = self.preview_panel.layout()
+        if panel_layout is None:
+            return 88
+        margins = panel_layout.contentsMargins()
+        header_height = self.preview_header_widget.sizeHint().height() if hasattr(self, 'preview_header_widget') else 24
+        available = self.preview_panel.height() - margins.top() - margins.bottom() - header_height - panel_layout.spacing()
+        return max(88, available)
+
+    def on_preview_anim_value(self, value):
+        if not hasattr(self, 'embedded_preview'):
+            return
+        ratio = max(0.0, min(1.0, float(value)))
+        new_height = int(self.preview_anim_start_height * ratio)
+        self.embedded_preview.setMaximumHeight(max(0, new_height))
+        if hasattr(self, 'preview_opacity_effect'):
+            self.preview_opacity_effect.setOpacity(ratio)
+
+    def on_preview_anim_finished(self):
+        if not hasattr(self, 'embedded_preview'):
+            return
+        if self.preview_enabled:
+            target_height = self._get_preview_open_height()
+            self.embedded_preview.setMaximumHeight(target_height)
+            self.embedded_preview.setVisible(True)
+            if hasattr(self, 'preview_opacity_effect'):
+                self.preview_opacity_effect.setOpacity(1.0)
         else:
+            self.embedded_preview.setMaximumHeight(0)
+            self.embedded_preview.setVisible(False)
+        self._sync_preview_toggle_button()
+
+    def _sync_preview_toggle_button(self):
+        if not hasattr(self, 'btn_preview_toggle_small'):
+            return
+        self.btn_preview_toggle_small.blockSignals(True)
+        self.btn_preview_toggle_small.setChecked(bool(self.preview_enabled))
+        self.btn_preview_toggle_small.setText('On' if self.preview_enabled else 'Off')
+        forced_off = bool(getattr(self, 'preview_forced_by_mode', False))
+        self.btn_preview_toggle_small.setEnabled(not forced_off)
+        if forced_off:
+            self.btn_preview_toggle_small.setToolTip('Preview is auto-disabled for this mode.')
+        else:
+            self.btn_preview_toggle_small.setToolTip('Toggle live preview')
+        self.btn_preview_toggle_small.blockSignals(False)
+
+    def save_preview_preference(self):
+        settings = QSettings('4ZoneRgbToolkit', 'Preferences')
+        settings.setValue('preview_user_enabled', bool(getattr(self, 'preview_user_enabled', True)))
+
+    def _set_preview_visible_internal(self, visible):
+        requested_visible = bool(visible)
+
+        if getattr(self, 'preview_window', None) is not None:
             self.preview_window.close()
             self.preview_window = None
+
+        if not hasattr(self, 'embedded_preview'):
+            self.preview_enabled = requested_visible
+            self._sync_preview_toggle_button()
+            return
+
+        if hasattr(self, 'preview_anim'):
+            self.preview_anim.stop()
+
+        if requested_visible:
+            self.preview_enabled = True
+            self.embedded_preview.setVisible(True)
+            self.embedded_preview.setMaximumHeight(self._get_preview_open_height())
+            if hasattr(self, 'preview_opacity_effect'):
+                self.preview_opacity_effect.setOpacity(1.0)
+        else:
+            self.preview_enabled = False
+            self.embedded_preview.setVisible(True)
+            self.preview_anim_start_height = max(1, self.embedded_preview.height(), self.embedded_preview.maximumHeight())
+            if hasattr(self, 'preview_anim'):
+                self.preview_anim.setStartValue(1.0)
+                self.preview_anim.setEndValue(0.0)
+                self.preview_anim.start()
+            else:
+                self.embedded_preview.setMaximumHeight(0)
+                self.embedded_preview.setVisible(False)
+
+        self._sync_preview_toggle_button()
+
+    def apply_preview_mode_policy(self, mode_name):
+        restricted_mode = mode_name in self.HARDWARE_MODES or mode_name == 'Live Audio Visualizer'
+        self.preview_forced_by_mode = restricted_mode
+        if restricted_mode:
+            if self.preview_enabled:
+                self._set_preview_visible_internal(False)
+            else:
+                self._sync_preview_toggle_button()
+        else:
+            desired_visible = bool(getattr(self, 'preview_user_enabled', True))
+            if self.preview_enabled != desired_visible:
+                self._set_preview_visible_internal(desired_visible)
+            else:
+                self._sync_preview_toggle_button()
+
+    def set_preview_visible(self, visible):
+        self.preview_user_enabled = bool(visible)
+        self.save_preview_preference()
+        if getattr(self, 'preview_forced_by_mode', False):
+            self._set_preview_visible_internal(False)
+        else:
+            self._set_preview_visible_internal(self.preview_user_enabled)
+
+    def toggle_preview(self):
+        self.set_preview_visible(not getattr(self, 'preview_user_enabled', True))
 
     def clear_update_cache(self):
         tmp = tempfile.gettempdir()
@@ -1304,21 +1392,126 @@ class RGBControllerApp(QMainWindow):
                 try:
                     os.remove(path)
                     deleted += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f'Failed to remove update cache file {path}: {e}')
         if deleted > 0:
             QMessageBox.information(self, "Update Cache Cleared", f"Removed {deleted} leftover update file(s) from your Temp folder.")
         else:
             QMessageBox.information(self, "Update Cache", "No leftover update files found. Nothing to clear!")
 
+    def build_default_mode_settings(self):
+        return {m: dict(self.default_control_settings) for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)}
+
+    def save_runtime_state_settings(self):
+        settings = QSettings('4ZoneRgbToolkit', 'Preferences')
+        settings.setValue('mode_settings', json.dumps(self.mode_settings))
+        current_mode = self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Off'
+        settings.setValue('last_mode', current_mode)
+        settings.setValue('preview_user_enabled', bool(getattr(self, 'preview_user_enabled', True)))
+
+    def update_mode_description(self, mode_name):
+        descriptions = {
+            'Off': 'Turns all keyboard lighting off.',
+            'Static': 'Applies one solid color to each zone.',
+            'Breath': 'Pulses the selected zone colors in and out.',
+            'Smooth': 'Runs the keyboard firmware smooth transition effect.',
+            'Wave': 'Uses the hardware wave effect with selectable direction.',
+            'Smooth Wave': 'Software gradient sweep across zones. Fill Mode can cycle fixed palettes.',
+            'Lightning': 'Cinematic storm flashes with staged strikes, flicker, and afterglow.',
+            'Party': 'Beat-style party lighting with tempo-driven color bursts.',
+            'Realistic Fire': 'Hot ember-style flicker with deep red and orange motion.',
+            'Scanner (Cylon)': 'A bouncing scanner eye with optional rainbow sweep.',
+            'Aurora Borealis': 'Flowing cool-toned waves drifting softly across the zones.',
+            'Meteor Shower': 'Fast streaks with bright heads and fading tails.',
+            'Ambient Screen Color': 'Mirrors the display onto the keyboard with adjustable FPS and vibrance.',
+            'Battery Visualizer': 'Maps battery level across the four keyboard zones.',
+            'Mouse-Reactive Aura': 'Shifts lighting in response to mouse movement.',
+            'Pomodoro Timer': 'Turns the keyboard into a full-session progress indicator.',
+            'Live Audio Visualizer': 'A 4-band audio-reactive equalizer using your selected zone colors.',
+        }
+        self.mode_description_label.setText(descriptions.get(mode_name, 'Configure the selected effect using the controls on the left.'))
+
+    def sync_control_label_widths(self):
+        if not hasattr(self, 'control_value_labels') or not self.control_value_labels:
+            return
+        samples = [
+            'Brightness: 100%',
+            'Smoothness: 100%',
+            'Vibrance: 3.0x',
+            'Animation Speed: 100%',
+            'Lightning Frequency: 100%',
+            'Party Tempo: 100%',
+            'Visualizer Sensitivity: 100%',
+            'Fire Flicker Speed: 100%',
+            'Scanner Sweep Speed: 100%',
+            'Aurora Shift Speed: 100%',
+            'Meteor Speed: 100%',
+            'Storm Intensity: 100%',
+            'Ambient FPS: 60',
+            'Flicker Reduction: 50',
+        ]
+        samples.extend(label.text() for label in self.control_value_labels)
+        fm = self.control_value_labels[0].fontMetrics()
+        target_width = max(fm.horizontalAdvance(text) for text in samples) + 14
+        for label in self.control_value_labels:
+            label.setMinimumWidth(target_width)
+            label.setMaximumWidth(target_width)
+            label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+
+    def update_preset_toolbar_layout(self, force=False):
+        if not all(hasattr(self, name) for name in (
+            'preset_layout',
+            'preset_group',
+            'preset_combo',
+            'btn_save_preset',
+            'btn_delete_preset',
+            'btn_import_presets',
+            'btn_export_presets',
+        )):
+            return
+        group_width = self.preset_group.width() or (self.width() // 3)
+        compact = group_width < 430
+        if (not force) and getattr(self, '_preset_toolbar_compact', None) == compact:
+            return
+        self._preset_toolbar_compact = compact
+
+        while self.preset_layout.count():
+            self.preset_layout.takeAt(0)
+
+        for col in range(5):
+            self.preset_layout.setColumnStretch(col, 0)
+
+        if compact:
+            self.preset_layout.addWidget(self.preset_combo, 0, 0, 1, 5)
+            self.preset_layout.addWidget(self.btn_save_preset, 1, 0)
+            self.preset_layout.addWidget(self.btn_delete_preset, 1, 1)
+            self.preset_layout.addWidget(self.btn_import_presets, 1, 3)
+            self.preset_layout.addWidget(self.btn_export_presets, 1, 4)
+            self.preset_layout.setColumnStretch(2, 1)
+        else:
+            self.preset_layout.addWidget(self.preset_combo, 0, 0)
+            self.preset_layout.addWidget(self.btn_save_preset, 0, 1)
+            self.preset_layout.addWidget(self.btn_delete_preset, 0, 2)
+            self.preset_layout.addWidget(self.btn_import_presets, 0, 3)
+            self.preset_layout.addWidget(self.btn_export_presets, 0, 4)
+            self.preset_layout.setColumnStretch(0, 1)
+
+    def update_zone_color_controls_state(self, mode_name=None):
+        mode_name = mode_name or (self.mode_list.currentItem().text() if self.mode_list.currentItem() else None)
+        smooth_wave_custom = mode_name == 'Smooth Wave' and self.smooth_wave_palette_combo.currentText() == 'Custom 4-Color'
+        is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)') or smooth_wave_custom
+        self.colors_group.setEnabled(is_zones_enabled)
+        if is_zones_enabled:
+            self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; padding-top: 22px; }')
+        else:
+            self.colors_group.setStyleSheet('QGroupBox { color: #555555; font-size: 16px; font-weight: bold; padding-top: 22px; }')
+
     def load_settings(self):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
-        try:
+        if hasattr(self, 'startup_preset_combo'):
             self.startup_preset_combo.blockSignals(True)
-        except:
-            pass
         min_val = settings.value('minimize_to_tray', False)
         min_to_tray = str(min_val).lower() == 'true' if isinstance(min_val, str) else bool(min_val)
         self.minimize_to_tray_cb.setChecked(min_to_tray)
@@ -1331,38 +1524,52 @@ class RGBControllerApp(QMainWindow):
                     self.presets = json.loads(presets_json)
                 except Exception:
                     self.presets = {}
+        mode_settings_json = settings.value('mode_settings', '')
+        loaded_mode_settings = self.build_default_mode_settings()
+        if isinstance(mode_settings_json, str) and mode_settings_json:
+            try:
+                parsed_mode_settings = json.loads(mode_settings_json)
+                if isinstance(parsed_mode_settings, dict):
+                    for mode_name, mode_data in parsed_mode_settings.items():
+                        if mode_name in loaded_mode_settings and isinstance(mode_data, dict):
+                            loaded_mode_settings[mode_name].update(mode_data)
+            except Exception as e:
+                print(f'Failed to load mode settings: {e}')
+        self.mode_settings = loaded_mode_settings
+        preview_val = settings.value('preview_user_enabled', True)
+        self.preview_user_enabled = str(preview_val).lower() == 'true' if isinstance(preview_val, str) else bool(preview_val)
         self.update_preset_combos()
         startup_p = settings.value('startup_preset', 'None (Use Last State)')
         if startup_p in self.presets or startup_p == 'None (Use Last State)':
             self.startup_preset_combo.setCurrentText(startup_p)
-        hide_warn_val = settings.value('hide_hardware_warning', False)
-        hide_warn = str(hide_warn_val).lower() == 'true' if isinstance(hide_warn_val, str) else bool(hide_warn_val)
-        if hide_warn:
-            self.disclaimer_widget.hide()
-            self.dnd_checkbox.setChecked(True)
-        else:
-            self.disclaimer_widget.show()
-        try:
+        last_mode = settings.value('last_mode', 'Off')
+        if hasattr(self, 'startup_preset_combo'):
             self.startup_preset_combo.blockSignals(False)
-        except:
-            pass
         self.minimize_to_tray_cb.blockSignals(False)
         self.launch_on_start_cb.blockSignals(False)
         if startup_p in self.presets:
             self.apply_preset_logic(startup_p)
+        else:
+            items = self.mode_list.findItems(last_mode, Qt.MatchExactly)
+            if items:
+                self.mode_list.setCurrentItem(items[0])
+                self.on_mode_changed(last_mode)
+        current_mode = self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Off'
+        self.apply_preview_mode_policy(current_mode)
+
     def save_settings(self, *args):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
         settings.setValue('minimize_to_tray', self.minimize_to_tray_cb.isChecked())
         settings.setValue('startup_preset', self.startup_preset_combo.currentText())
         settings.setValue('saved_presets', json.dumps(self.presets))
+        settings.setValue('mode_settings', json.dumps(self.mode_settings))
+        current_mode = self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Off'
+        settings.setValue('last_mode', current_mode)
+        settings.setValue('preview_user_enabled', bool(getattr(self, 'preview_user_enabled', True)))
         launch_start = self.launch_on_start_cb.isChecked()
         settings.setValue('launch_on_start', launch_start)
         self.manage_startup_registry(launch_start)
-    def save_dnd_preference(self, checked):
-        settings = QSettings('4ZoneRgbToolkit', 'Preferences')
-        settings.setValue('hide_hardware_warning', checked)
-    def close_disclaimer(self):
-        self.disclaimer_widget.hide()
+
     def clear_cache(self):
         reply = QMessageBox.warning(self, 'Clear Cache & Reset', 'WARNING: This will permanently delete all your saved presets, startup configurations, and reset the application to factory defaults.\n\nAre you absolutely sure you want to proceed?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
@@ -1375,9 +1582,14 @@ class RGBControllerApp(QMainWindow):
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(False)
             self.presets = {}
-            self.mode_settings = {m: dict(self.default_control_settings) for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)}
+            self.mode_settings = self.build_default_mode_settings()
             self.wave_direction = 'left'
             self.smooth_wave_direction = 'left'
+            self.preview_user_enabled = True
+            self.preview_forced_by_mode = False
+            self.wave_fill_cb.setChecked(False)
+            self.scanner_rainbow_cb.setChecked(False)
+            self.smooth_wave_palette_combo.setCurrentText('RGBW')
             self.update_preset_combos()
             self.minimize_to_tray_cb.blockSignals(False)
             self.launch_on_start_cb.blockSignals(False)
@@ -1391,6 +1603,7 @@ class RGBControllerApp(QMainWindow):
             if items:
                 self.mode_list.setCurrentItem(items[0])
             self.on_mode_changed('Static')
+            self.save_preview_preference()
             QMessageBox.information(self, 'Cache Cleared', 'The application cache has been successfully reset to default settings.')
             self.toggle_settings()
     def show_logs(self):
@@ -1399,8 +1612,8 @@ class RGBControllerApp(QMainWindow):
                 self.logs_dialog = LogsDialog(self)
             self.logs_dialog.show()
             self.logs_dialog.raise_()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'Failed to show logs dialog: {e}')
     def apply_preset_from_ui(self, index):
         preset_name = self.preset_combo.itemText(index)
         self.apply_preset_logic(preset_name)
@@ -1435,7 +1648,18 @@ class RGBControllerApp(QMainWindow):
                 self.global_color = p['global_color']
                 self.update_button_color(self.global_color_btn, self.global_color)
             if 'scanner_rainbow' in p:
+                self.scanner_rainbow_cb.blockSignals(True)
                 self.scanner_rainbow_cb.setChecked(p['scanner_rainbow'])
+                self.scanner_rainbow_cb.blockSignals(False)
+            self.wave_fill_cb.blockSignals(True)
+            self.wave_fill_cb.setChecked(bool(p.get('wave_fill', False)))
+            self.wave_fill_cb.blockSignals(False)
+            self.smooth_wave_palette_combo.blockSignals(True)
+            palette_name = p.get('smooth_wave_palette', self.default_control_settings['smooth_wave_palette'])
+            if self.smooth_wave_palette_combo.findText(palette_name) == -1:
+                palette_name = self.default_control_settings['smooth_wave_palette']
+            self.smooth_wave_palette_combo.setCurrentText(palette_name)
+            self.smooth_wave_palette_combo.blockSignals(False)
             if 'wave_dir' in p:
                 self.set_wave_direction(p['wave_dir'])
             else:
@@ -1455,6 +1679,11 @@ class RGBControllerApp(QMainWindow):
                 'storm_intensity': self.storm_slider.value(),
                 'ambient_fps': self.ambient_fps_slider.value(),
                 'flicker': self.flicker_slider.value(),
+                'wave_fill': self.wave_fill_cb.isChecked(),
+                'scanner_rainbow': self.scanner_rainbow_cb.isChecked(),
+                'smooth_wave_palette': self.smooth_wave_palette_combo.currentText(),
+                'wave_direction': self.wave_direction,
+                'smooth_wave_direction': self.smooth_wave_direction,
             })
             self.mode_list.blockSignals(False)
             self.bright_slider.blockSignals(False)
@@ -1476,6 +1705,8 @@ class RGBControllerApp(QMainWindow):
                     'colors': list(self.zone_colors),
                     'global_color': list(self.global_color),
                     'scanner_rainbow': self.scanner_rainbow_cb.isChecked(),
+                    'wave_fill': self.wave_fill_cb.isChecked(),
+                    'smooth_wave_palette': self.smooth_wave_palette_combo.currentText(),
                     'wave_dir': self.wave_direction,
                     'smooth_wave_dir': self.smooth_wave_direction
                 }
@@ -1532,8 +1763,9 @@ class RGBControllerApp(QMainWindow):
             print(f'Failed to modify startup registry: {e}')
 
     def load_mode_controls(self, mode_name):
-        settings = self.mode_settings.get(mode_name, dict(self.default_control_settings))
-        self.mode_settings.setdefault(mode_name, dict(settings))
+        settings = dict(self.default_control_settings)
+        settings.update(self.mode_settings.get(mode_name, {}))
+        self.mode_settings[mode_name] = dict(settings)
         slider_map = [
             (self.bright_slider, 'brightness'),
             (self.vibrance_slider, 'vibrance'),
@@ -1548,6 +1780,25 @@ class RGBControllerApp(QMainWindow):
             slider.blockSignals(True)
             slider.setValue(settings.get(key, self.default_control_settings.get(key, slider.value())))
             slider.blockSignals(False)
+        self.wave_fill_cb.blockSignals(True)
+        self.wave_fill_cb.setChecked(bool(settings.get('wave_fill', False)))
+        self.wave_fill_cb.blockSignals(False)
+        self.scanner_rainbow_cb.blockSignals(True)
+        self.scanner_rainbow_cb.setChecked(bool(settings.get('scanner_rainbow', False)))
+        self.scanner_rainbow_cb.blockSignals(False)
+        self.smooth_wave_palette_combo.blockSignals(True)
+        palette_name = settings.get('smooth_wave_palette', self.default_control_settings['smooth_wave_palette'])
+        if self.smooth_wave_palette_combo.findText(palette_name) == -1:
+            palette_name = self.default_control_settings['smooth_wave_palette']
+        self.smooth_wave_palette_combo.setCurrentText(palette_name)
+        self.smooth_wave_palette_combo.blockSignals(False)
+        self.wave_direction = settings.get('wave_direction', self.default_control_settings['wave_direction'])
+        self.wave_dir_left_btn.setChecked(self.wave_direction == 'left')
+        self.wave_dir_right_btn.setChecked(self.wave_direction == 'right')
+        self.smooth_wave_direction = settings.get('smooth_wave_direction', self.default_control_settings['smooth_wave_direction'])
+        self.smooth_wave_dir_left_btn.setChecked(self.smooth_wave_direction == 'left')
+        self.smooth_wave_dir_right_btn.setChecked(self.smooth_wave_direction == 'right')
+        self.update_zone_color_controls_state(mode_name)
 
     def update_mode_setting(self, key, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else None
@@ -1556,11 +1807,15 @@ class RGBControllerApp(QMainWindow):
         if mode_name not in self.mode_settings:
             self.mode_settings[mode_name] = dict(self.default_control_settings)
         self.mode_settings[mode_name][key] = value
+        self.save_runtime_state_settings()
 
     def set_wave_direction(self, direction):
         self.wave_direction = direction
         self.wave_dir_left_btn.setChecked(direction == 'left')
         self.wave_dir_right_btn.setChecked(direction == 'right')
+        self.mode_settings.setdefault('Wave', dict(self.default_control_settings))
+        self.mode_settings['Wave']['wave_direction'] = direction
+        self.save_runtime_state_settings()
         if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Wave':
             self.apply_effect()
 
@@ -1568,10 +1823,13 @@ class RGBControllerApp(QMainWindow):
         self.smooth_wave_direction = direction
         self.smooth_wave_dir_left_btn.setChecked(direction == 'left')
         self.smooth_wave_dir_right_btn.setChecked(direction == 'right')
+        self.mode_settings.setdefault('Smooth Wave', dict(self.default_control_settings))
+        self.mode_settings['Smooth Wave']['smooth_wave_direction'] = direction
+        self.save_runtime_state_settings()
         if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave':
             self.apply_effect()
+
     def update_button_color(self, btn, rgb):
-        # ***<module>.RGBControllerApp.update_button_color: Failure: Compilation Error
         r, g, b = rgb
         luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         text_color = 'black' if luminance > 0.5 else 'white'
@@ -1604,54 +1862,92 @@ class RGBControllerApp(QMainWindow):
                 self.custom_colors[i * 3 + 2] = b
                 self.update_button_color(self.color_buttons[i], [r, g, b])
             self.apply_effect()
-    
-    def switch_to_custom_colors(self):
-        """Switch to custom zone colors mode in Live Audio Visualizer"""
-        self.visualizer_color_mode_custom = True
-        self.visualizer_custom_btn.setChecked(True)
-        self.visualizer_ambient_btn.setChecked(False)
-        # Show zone colors, hide ambient controls
-        for btn in self.color_buttons:
-            btn.show()
-        self.global_color_btn.show()
-        self.visualizer_ambient_controls.hide()
-    
-    def switch_to_ambient_colors(self):
-        """Switch to ambient screen color mode in Live Audio Visualizer"""
-        self.visualizer_color_mode_custom = False
-        self.visualizer_custom_btn.setChecked(False)
-        self.visualizer_ambient_btn.setChecked(True)
-        # Hide zone colors, show ambient controls
-        for btn in self.color_buttons:
-            btn.hide()
-        self.global_color_btn.hide()
-        self.visualizer_ambient_controls.show()
 
-    def set_live_audio_menu_compact(self, compact: bool):
-        """Shorten effects list just enough to fit visualizer mode buttons below it."""
-        if compact:
-            if self.is_live_audio_menu_compact:
-                return
-            full_height = self.mode_list.height()
-            if full_height <= 1:
-                row_h = self.mode_list.sizeHintForRow(0)
-                if row_h <= 0:
-                    row_h = 34
-                # Estimate visible list height if layout hasn't settled yet.
-                full_height = min(480, row_h * self.mode_list.count() + 2 * self.mode_list.frameWidth() + 8)
+    def on_scanner_rainbow_toggled(self, checked):
+        self.update_mode_setting('scanner_rainbow', bool(checked))
+        self.apply_effect()
 
-            buttons_h = self.visualizer_buttons_group.sizeHint().height()
-            compact_height = max(140, full_height - buttons_h - self.effects_panel_spacing)
-            self.mode_list.setMinimumHeight(compact_height)
-            self.mode_list.setMaximumHeight(compact_height)
-            self.is_live_audio_menu_compact = True
+    def on_wave_fill_toggled(self, checked):
+        self.update_mode_setting('wave_fill', bool(checked))
+        self.apply_effect()
+
+    def on_smooth_wave_palette_changed(self, palette_name):
+        self.update_mode_setting('smooth_wave_palette', palette_name)
+        self.update_zone_color_controls_state('Smooth Wave' if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave' else None)
+        if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave':
+            self.apply_effect()
+
+    def get_smooth_wave_fill_palette(self):
+        palette_name = self.smooth_wave_palette_combo.currentText()
+        if palette_name == 'Pastel':
+            return [
+                (255.0, 179.0, 186.0),
+                (186.0, 255.0, 201.0),
+                (186.0, 225.0, 255.0),
+                (255.0, 252.0, 249.0),
+            ]
+        if palette_name == 'Custom 4-Color':
+            return [tuple(float(channel) for channel in color) for color in self.zone_colors]
+        return [
+            (255.0, 0.0, 0.0),
+            (0.0, 255.0, 0.0),
+            (0.0, 0.0, 255.0),
+            (255.0, 252.0, 249.0),
+        ]
+
+    def export_presets(self):
+        if not self.presets:
+            QMessageBox.information(self, 'Export Presets', 'There are no presets to export yet.')
             return
-
-        if not self.is_live_audio_menu_compact:
+        default_name = f'4_zone_rgb_presets_{CURRENT_VERSION}.json'
+        file_path, _ = QFileDialog.getSaveFileName(self, 'Export Presets', default_name, 'JSON Files (*.json)')
+        if not file_path:
             return
-        self.mode_list.setMinimumHeight(self.mode_list_default_min_height)
-        self.mode_list.setMaximumHeight(self.mode_list_default_max_height)
-        self.is_live_audio_menu_compact = False
+        payload = {
+            'version': CURRENT_VERSION,
+            'exported_at': int(time.time()),
+            'presets': self.presets,
+        }
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=2)
+            QMessageBox.information(self, 'Export Presets', f'Exported {len(self.presets)} preset(s) successfully.')
+        except Exception as e:
+            QMessageBox.warning(self, 'Export Presets', f'Failed to export presets:\n{e}')
+
+    def import_presets(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Import Presets', '', 'JSON Files (*.json)')
+        if not file_path:
+            return
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            imported = payload.get('presets', payload) if isinstance(payload, dict) else None
+            if not isinstance(imported, dict):
+                raise ValueError('File does not contain a valid preset dictionary.')
+            imported_count = 0
+            for name, preset in imported.items():
+                if isinstance(name, str) and isinstance(preset, dict):
+                    self.presets[name] = preset
+                    imported_count += 1
+            self.update_preset_combos()
+            self.save_settings()
+            QMessageBox.information(self, 'Import Presets', f'Imported {imported_count} preset(s) successfully.')
+        except Exception as e:
+            QMessageBox.warning(self, 'Import Presets', f'Failed to import presets:\n{e}')
+
+    def reset_current_mode_settings(self):
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else None
+        if not mode_name:
+            return
+        self.mode_settings[mode_name] = dict(self.default_control_settings)
+        if mode_name == 'Wave':
+            self.wave_direction = self.default_control_settings['wave_direction']
+        if mode_name == 'Smooth Wave':
+            self.smooth_wave_direction = self.default_control_settings['smooth_wave_direction']
+        self.load_mode_controls(mode_name)
+        self.on_mode_changed(mode_name)
+        self.save_runtime_state_settings()
     
     def minimize_app(self):
         if self.minimize_to_tray_cb.isChecked():
@@ -1686,7 +1982,8 @@ class RGBControllerApp(QMainWindow):
                 self.kb.set_effect('static')
                 self.kb.set_solid_color(0, 0, 0)
         except Exception as e:
-            pass
+            print(f'Failed to turn off keyboard LEDs from tray quit: {e}')
+        self.save_settings()
         self.stop_visualizer()
         QApplication.instance().quit()
     def on_tray_activated(self, reason):
@@ -1794,11 +2091,6 @@ class RGBControllerApp(QMainWindow):
             if msg.message == 131 and msg.wParam:
                 return (True, 0)
         return super().nativeEvent(eventType, message)
-    def stop_visualizer(self):
-        if self.visualizer_process:
-            self.visualizer_process.terminate()
-            self.visualizer_process.wait()
-            self.visualizer_process = None
 
     def start_pomodoro(self):
         h = self.pomo_hours.value()
@@ -1873,12 +2165,8 @@ class RGBControllerApp(QMainWindow):
                 self.reset_mode_state()
             self.current_mode_name = mode_name
             self.load_mode_controls(mode_name)
-            is_zones_enabled = mode_name in ('Static', 'Breath', 'Mouse-Reactive Aura', 'Scanner (Cylon)')
-            self.colors_group.setEnabled(is_zones_enabled)
-            if is_zones_enabled:
-                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
-            else:
-                self.colors_group.setStyleSheet('QGroupBox { color: #555555; font-size: 16px; font-weight: bold; }')
+            self.update_mode_description(mode_name)
+            self.update_zone_color_controls_state(mode_name)
             is_speed_enabled = mode_name not in ['Off', 'Static', '[Beta] CPU Temperature', 'Ambient Screen Color']
             for w in self.speed_widgets:
                 w.setEnabled(is_speed_enabled)
@@ -1924,28 +2212,13 @@ class RGBControllerApp(QMainWindow):
                 # (random mode removed)
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
-                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; }')
-                
-                # ─── Show visualizer color mode buttons ─────────────────────────
-                self.visualizer_buttons_group.show()
-                self.set_live_audio_menu_compact(True)
-                # Reset to custom colors mode by default
-                self.switch_to_custom_colors()
+                self.colors_group.setStyleSheet('QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; padding-top: 22px; }')
             else:
                 # Hide vibrance for all other modes
                 for w in self.vibrance_widgets: w.hide()
                 for w in self.speed_widgets: w.show()
                 for w in self.ambient_fps_widgets: w.hide()
                 for w in self.flicker_widgets: w.hide()
-                
-                # ─── Hide visualizer color mode buttons when leaving Live Audio ───
-                self.visualizer_buttons_group.hide()
-                self.set_live_audio_menu_compact(False)
-                # Show zone colors and hide ambient controls when leaving visualizer
-                for btn in self.color_buttons:
-                    btn.show()
-                self.global_color_btn.show()
-                self.visualizer_ambient_controls.hide()
 
             if mode_name == 'Pomodoro Timer':
                 # Hide all standard controls to isolate timer
@@ -1987,16 +2260,29 @@ class RGBControllerApp(QMainWindow):
             
             if 'Smooth Wave' in mode_name:
                 self.wave_fill_cb.show()
+                self.smooth_wave_palette_combo.show()
             else:
                 self.wave_fill_cb.hide()
+                self.smooth_wave_palette_combo.hide()
                 
             if 'Scanner (Cylon)' in mode_name:
                 self.scanner_rainbow_cb.show()
             else:
                 self.scanner_rainbow_cb.hide()
-                
+
+            self.apply_preview_mode_policy(mode_name)
+            self.sync_control_label_widths()
+            self.save_runtime_state_settings()
             self.transition_ticks = 15
             self.apply_effect()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.update_preset_toolbar_layout()
+        self.sync_control_label_widths()
+        if getattr(self, 'preview_enabled', False) and hasattr(self, 'embedded_preview'):
+            self.embedded_preview.setMaximumHeight(self._get_preview_open_height())
+
     def closeEvent(self, event):
         if self.minimize_to_tray_cb.isChecked() and (not self.force_quit):
             event.ignore()
@@ -2015,25 +2301,22 @@ class RGBControllerApp(QMainWindow):
                 print(f'Failed to turn off keyboard LEDs: {e}')
             if hasattr(self, 'tray_icon'):
                 self.tray_icon.hide()
+            self.save_settings()
             super().closeEvent(event)
     def on_bright_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
             self.bright_label.setText(f'Smoothness: {value}%')
-            # Restart visualizer with new smoothness value
-            self.apply_effect()
         else:
             self.bright_label.setText(f'Brightness: {value}%')
-            self.apply_effect()
+        self.sync_control_label_widths()
+        self.apply_effect()
         self.update_mode_setting('brightness', value)
+
     def on_speed_changed(self, value):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Lightning' in mode_name:
             self.speed_label.setText(f'Lightning Frequency: {value}%')
-        elif 'Party' in mode_name:
-            self.speed_label.setText(f'Party Tempo: {value}%')
-        elif 'Starry Night' in mode_name:
-            self.speed_label.setText(f'Twinkle Speed: {value}%')
         elif 'Live Audio Visualizer' in mode_name:
             self.speed_label.setText(f'Visualizer Sensitivity: {value}%')
         elif 'Realistic Fire' in mode_name:
@@ -2044,28 +2327,28 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f'Aurora Shift Speed: {value}%')
         elif 'Meteor Shower' in mode_name:
             self.speed_label.setText(f'Meteor Speed: {value}%')
+        elif 'Party' in mode_name:
+            self.speed_label.setText(f'Party Tempo: {value}%')
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
+        self.sync_control_label_widths()
         self.apply_effect()
         self.update_mode_setting('speed', value)
 
     def on_storm_changed(self, value):
         self.storm_label.setText(f'Storm Intensity: {value}%')
+        self.sync_control_label_widths()
         self.apply_effect()
         self.update_mode_setting('storm_intensity', value)
     # Random mode removed; handler deleted
     def on_vibrance_changed(self, value):
-        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
-        if 'Live Audio Visualizer' in mode_name:
-            self.vibrance_label.setText(f'Brightness Boost: {value}%')
-            self.apply_effect()  # restart with new brightness boost
-        else:
-            self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
-            # Does not need immediate effect replay - calculates frame by frame
+        self.vibrance_label.setText(f'Vibrance: {value/10.0}x')
+        self.sync_control_label_widths()
         self.update_mode_setting('vibrance', value)
 
     def on_ambient_fps_changed(self, value):
         self.ambient_fps_label.setText(f'Ambient FPS: {value}')
+        self.sync_control_label_widths()
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Ambient Screen Color' in mode_name:
             # Update timer to reflect the exact new target framerate
@@ -2075,22 +2358,35 @@ class RGBControllerApp(QMainWindow):
             
     def on_flicker_changed(self, value):
         self.flicker_label.setText(f'Flicker Reduction: {value}')
+        self.sync_control_label_widths()
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
             self.apply_effect()
         self.update_mode_setting('flicker', value)
+
     def stop_visualizer(self):
         if hasattr(self, 'visualizer_process') and self.visualizer_process:
+            proc = self.visualizer_process
             try:
-                import subprocess
-                # Forcefully kill the process tree (/T) to ensure the actual Python child
-                # spawned by the PyInstaller wrapper is terminated, preventing background leakage.
-                subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.visualizer_process.pid)], 
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                               creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
-                self.visualizer_process.wait(timeout=1.0)
-            except Exception as e:
-                pass
+                proc.terminate()
+                proc.wait(timeout=1.0)
+            except Exception as terminate_error:
+                try:
+                    if sys.platform == 'win32':
+                        subprocess.run(
+                            ['taskkill', '/F', '/T', '/PID', str(proc.pid)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            creationflags=subprocess.CREATE_NO_WINDOW,
+                        )
+                        proc.wait(timeout=1.0)
+                    else:
+                        proc.kill()
+                        proc.wait(timeout=1.0)
+                except Exception as kill_error:
+                    print(f'Failed to stop visualizer process: {kill_error}')
+                else:
+                    print(f'Visualizer required force stop: {terminate_error}')
             finally:
                 self.visualizer_process = None
 
@@ -2125,11 +2421,6 @@ class RGBControllerApp(QMainWindow):
                 sensitivity_val  = str(self.speed_slider.value())
                 smoothness_val   = str(self.bright_slider.value())
                 flicker_val      = str(self.flicker_slider.value())
-                # Ambient mode flag and settings
-                ambient_mode_val = '1' if not self.visualizer_color_mode_custom else '0'
-                vibrance_val     = str(self.vibrance_slider.value())
-                fps_val          = str(self.ambient_fps_slider.value())
-                
                 # Pass zone colors as individual R G B args for all 4 zones
                 color_args = []
                 for c in self.zone_colors:
@@ -2140,10 +2431,10 @@ class RGBControllerApp(QMainWindow):
                 # frozen executable to run the visualizer code path instead of
                 # attempting to execute a script file.
                 if getattr(sys, 'frozen', False):
-                    cmd = [sys.executable, '--run-visualizer', sensitivity_val, smoothness_val, flicker_val] + color_args + [ambient_mode_val, vibrance_val, fps_val]
+                    cmd = [sys.executable, '--run-visualizer', sensitivity_val, smoothness_val, flicker_val] + color_args
                 else:
                     script_cmd = os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')
-                    cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args + [ambient_mode_val, vibrance_val, fps_val]
+                    cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args
 
                 import threading
                 flags = 0
@@ -2261,10 +2552,11 @@ class RGBControllerApp(QMainWindow):
                         if self.wave_fill_cb.isChecked():
                             total_cycles = int(t)
                             phase = t % 1.0
-                            hue_prev = total_cycles * 0.1 % 1.0
-                            hue_next = (total_cycles + 1) * 0.1 % 1.0
-                            r_prev, g_prev, b_prev = colorsys.hsv_to_rgb(hue_prev, 1.0, 1.0)
-                            r_next, g_next, b_next = colorsys.hsv_to_rgb(hue_next, 1.0, 1.0)
+                            fill_palette = self.get_smooth_wave_fill_palette()
+                            prev_idx = total_cycles % len(fill_palette)
+                            next_idx = (total_cycles + 1) % len(fill_palette)
+                            r_prev, g_prev, b_prev = fill_palette[prev_idx]
+                            r_next, g_next, b_next = fill_palette[next_idx]
                             for i in range(4):
                                 zone_pos = i * 0.25 if self.smooth_wave_direction == 'left' else (3 - i) * 0.25
                                 margin = 0.2
@@ -2279,9 +2571,9 @@ class RGBControllerApp(QMainWindow):
                                         R = r_prev * (1 - blend) + r_next * blend
                                         G = g_prev * (1 - blend) + g_next * blend
                                         B = b_prev * (1 - blend) + b_next * blend
-                                target_colors[i * 3] = R * 255
-                                target_colors[i * 3 + 1] = G * 255
-                                target_colors[i * 3 + 2] = B * 255
+                                target_colors[i * 3] = R
+                                target_colors[i * 3 + 1] = G
+                                target_colors[i * 3 + 2] = B
                         else:
                             for i in range(4):
                                 hue = (t + i * dir_mult) % 1.0
