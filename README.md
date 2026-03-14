@@ -1,4 +1,4 @@
-# ![Icon](assets/rgb_wheel.ico) 4 Zone RGB Toolkit
+# <img src="assets/rgb_wheel.ico" alt="Icon" width="16" height="16"> 4 Zone RGB Toolkit
 
 ![Preview](assets/preview.png)
 
