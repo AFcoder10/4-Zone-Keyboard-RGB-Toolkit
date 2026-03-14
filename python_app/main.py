@@ -44,7 +44,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.2"
+CURRENT_VERSION = "v2.21"
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -1129,8 +1129,14 @@ class RGBControllerApp(QMainWindow):
         right_layout.addWidget(preset_group)
         self.kb = None
         self.visualizer_process = None
+        self.visualizer_script_path = os.path.normcase(os.path.abspath(os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')))
+        self.visualizer_launch_signature = None
         self.custom_timer = QTimer(self)
         self.custom_timer.timeout.connect(self.update_custom_effects)
+        self.visualizer_restart_timer = QTimer(self)
+        self.visualizer_restart_timer.setSingleShot(True)
+        self.visualizer_restart_timer.setInterval(180)
+        self.visualizer_restart_timer.timeout.connect(self._run_live_visualizer_restart)
         self.timer_interval_active_ms = 33
         self.timer_interval_idle_ms = 90
         self.current_timer_base_ms = self.timer_interval_active_ms
@@ -1622,72 +1628,75 @@ class RGBControllerApp(QMainWindow):
             return
         else:
             p = self.presets[preset_name]
-            self.mode_list.blockSignals(True)
-            self.bright_slider.blockSignals(True)
-            self.speed_slider.blockSignals(True)
-            preset_mode = p.get('mode', 'Static')
-            if preset_mode in ('Wave (Left)', 'Wave (Right)'):
-                self.wave_direction = 'left' if 'Left' in preset_mode else 'right'
-                preset_mode = 'Wave'
-            if preset_mode in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
-                self.smooth_wave_direction = 'left' if 'Left' in preset_mode else 'right'
-                preset_mode = 'Smooth Wave'
-            items = self.mode_list.findItems(preset_mode, Qt.MatchExactly)
-            if items:
-                self.mode_list.setCurrentItem(items[0])
-            self.bright_slider.setValue(p.get('brightness', 100))
-            self.vibrance_slider.setValue(p.get('vibrance', 15))
-            self.speed_slider.setValue(p.get('speed', 20))
-            self.storm_slider.setValue(p.get('storm_intensity', self.default_control_settings['storm_intensity']))
-            self.ambient_fps_slider.setValue(p.get('ambient_fps', self.default_control_settings['ambient_fps']))
-            self.flicker_slider.setValue(p.get('flicker', self.default_control_settings['flicker']))
-            self.zone_colors = p.get('colors', [[255, 0, 0]] * 4)
-            for i in range(4):
-                self.update_button_color(self.color_buttons[i], self.zone_colors[i])
-            if 'global_color' in p:
-                self.global_color = p['global_color']
-                self.update_button_color(self.global_color_btn, self.global_color)
-            if 'scanner_rainbow' in p:
-                self.scanner_rainbow_cb.blockSignals(True)
-                self.scanner_rainbow_cb.setChecked(p['scanner_rainbow'])
-                self.scanner_rainbow_cb.blockSignals(False)
-            self.wave_fill_cb.blockSignals(True)
-            self.wave_fill_cb.setChecked(bool(p.get('wave_fill', False)))
-            self.wave_fill_cb.blockSignals(False)
-            self.smooth_wave_palette_combo.blockSignals(True)
-            palette_name = p.get('smooth_wave_palette', self.default_control_settings['smooth_wave_palette'])
-            if self.smooth_wave_palette_combo.findText(palette_name) == -1:
-                palette_name = self.default_control_settings['smooth_wave_palette']
-            self.smooth_wave_palette_combo.setCurrentText(palette_name)
-            self.smooth_wave_palette_combo.blockSignals(False)
-            if 'wave_dir' in p:
-                self.set_wave_direction(p['wave_dir'])
-            else:
-                if p.get('mode') in ('Wave (Left)', 'Wave (Right)'):
-                    self.set_wave_direction('left' if 'Left' in p.get('mode') else 'right')
-            if 'smooth_wave_dir' in p:
-                self.set_smooth_wave_direction(p['smooth_wave_dir'])
-            else:
-                if p.get('mode') in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
-                    self.set_smooth_wave_direction('left' if 'Left' in p.get('mode') else 'right')
-            mode_key = preset_mode
-            self.mode_settings.setdefault(mode_key, dict(self.default_control_settings))
-            self.mode_settings[mode_key].update({
-                'brightness': self.bright_slider.value(),
-                'vibrance': self.vibrance_slider.value(),
-                'speed': self.speed_slider.value(),
-                'storm_intensity': self.storm_slider.value(),
-                'ambient_fps': self.ambient_fps_slider.value(),
-                'flicker': self.flicker_slider.value(),
-                'wave_fill': self.wave_fill_cb.isChecked(),
-                'scanner_rainbow': self.scanner_rainbow_cb.isChecked(),
-                'smooth_wave_palette': self.smooth_wave_palette_combo.currentText(),
-                'wave_direction': self.wave_direction,
-                'smooth_wave_direction': self.smooth_wave_direction,
-            })
-            self.mode_list.blockSignals(False)
-            self.bright_slider.blockSignals(False)
-            self.speed_slider.blockSignals(False)
+            blocked_widgets = [
+                self.mode_list,
+                self.bright_slider,
+                self.vibrance_slider,
+                self.speed_slider,
+                self.storm_slider,
+                self.ambient_fps_slider,
+                self.flicker_slider,
+                self.wave_fill_cb,
+                self.scanner_rainbow_cb,
+                self.smooth_wave_palette_combo,
+            ]
+            for widget in blocked_widgets:
+                widget.blockSignals(True)
+            try:
+                preset_mode = p.get('mode', 'Static')
+                if preset_mode in ('Wave (Left)', 'Wave (Right)'):
+                    self.wave_direction = 'left' if 'Left' in preset_mode else 'right'
+                    preset_mode = 'Wave'
+                if preset_mode in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
+                    self.smooth_wave_direction = 'left' if 'Left' in preset_mode else 'right'
+                    preset_mode = 'Smooth Wave'
+                items = self.mode_list.findItems(preset_mode, Qt.MatchExactly)
+                if items:
+                    self.mode_list.setCurrentItem(items[0])
+                self.bright_slider.setValue(p.get('brightness', 100))
+                self.vibrance_slider.setValue(p.get('vibrance', 15))
+                self.speed_slider.setValue(p.get('speed', 20))
+                self.storm_slider.setValue(p.get('storm_intensity', self.default_control_settings['storm_intensity']))
+                self.ambient_fps_slider.setValue(p.get('ambient_fps', self.default_control_settings['ambient_fps']))
+                self.flicker_slider.setValue(p.get('flicker', self.default_control_settings['flicker']))
+                self.zone_colors = p.get('colors', [[255, 0, 0]] * 4)
+                for i in range(4):
+                    self.update_button_color(self.color_buttons[i], self.zone_colors[i])
+                if 'global_color' in p:
+                    self.global_color = p['global_color']
+                    self.update_button_color(self.global_color_btn, self.global_color)
+                self.scanner_rainbow_cb.setChecked(bool(p.get('scanner_rainbow', False)))
+                self.wave_fill_cb.setChecked(bool(p.get('wave_fill', False)))
+                palette_name = p.get('smooth_wave_palette', self.default_control_settings['smooth_wave_palette'])
+                if self.smooth_wave_palette_combo.findText(palette_name) == -1:
+                    palette_name = self.default_control_settings['smooth_wave_palette']
+                self.smooth_wave_palette_combo.setCurrentText(palette_name)
+                if 'wave_dir' in p:
+                    self.set_wave_direction(p['wave_dir'], apply_now=False)
+                elif p.get('mode') in ('Wave (Left)', 'Wave (Right)'):
+                    self.set_wave_direction('left' if 'Left' in p.get('mode') else 'right', apply_now=False)
+                if 'smooth_wave_dir' in p:
+                    self.set_smooth_wave_direction(p['smooth_wave_dir'], apply_now=False)
+                elif p.get('mode') in ('Smooth Wave (Left)', 'Smooth Wave (Right)'):
+                    self.set_smooth_wave_direction('left' if 'Left' in p.get('mode') else 'right', apply_now=False)
+                mode_key = preset_mode
+                self.mode_settings.setdefault(mode_key, dict(self.default_control_settings))
+                self.mode_settings[mode_key].update({
+                    'brightness': self.bright_slider.value(),
+                    'vibrance': self.vibrance_slider.value(),
+                    'speed': self.speed_slider.value(),
+                    'storm_intensity': self.storm_slider.value(),
+                    'ambient_fps': self.ambient_fps_slider.value(),
+                    'flicker': self.flicker_slider.value(),
+                    'wave_fill': self.wave_fill_cb.isChecked(),
+                    'scanner_rainbow': self.scanner_rainbow_cb.isChecked(),
+                    'smooth_wave_palette': self.smooth_wave_palette_combo.currentText(),
+                    'wave_direction': self.wave_direction,
+                    'smooth_wave_direction': self.smooth_wave_direction,
+                })
+            finally:
+                for widget in blocked_widgets:
+                    widget.blockSignals(False)
             self.on_mode_changed(preset_mode)
     def save_new_preset(self):
         name, ok = QInputDialog.getText(self, 'Save Preset', 'Enter a name for this preset:')
@@ -1809,24 +1818,24 @@ class RGBControllerApp(QMainWindow):
         self.mode_settings[mode_name][key] = value
         self.save_runtime_state_settings()
 
-    def set_wave_direction(self, direction):
+    def set_wave_direction(self, direction, apply_now=True):
         self.wave_direction = direction
         self.wave_dir_left_btn.setChecked(direction == 'left')
         self.wave_dir_right_btn.setChecked(direction == 'right')
         self.mode_settings.setdefault('Wave', dict(self.default_control_settings))
         self.mode_settings['Wave']['wave_direction'] = direction
         self.save_runtime_state_settings()
-        if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Wave':
+        if apply_now and self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Wave':
             self.apply_effect()
 
-    def set_smooth_wave_direction(self, direction):
+    def set_smooth_wave_direction(self, direction, apply_now=True):
         self.smooth_wave_direction = direction
         self.smooth_wave_dir_left_btn.setChecked(direction == 'left')
         self.smooth_wave_dir_right_btn.setChecked(direction == 'right')
         self.mode_settings.setdefault('Smooth Wave', dict(self.default_control_settings))
         self.mode_settings['Smooth Wave']['smooth_wave_direction'] = direction
         self.save_runtime_state_settings()
-        if self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave':
+        if apply_now and self.mode_list.currentItem() and self.mode_list.currentItem().text() == 'Smooth Wave':
             self.apply_effect()
 
     def update_button_color(self, btn, rgb):
@@ -2235,13 +2244,13 @@ class RGBControllerApp(QMainWindow):
             
             if mode_name == 'Wave':
                 self.wave_dir_widget.show()
-                self.set_wave_direction(self.wave_direction)
+                self.set_wave_direction(self.wave_direction, apply_now=False)
             else:
                 self.wave_dir_widget.hide()
 
             if mode_name == 'Smooth Wave':
                 self.smooth_wave_dir_widget.show()
-                self.set_smooth_wave_direction(self.smooth_wave_direction)
+                self.set_smooth_wave_direction(self.smooth_wave_direction, apply_now=False)
             else:
                 self.smooth_wave_dir_widget.hide()
 
@@ -2307,10 +2316,11 @@ class RGBControllerApp(QMainWindow):
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
             self.bright_label.setText(f'Smoothness: {value}%')
+            self.schedule_live_visualizer_restart()
         else:
             self.bright_label.setText(f'Brightness: {value}%')
+            self.apply_effect()
         self.sync_control_label_widths()
-        self.apply_effect()
         self.update_mode_setting('brightness', value)
 
     def on_speed_changed(self, value):
@@ -2332,7 +2342,10 @@ class RGBControllerApp(QMainWindow):
         else:
             self.speed_label.setText(f'Animation Speed: {value}%')
         self.sync_control_label_widths()
-        self.apply_effect()
+        if 'Live Audio Visualizer' in mode_name:
+            self.schedule_live_visualizer_restart()
+        else:
+            self.apply_effect()
         self.update_mode_setting('speed', value)
 
     def on_storm_changed(self, value):
@@ -2361,34 +2374,110 @@ class RGBControllerApp(QMainWindow):
         self.sync_control_label_widths()
         mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
         if 'Live Audio Visualizer' in mode_name:
-            self.apply_effect()
+            self.schedule_live_visualizer_restart()
         self.update_mode_setting('flicker', value)
 
-    def stop_visualizer(self):
-        if hasattr(self, 'visualizer_process') and self.visualizer_process:
-            proc = self.visualizer_process
+    def schedule_live_visualizer_restart(self):
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
+        if mode_name != 'Live Audio Visualizer':
+            return
+        if hasattr(self, 'visualizer_restart_timer'):
+            self.visualizer_restart_timer.start()
+
+    def _run_live_visualizer_restart(self):
+        mode_name = self.mode_list.currentItem().text() if self.mode_list.currentItem() else ''
+        if mode_name != 'Live Audio Visualizer':
+            return
+        self.apply_effect()
+
+    def _matches_visualizer_cmdline(self, cmdline):
+        if not cmdline:
+            return False
+        for arg in cmdline:
+            if str(arg).strip() == '--run-visualizer':
+                return True
+        for arg in cmdline:
             try:
-                proc.terminate()
-                proc.wait(timeout=1.0)
-            except Exception as terminate_error:
+                normalized_arg = os.path.normcase(os.path.abspath(str(arg)))
+            except Exception:
+                continue
+            if normalized_arg == self.visualizer_script_path:
+                return True
+        return False
+
+    def _collect_visualizer_pids(self):
+        pids = set()
+        if getattr(self, 'visualizer_process', None) is not None:
+            proc = self.visualizer_process
+            if proc.poll() is None:
+                pids.add(proc.pid)
+        if not HAS_PSUTIL:
+            return pids
+        try:
+            for proc in psutil.process_iter(['pid', 'ppid', 'cmdline']):
+                pid = proc.info.get('pid')
+                if not pid or pid == os.getpid():
+                    continue
+                cmdline = proc.info.get('cmdline') or []
+                if not self._matches_visualizer_cmdline(cmdline):
+                    continue
+                parent_pid = proc.info.get('ppid')
+                if parent_pid == os.getpid() or '--run-visualizer' in cmdline:
+                    pids.add(pid)
+        except Exception as e:
+            print(f'Failed to scan for visualizer processes: {e}')
+        return pids
+
+    def _force_kill_pid(self, pid):
+        try:
+            if sys.platform == 'win32':
+                subprocess.run(
+                    ['taskkill', '/F', '/T', '/PID', str(pid)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+            else:
+                os.kill(pid, 9)
+        except Exception as e:
+            print(f'Failed to force-kill visualizer PID {pid}: {e}')
+
+    def _terminate_visualizer_pid(self, pid):
+        tracked_proc = getattr(self, 'visualizer_process', None)
+        if tracked_proc is not None and tracked_proc.pid == pid:
+            try:
+                tracked_proc.terminate()
+                tracked_proc.wait(timeout=1.2)
+                return
+            except Exception:
+                self._force_kill_pid(pid)
                 try:
-                    if sys.platform == 'win32':
-                        subprocess.run(
-                            ['taskkill', '/F', '/T', '/PID', str(proc.pid)],
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            creationflags=subprocess.CREATE_NO_WINDOW,
-                        )
-                        proc.wait(timeout=1.0)
-                    else:
-                        proc.kill()
-                        proc.wait(timeout=1.0)
-                except Exception as kill_error:
-                    print(f'Failed to stop visualizer process: {kill_error}')
-                else:
-                    print(f'Visualizer required force stop: {terminate_error}')
-            finally:
-                self.visualizer_process = None
+                    tracked_proc.wait(timeout=1.2)
+                except Exception:
+                    pass
+                return
+
+        if HAS_PSUTIL:
+            try:
+                proc = psutil.Process(pid)
+                proc.terminate()
+                try:
+                    proc.wait(timeout=1.2)
+                except psutil.TimeoutExpired:
+                    self._force_kill_pid(pid)
+            except Exception:
+                self._force_kill_pid(pid)
+        else:
+            self._force_kill_pid(pid)
+
+    def stop_visualizer(self):
+        if hasattr(self, 'visualizer_restart_timer'):
+            self.visualizer_restart_timer.stop()
+        visualizer_pids = self._collect_visualizer_pids()
+        for pid in visualizer_pids:
+            self._terminate_visualizer_pid(pid)
+        self.visualizer_process = None
+        self.visualizer_launch_signature = None
 
     def apply_effect(self):
         # Stop the custom timer before applying a new effect
@@ -2397,6 +2486,8 @@ class RGBControllerApp(QMainWindow):
             return
         else:
             mode_name = self.mode_list.currentItem().text()
+            if mode_name != 'Live Audio Visualizer' and hasattr(self, 'visualizer_restart_timer'):
+                self.visualizer_restart_timer.stop()
             if self.sct:
                 self.sct.close()
                 self.sct = None
@@ -2408,12 +2499,6 @@ class RGBControllerApp(QMainWindow):
                     except ValueError:
                         return None
             if 'Live Audio Visualizer' in mode_name:
-                self.stop_visualizer()
-                print('Launching visualizer...')
-                if self.kb:
-                    self.kb.close()
-                    self.kb = None
-
                 env = sanitized_child_env(
                     os.environ,
                     include_pythonpath=(not getattr(sys, 'frozen', False))
@@ -2436,6 +2521,15 @@ class RGBControllerApp(QMainWindow):
                     script_cmd = os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')
                     cmd = [sys.executable, script_cmd, sensitivity_val, smoothness_val, flicker_val] + color_args
 
+                launch_signature = tuple(cmd)
+                if self.visualizer_process and self.visualizer_process.poll() is None and self.visualizer_launch_signature == launch_signature:
+                    return
+
+                self.stop_visualizer()
+                if self.kb:
+                    self.kb.close()
+                    self.kb = None
+
                 import threading
                 flags = 0
                 if sys.platform == "win32":
@@ -2445,6 +2539,7 @@ class RGBControllerApp(QMainWindow):
                     cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
                     text=True, creationflags=flags, bufsize=1
                 )
+                self.visualizer_launch_signature = launch_signature
                 
                 def read_proc(proc):
                     for line in iter(proc.stdout.readline, ''):
