@@ -1,4 +1,4 @@
-# <img src="assets/rgb_wheel.ico" alt="Icon" width="16" height="16"> 4 Zone RGB Toolkit
+# <sub><img src="assets/rgb_wheel.ico" alt="Icon" width="128" height="128"></sub> 4 Zone RGB Toolkit
 
 ![Preview](assets/preview.png)
 
@@ -41,6 +41,3 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 ## Installation
 
 Download the latest version from [Releases](https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases).
-
-
-
