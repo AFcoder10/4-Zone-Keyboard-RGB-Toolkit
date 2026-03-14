@@ -41,3 +41,7 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 ## Installation
 
 Download the latest version from [Releases](https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases).
+
+---
+
+Inspired by [L5P-Keyboard-RGB](https://github.com/4JX/L5P-Keyboard-RGB) by 4JX.
