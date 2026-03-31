@@ -31,6 +31,7 @@ try:
     HAS_WMI = True
 except Exception:
     HAS_WMI = False
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame, QFileDialog
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread, QPropertyAnimation, QEasingCurve, QVariantAnimation
 from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter
@@ -44,7 +45,45 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.21"
+CURRENT_VERSION = "v2.3"
+
+class SYSTEM_POWER_STATUS(ctypes.Structure):
+    _fields_ = [
+        ("ACLineStatus", ctypes.c_ubyte),
+        ("BatteryFlag", ctypes.c_ubyte),
+        ("BatteryLifePercent", ctypes.c_ubyte),
+        ("SystemStatusFlag", ctypes.c_ubyte),
+        ("BatteryLifeTime", ctypes.c_uint),
+        ("BatteryFullLifeTime", ctypes.c_uint),
+    ]
+
+class GUID(ctypes.Structure):
+    _fields_ = [
+        ("Data1", ctypes.c_uint32),
+        ("Data2", ctypes.c_uint16),
+        ("Data3", ctypes.c_uint16),
+        ("Data4", ctypes.c_ubyte * 8),
+    ]
+
+# Windows power mode overlay GUID for "Best power efficiency" (aka Energy Saver mode)
+GUID_OVERLAY_BEST_POWER_EFFICIENCY = GUID(
+    0x961CC777,
+    0x2547,
+    0x4F9D,
+    (ctypes.c_ubyte * 8)(0x81, 0x74, 0x7D, 0x86, 0x18, 0x1B, 0x8A, 0x7A),
+)
+
+def _guid_equals(a, b):
+    return (
+        a.Data1 == b.Data1 and
+        a.Data2 == b.Data2 and
+        a.Data3 == b.Data3 and
+        bytes(a.Data4) == bytes(b.Data4)
+    )
+
+# Battery cache: updated every 500ms to avoid expensive repeated calls in tight loops
+_battery_cache = {'percent': 0, 'charging': True, 'last_update': 0}
+_mouse_aura_error_throttle = {'last_error': '', 'last_time': 0}
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -317,10 +356,19 @@ class LogsDialog(FadeDialog):
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.refresh)
         self.update_timer.start(500)
+        self.last_text_length = 0  # Track text length to avoid redundant updates
+
     def refresh(self):
         try:
+            # Get combined log text
             text = _STDOUT_BUFFER.get_text() + _STDERR_BUFFER.get_text()
-            self.log_view.setPlainText(text)
+            # Only update if text actually grew (avoid full replacement on every tick)
+            if len(text) > self.last_text_length:
+                # Instead of full replacement, append new content
+                old_text = self.log_view.toPlainText()
+                if old_text != text:
+                    self.log_view.setPlainText(text)
+                    self.last_text_length = len(text)
             self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
         except Exception:
             pass
@@ -342,6 +390,7 @@ class KeyboardPreviewWidget(QWidget):
     def __init__(self, parent_app, parent=None):
         super().__init__(parent)
         self.parent_app = parent_app
+        self.last_colors = None  # Track last color state to avoid unnecessary repaints
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
@@ -360,7 +409,9 @@ class KeyboardPreviewWidget(QWidget):
     def update_colors(self):
         try:
             colors = self.parent_app.custom_colors
-            if len(colors) >= 12:
+            # Only update if colors changed to avoid expensive CSS recalculation
+            if colors != self.last_colors and len(colors) >= 12:
+                self.last_colors = colors[:]  # Store copy
                 for i in range(4):
                     r = max(0, min(255, int(colors[i * 3])))
                     g = max(0, min(255, int(colors[i * 3 + 1])))
@@ -481,6 +532,14 @@ class RGBControllerApp(QMainWindow):
         self.launch_on_start_cb.setStyleSheet(toggle_css)
         self.launch_on_start_cb.toggled.connect(self.save_settings)
         settings_layout.addWidget(self.launch_on_start_cb)
+        self.turn_off_unplugged_cb = QCheckBox('Turn Off Lights When Unplugged')
+        self.turn_off_unplugged_cb.setStyleSheet(toggle_css)
+        self.turn_off_unplugged_cb.toggled.connect(self.on_power_policy_setting_changed)
+        settings_layout.addWidget(self.turn_off_unplugged_cb)
+        self.turn_off_battery_saver_cb = QCheckBox('Turn Off Lights When Battery Saver Is On')
+        self.turn_off_battery_saver_cb.setStyleSheet(toggle_css)
+        self.turn_off_battery_saver_cb.toggled.connect(self.on_power_policy_setting_changed)
+        settings_layout.addWidget(self.turn_off_battery_saver_cb)
         settings_layout.addWidget(QLabel('Startup Preset:', styleSheet='color: #00E5FF; font-weight: bold; margin-top: 15px;'))
         self.startup_preset_combo = QComboBox()
         self.startup_preset_combo.setStyleSheet('\n            QComboBox { background-color: #1A1A1E; color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 6px; font-family: \'Segoe UI Variable\'; }\n            QComboBox::drop-down { border: none; }\n        ')
@@ -1141,6 +1200,17 @@ class RGBControllerApp(QMainWindow):
         self.timer_interval_idle_ms = 90
         self.current_timer_base_ms = self.timer_interval_active_ms
         self.is_window_active = True
+        self.turn_off_when_unplugged = False
+        self.turn_off_when_battery_saver = False
+        self._is_power_policy_forcing_off = False
+        self.power_policy_timer = QTimer(self)
+        self.power_policy_timer.setInterval(2000)
+        self.power_policy_timer.timeout.connect(self.poll_power_policy)
+        # Power policy timer will start conditionally based on settings when they're loaded
+        self.battery_cache_timer = QTimer(self)
+        self.battery_cache_timer.setInterval(500)
+        self.battery_cache_timer.timeout.connect(self.update_battery_cache)
+        self.battery_cache_timer.start()
         self.custom_colors = [0] * 12
         self.transition_ticks = 0
         self.last_activity = time.monotonic()
@@ -1516,6 +1586,8 @@ class RGBControllerApp(QMainWindow):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
+        self.turn_off_unplugged_cb.blockSignals(True)
+        self.turn_off_battery_saver_cb.blockSignals(True)
         if hasattr(self, 'startup_preset_combo'):
             self.startup_preset_combo.blockSignals(True)
         min_val = settings.value('minimize_to_tray', False)
@@ -1524,6 +1596,15 @@ class RGBControllerApp(QMainWindow):
         launch_val = settings.value('launch_on_start', False)
         launch_start = str(launch_val).lower() == 'true' if isinstance(launch_val, str) else bool(launch_val)
         self.launch_on_start_cb.setChecked(launch_start)
+        unplugged_val = settings.value('turn_off_when_unplugged', False)
+        self.turn_off_when_unplugged = str(unplugged_val).lower() == 'true' if isinstance(unplugged_val, str) else bool(unplugged_val)
+        self.turn_off_unplugged_cb.setChecked(self.turn_off_when_unplugged)
+        battery_saver_val = settings.value('turn_off_when_battery_saver', False)
+        self.turn_off_when_battery_saver = str(battery_saver_val).lower() == 'true' if isinstance(battery_saver_val, str) else bool(battery_saver_val)
+        self.turn_off_battery_saver_cb.setChecked(self.turn_off_when_battery_saver)
+        # Start power policy timer if either setting is enabled
+        if self.turn_off_when_unplugged or self.turn_off_when_battery_saver:
+            self.power_policy_timer.start()
         presets_json = settings.value('saved_presets', '{}')
         if isinstance(presets_json, str) and presets_json:
                 try:
@@ -1553,6 +1634,8 @@ class RGBControllerApp(QMainWindow):
             self.startup_preset_combo.blockSignals(False)
         self.minimize_to_tray_cb.blockSignals(False)
         self.launch_on_start_cb.blockSignals(False)
+        self.turn_off_unplugged_cb.blockSignals(False)
+        self.turn_off_battery_saver_cb.blockSignals(False)
         if startup_p in self.presets:
             self.apply_preset_logic(startup_p)
         else:
@@ -1562,6 +1645,7 @@ class RGBControllerApp(QMainWindow):
                 self.on_mode_changed(last_mode)
         current_mode = self.mode_list.currentItem().text() if self.mode_list.currentItem() else 'Off'
         self.apply_preview_mode_policy(current_mode)
+        self.refresh_power_policy_state()
 
     def save_settings(self, *args):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
@@ -1574,7 +1658,84 @@ class RGBControllerApp(QMainWindow):
         settings.setValue('preview_user_enabled', bool(getattr(self, 'preview_user_enabled', True)))
         launch_start = self.launch_on_start_cb.isChecked()
         settings.setValue('launch_on_start', launch_start)
+        settings.setValue('turn_off_when_unplugged', self.turn_off_unplugged_cb.isChecked())
+        settings.setValue('turn_off_when_battery_saver', self.turn_off_battery_saver_cb.isChecked())
         self.manage_startup_registry(launch_start)
+
+    def on_power_policy_setting_changed(self, *args):
+        self.turn_off_when_unplugged = self.turn_off_unplugged_cb.isChecked()
+        self.turn_off_when_battery_saver = self.turn_off_battery_saver_cb.isChecked()
+        self.save_settings()
+        # Start/stop timer based on whether either setting is enabled
+        either_enabled = self.turn_off_when_unplugged or self.turn_off_when_battery_saver
+        if either_enabled and not self.power_policy_timer.isActive():
+            self.power_policy_timer.start()
+        elif not either_enabled and self.power_policy_timer.isActive():
+            self.power_policy_timer.stop()
+            self._is_power_policy_forcing_off = False
+        self.refresh_power_policy_state()
+        self.apply_effect()
+
+    def _is_energy_saver_overlay_enabled(self):
+        try:
+            overlay_guid = GUID()
+            rc = ctypes.windll.powrprof.PowerGetEffectiveOverlayScheme(ctypes.byref(overlay_guid))
+            if rc == 0:
+                return _guid_equals(overlay_guid, GUID_OVERLAY_BEST_POWER_EFFICIENCY)
+        except Exception:
+            pass
+        return False
+
+    def _read_system_power_status(self):
+        status = SYSTEM_POWER_STATUS()
+        try:
+            ok = ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(status))
+        except Exception:
+            ok = 0
+        if ok:
+            # ACLineStatus: 0=offline, 1=online, 255=unknown
+            unplugged = status.ACLineStatus == 0
+            # SystemStatusFlag bit 0 indicates Battery Saver status on Windows.
+            battery_saver = bool(status.SystemStatusFlag & 0x01)
+            # Windows 11 Energy Saver can be exposed through power overlay mode.
+            battery_saver = battery_saver or self._is_energy_saver_overlay_enabled()
+            return unplugged, battery_saver
+        if HAS_PSUTIL:
+            try:
+                battery = psutil.sensors_battery()
+                if battery is not None:
+                    return (not bool(battery.power_plugged), self._is_energy_saver_overlay_enabled())
+            except Exception:
+                pass
+        return False, self._is_energy_saver_overlay_enabled()
+
+    def refresh_power_policy_state(self):
+        self.turn_off_when_unplugged = bool(self.turn_off_unplugged_cb.isChecked())
+        self.turn_off_when_battery_saver = bool(self.turn_off_battery_saver_cb.isChecked())
+        unplugged, battery_saver = self._read_system_power_status()
+        self._is_power_policy_forcing_off = (
+            (self.turn_off_when_unplugged and unplugged) or
+            (self.turn_off_when_battery_saver and battery_saver)
+        )
+        return self._is_power_policy_forcing_off
+
+    def poll_power_policy(self):
+        old_state = bool(getattr(self, '_is_power_policy_forcing_off', False))
+        new_state = self.refresh_power_policy_state()
+        if old_state != new_state:
+            self.apply_effect()
+
+    def update_battery_cache(self):
+        """Update battery cache every 500ms to avoid expensive repeated calls in tight loops."""
+        try:
+            if HAS_PSUTIL:
+                battery = psutil.sensors_battery()
+                if battery:
+                    _battery_cache['percent'] = battery.percent
+                    _battery_cache['charging'] = battery.power_plugged
+                    _battery_cache['last_update'] = time.monotonic()
+        except Exception:
+            pass
 
     def clear_cache(self):
         reply = QMessageBox.warning(self, 'Clear Cache & Reset', 'WARNING: This will permanently delete all your saved presets, startup configurations, and reset the application to factory defaults.\n\nAre you absolutely sure you want to proceed?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -1584,9 +1745,16 @@ class RGBControllerApp(QMainWindow):
             self.manage_startup_registry(False)
             self.minimize_to_tray_cb.blockSignals(True)
             self.launch_on_start_cb.blockSignals(True)
+            self.turn_off_unplugged_cb.blockSignals(True)
+            self.turn_off_battery_saver_cb.blockSignals(True)
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(False)
+            self.turn_off_unplugged_cb.setChecked(False)
+            self.turn_off_battery_saver_cb.setChecked(False)
+            self.turn_off_when_unplugged = False
+            self.turn_off_when_battery_saver = False
+            self._is_power_policy_forcing_off = False
             self.presets = {}
             self.mode_settings = self.build_default_mode_settings()
             self.wave_direction = 'left'
@@ -1599,6 +1767,8 @@ class RGBControllerApp(QMainWindow):
             self.update_preset_combos()
             self.minimize_to_tray_cb.blockSignals(False)
             self.launch_on_start_cb.blockSignals(False)
+            self.turn_off_unplugged_cb.blockSignals(False)
+            self.turn_off_battery_saver_cb.blockSignals(False)
             self.startup_preset_combo.blockSignals(False)
             self.bright_slider.setValue(100)
             self.vibrance_slider.setValue(15)
@@ -1783,12 +1953,35 @@ class RGBControllerApp(QMainWindow):
             (self.ambient_fps_slider, 'ambient_fps'),
             (self.flicker_slider, 'flicker'),
         ]
+
+        def _coerce_slider_setting(slider, key):
+            default_value = self.default_control_settings.get(key, slider.value())
+            raw_value = settings.get(key, default_value)
+            try:
+                value = int(raw_value)
+            except (TypeError, ValueError):
+                value = int(default_value)
+            # If persisted data is out-of-range (for example from older builds),
+            # fall back to the current default instead of snapping to slider max.
+            if value < slider.minimum() or value > slider.maximum():
+                value = int(default_value)
+            return value
+
         for slider, key in slider_map:
             if slider is None:
                 continue
             slider.blockSignals(True)
-            slider.setValue(settings.get(key, self.default_control_settings.get(key, slider.value())))
+            normalized_value = _coerce_slider_setting(slider, key)
+            slider.setValue(normalized_value)
             slider.blockSignals(False)
+            settings[key] = normalized_value
+        self.mode_settings[mode_name] = dict(settings)
+        self.bright_label.setText(f'Brightness: {self.bright_slider.value()}%')
+        self.vibrance_label.setText(f'Vibrance: {self.vibrance_slider.value()/10.0}x')
+        self.speed_label.setText(f'Animation Speed: {self.speed_slider.value()}%')
+        self.storm_label.setText(f'Storm Intensity: {self.storm_slider.value()}%')
+        self.ambient_fps_label.setText(f'Ambient FPS: {self.ambient_fps_slider.value()}')
+        self.flicker_label.setText(f'Flicker Reduction: {self.flicker_slider.value()}')
         self.wave_fill_cb.blockSignals(True)
         self.wave_fill_cb.setChecked(bool(settings.get('wave_fill', False)))
         self.wave_fill_cb.blockSignals(False)
@@ -2176,7 +2369,7 @@ class RGBControllerApp(QMainWindow):
             self.load_mode_controls(mode_name)
             self.update_mode_description(mode_name)
             self.update_zone_color_controls_state(mode_name)
-            is_speed_enabled = mode_name not in ['Off', 'Static', '[Beta] CPU Temperature', 'Ambient Screen Color']
+            is_speed_enabled = mode_name not in ['Off', 'Static', 'Ambient Screen Color']
             for w in self.speed_widgets:
                 w.setEnabled(is_speed_enabled)
                 
@@ -2498,6 +2691,11 @@ class RGBControllerApp(QMainWindow):
                         self.kb = L5PKeyboard()
                     except ValueError:
                         return None
+            if self.refresh_power_policy_state():
+                if self.kb:
+                    self.kb.set_effect('static')
+                    self.kb.set_solid_color(0, 0, 0)
+                return
             if 'Live Audio Visualizer' in mode_name:
                 env = sanitized_child_env(
                     os.environ,
@@ -2633,6 +2831,10 @@ class RGBControllerApp(QMainWindow):
                 return
             else:
                 mode_name = self.mode_list.currentItem().text()
+                if self._is_power_policy_forcing_off:
+                    self.kb.set_effect('static')
+                    self.kb.set_solid_color(0, 0, 0)
+                    return
                 # (random mode removed) — continue with normal effect updates
                 
                 speed_mult = self.speed_slider.value() / 50.0
@@ -3064,61 +3266,57 @@ class RGBControllerApp(QMainWindow):
                             else:
                                 if 'Battery Visualizer' in mode_name:
                                     smooth_amount = 0.5
-                                    if HAS_PSUTIL:
-                                        battery = psutil.sensors_battery()
-                                        if battery:
-                                            percent = battery.percent
-                                            charging = battery.power_plugged
-                                            
-                                            # Determine the base color and active zones count
-                                            if charging:
-                                                if percent >= 100:
-                                                    base_color = [0, 255, 0] # Green when full
-                                                    active_zones_max = 4
-                                                else:
-                                                    base_color = [0, 0, 255] # Blue when charging
-                                                    active_zones_max = (percent // 25) + 1
-                                            else:
-                                                if percent <= 25:
-                                                    base_color = [255, 0, 0] # Red
-                                                    active_zones_max = 1
-                                                elif percent <= 50:
-                                                    base_color = [255, 128, 0] # Orange
-                                                    active_zones_max = 2
-                                                else:
-                                                    base_color = [255, 255, 255] # White
-                                                    active_zones_max = 3 if percent <= 75 else 4
-                                            
-                                            for i in range(4):
-                                                # Percentage within this specific zone's range (0-25 per zone)
-                                                zone_min = i * 25
-                                                zone_max = (i + 1) * 25
-                                                
-                                                if percent >= zone_max:
-                                                    # Fully charged zone
-                                                    brightness_mult = 1.0
-                                                elif percent > zone_min:
-                                                    # Partial zone filling
-                                                    brightness_mult = (percent - zone_min) / 25.0
-                                                else:
-                                                    # Not reached yet
-                                                    brightness_mult = 0.0
-                                                
-                                                # Apply the "tier" color logically
-                                                # Lower zones inherit the color of the current active tier
-                                                if i < active_zones_max:
-                                                    target_colors[i * 3] = base_color[0] * brightness_mult
-                                                    target_colors[i * 3 + 1] = base_color[1] * brightness_mult
-                                                    target_colors[i * 3 + 2] = base_color[2] * brightness_mult
-                                                else:
-                                                    target_colors[i * 3] = 0
-                                                    target_colors[i * 3 + 1] = 0
-                                                    target_colors[i * 3 + 2] = 0
+                                    # Use cached battery data to avoid repeated system calls each frame
+                                    percent = _battery_cache.get('percent', 0)
+                                    charging = _battery_cache.get('charging', True)
+                                    
+                                    # Determine the base color and active zones count
+                                    if charging:
+                                        if percent >= 100:
+                                            base_color = [0, 255, 0] # Green when full
+                                            active_zones_max = 4
+                                        else:
+                                            base_color = [0, 0, 255] # Blue when charging
+                                            active_zones_max = (percent // 25) + 1
+                                    else:
+                                        if percent <= 25:
+                                            base_color = [255, 0, 0] # Red
+                                            active_zones_max = 1
+                                        elif percent <= 50:
+                                            base_color = [255, 128, 0] # Orange
+                                            active_zones_max = 2
+                                        else:
+                                            base_color = [255, 255, 255] # White
+                                            active_zones_max = 3 if percent <= 75 else 4
+                                    
+                                    for i in range(4):
+                                        # Percentage within this specific zone's range (0-25 per zone)
+                                        zone_min = i * 25
+                                        zone_max = (i + 1) * 25
+                                        
+                                        if percent >= zone_max:
+                                            # Fully charged zone
+                                            brightness_mult = 1.0
+                                        elif percent > zone_min:
+                                            # Partial zone filling
+                                            brightness_mult = (percent - zone_min) / 25.0
+                                        else:
+                                            # Not reached yet
+                                            brightness_mult = 0.0
+                                        
+                                        # Apply the "tier" color logically
+                                        # Lower zones inherit the color of the current active tier
+                                        if i < active_zones_max:
+                                            target_colors[i * 3] = base_color[0] * brightness_mult
+                                            target_colors[i * 3 + 1] = base_color[1] * brightness_mult
+                                            target_colors[i * 3 + 2] = base_color[2] * brightness_mult
+                                        else:
+                                            target_colors[i * 3] = 0
+                                            target_colors[i * 3 + 1] = 0
+                                            target_colors[i * 3 + 2] = 0
                                 elif 'Mouse-Reactive Aura' in mode_name:
                                     smooth_amount = 0.8
                                     try:
-                                        from PySide6.QtGui import QCursor
-                                        
                                         cursor_pos = QCursor.pos()
                                         screen = QApplication.primaryScreen()
                                         if screen:
@@ -3144,7 +3342,14 @@ class RGBControllerApp(QMainWindow):
                                                 target_colors[i * 3 + 1] = self.zone_colors[i][1] * intensity
                                                 target_colors[i * 3 + 2] = self.zone_colors[i][2] * intensity
                                     except Exception as e:
-                                        print(f"Mouse aura calculation error: {e}")
+                                        # Throttle error logging to avoid spam
+                                        now = time.monotonic()
+                                        error_msg = str(e)
+                                        if (_mouse_aura_error_throttle['last_error'] != error_msg or
+                                            now - _mouse_aura_error_throttle['last_time'] > 5.0):
+                                            print(f"Mouse aura calculation error: {e}")
+                                            _mouse_aura_error_throttle['last_error'] = error_msg
+                                            _mouse_aura_error_throttle['last_time'] = now
                                 elif 'Pomodoro Timer' in mode_name:
                                     if self.pomo_running:
                                         now = time.monotonic()
