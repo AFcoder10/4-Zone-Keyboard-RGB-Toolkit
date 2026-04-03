@@ -4,7 +4,7 @@
 
 A modern, highly optimized hardware and software RGB visualization tool specifically designed and tested for Lenovo LOQ and Legion laptops with 4-Zone RGB keyboards. This toolkit provides a sleek, Fluent Design-inspired graphical interface that lets you customize keyboard lighting dynamically.
 
-Current Version: v2.3
+Current Version: v2.4
 
 ## Features
 
@@ -30,6 +30,7 @@ Current Version: v2.3
 - Mouse-Reactive Aura
 - Pomodoro Timer
 - Live Audio Visualizer
+- Temperature Mode (Beta)
 
 ## Hardware Compatibility
 

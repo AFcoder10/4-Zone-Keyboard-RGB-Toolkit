@@ -45,7 +45,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.3"
+CURRENT_VERSION = "v2.4"
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
     _fields_ = [
@@ -1110,7 +1110,7 @@ class RGBControllerApp(QMainWindow):
         self.preview_forced_by_mode = False
 
         left_layout.addWidget(self.preview_panel)
-        self.SOFTWARE_MODES = ['Smooth Wave', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer']
+        self.SOFTWARE_MODES = ['Smooth Wave', 'Lightning', 'Party', 'Realistic Fire', 'Scanner (Cylon)', 'Aurora Borealis', 'Meteor Shower', 'Ambient Screen Color', 'Battery Visualizer', 'Mouse-Reactive Aura', 'Pomodoro Timer', 'Live Audio Visualizer', 'Temperature Mode (Beta)']
         self.HARDWARE_MODES = ['Off', 'Static', 'Breath', 'Smooth', 'Wave']
         self.default_control_settings = {
             'brightness': 100,
@@ -1190,6 +1190,8 @@ class RGBControllerApp(QMainWindow):
         self.visualizer_process = None
         self.visualizer_script_path = os.path.normcase(os.path.abspath(os.path.join(os.path.dirname(__file__), 'audio_visualizer.py')))
         self.visualizer_launch_signature = None
+        self.temperature_worker_process = None
+        self.temperature_worker_script_path = os.path.normcase(os.path.abspath(os.path.join(os.path.dirname(__file__), 'temperature_worker.py')))
         self.custom_timer = QTimer(self)
         self.custom_timer.timeout.connect(self.update_custom_effects)
         self.visualizer_restart_timer = QTimer(self)
@@ -1504,6 +1506,7 @@ class RGBControllerApp(QMainWindow):
             'Mouse-Reactive Aura': 'Shifts lighting in response to mouse movement.',
             'Pomodoro Timer': 'Turns the keyboard into a full-session progress indicator.',
             'Live Audio Visualizer': 'A 4-band audio-reactive equalizer using your selected zone colors.',
+            'Temperature Mode (Beta)': 'Displays CPU average core temp on Zones 1 & 2, and GPU core temp on Zones 3 & 4. Colors range from Blue (<40°C) to Flashing Red (>100°C).',
         }
         self.mode_description_label.setText(descriptions.get(mode_name, 'Configure the selected effect using the controls on the left.'))
 
@@ -1637,8 +1640,15 @@ class RGBControllerApp(QMainWindow):
         self.turn_off_unplugged_cb.blockSignals(False)
         self.turn_off_battery_saver_cb.blockSignals(False)
         if startup_p in self.presets:
+            if self.presets[startup_p].get('mode') == 'Temperature Mode (Beta)':
+                startup_p = 'None (Use Last State)'
+                last_mode = 'Off'
+
+        if startup_p in self.presets:
             self.apply_preset_logic(startup_p)
         else:
+            if last_mode == 'Temperature Mode (Beta)':
+                last_mode = 'Off'
             items = self.mode_list.findItems(last_mode, Qt.MatchExactly)
             if items:
                 self.mode_list.setCurrentItem(items[0])
@@ -2187,6 +2197,7 @@ class RGBControllerApp(QMainWindow):
             print(f'Failed to turn off keyboard LEDs from tray quit: {e}')
         self.save_settings()
         self.stop_visualizer()
+        self.stop_temperature_worker()
         QApplication.instance().quit()
     def on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
@@ -2359,6 +2370,44 @@ class RGBControllerApp(QMainWindow):
             self.showNormal()
         # Reset colors when stopping? handled in loop if running=False
         
+    def start_temperature_worker(self):
+        stop_flag = os.path.join(tempfile.gettempdir(), "4zone_temp_worker_stop.flag")
+        if os.path.exists(stop_flag):
+            try: os.remove(stop_flag)
+            except Exception: pass
+            
+        pid_file = os.path.join(tempfile.gettempdir(), "4zone_temp_worker.pid")
+        if os.path.exists(pid_file):
+            try:
+                with open(pid_file, "r") as f:
+                    worker_pid = int(f.read().strip())
+                if psutil.pid_exists(worker_pid):
+                    return # Elevated worker is still alive
+            except Exception:
+                pass
+
+        cmd = [sys.executable, self.temperature_worker_script_path, str(os.getpid())]
+        env = os.environ.copy()
+        if "PYTHONPATH" not in env:
+            env["PYTHONPATH"] = os.path.dirname(os.path.normpath(__file__))
+            
+        try:
+            self.temperature_worker_process = subprocess.Popen(
+                cmd,
+                creationflags=0x00000008, # DETACHED_PROCESS
+                env=env
+            )
+        except Exception as e:
+            print(f"Failed to start temperature worker: {e}")
+
+    def stop_temperature_worker(self):
+        stop_flag = os.path.join(tempfile.gettempdir(), "4zone_temp_worker_stop.flag")
+        try:
+            with open(stop_flag, "w") as f:
+                f.write("stop")
+        except Exception:
+            pass
+
     def on_mode_changed(self, mode_name):
         if mode_name is None:
             return
@@ -2366,6 +2415,12 @@ class RGBControllerApp(QMainWindow):
             if getattr(self, 'current_mode_name', None) != mode_name:
                 self.reset_mode_state()
             self.current_mode_name = mode_name
+            
+            if mode_name == 'Temperature Mode (Beta)':
+                self.start_temperature_worker()
+            else:
+                self.stop_temperature_worker()
+                
             self.load_mode_controls(mode_name)
             self.update_mode_description(mode_name)
             self.update_zone_color_controls_state(mode_name)
@@ -2492,6 +2547,7 @@ class RGBControllerApp(QMainWindow):
             return
         else:
             self.stop_visualizer()
+            self.stop_temperature_worker()
             self.custom_timer.stop()
             if self.sct:
                 self.sct.close()
@@ -2878,6 +2934,47 @@ class RGBControllerApp(QMainWindow):
                                 target_colors[i * 3] = r * 255
                                 target_colors[i * 3 + 1] = g * 255
                                 target_colors[i * 3 + 2] = b * 255
+                    elif 'Temperature Mode (Beta)' in mode_name:
+                        if getattr(self, 'temp_last_read_time', 0) + 1.0 < t:
+                            self.temp_last_read_time = t
+                            out_file = os.path.join(tempfile.gettempdir(), "4zone_temperatures.json")
+                            self.last_temps = {"cpu": 0.0, "gpu": 0.0}
+                            if os.path.exists(out_file):
+                                try:
+                                    with open(out_file, "r") as f:
+                                        self.last_temps = json.load(f)
+                                except Exception:
+                                    pass
+                        
+                        temps = getattr(self, 'last_temps', {"cpu": 0.0, "gpu": 0.0})
+                        
+                        if temps.get("cpu", 0.0) > 100 or temps.get("gpu", 0.0) > 100:
+                            smooth_amount = 1.0
+                        else:
+                            smooth_amount = 0.015
+                        
+                        def _temp_color(temp):
+                            if temp < 40: return (0, 0, 255)
+                            elif temp < 60:
+                                b = (temp - 40) / 20.0
+                                return (int(b * 255), 255, int((1 - b) * 255))
+                            elif temp < 80:
+                                b = (temp - 60) / 20.0
+                                return (255, int(255 - b * 90), 0)
+                            elif temp < 90:
+                                b = (temp - 80) / 10.0
+                                return (255, int(165 - b * 115), 0)
+                            elif temp <= 100: return (255, 0, 0)
+                            else: return (255, 0, 0) if (int(t * 4) % 2) == 0 else (0, 0, 0)
+
+                        cpu_col = _temp_color(temps.get("cpu", 0.0))
+                        gpu_col = _temp_color(temps.get("gpu", 0.0))
+                        
+                        target_colors[0], target_colors[1], target_colors[2] = cpu_col
+                        target_colors[3], target_colors[4], target_colors[5] = cpu_col
+                        target_colors[6], target_colors[7], target_colors[8] = gpu_col
+                        target_colors[9], target_colors[10], target_colors[11] = gpu_col
+
                     else:
                         if 'Lightning' in mode_name:
                             if not hasattr(self, 'lightning_strikes'):
@@ -3460,6 +3557,18 @@ if __name__ == '__main__':
             try:
                 visualizer = AudioVisualizer()
                 visualizer.run()
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            sys.exit(0)
+    if '--run-temperature-worker' in sys.argv or (len(sys.argv) > 1 and 'temperature_worker.py' in sys.argv[1]):
+            if '--run-temperature-worker' in sys.argv:
+                sys.argv.remove('--run-temperature-worker')
+            if len(sys.argv) > 1 and 'temperature_worker.py' in sys.argv[1]:
+                sys.argv.remove(sys.argv[1])
+            import temperature_worker
+            try:
+                temperature_worker.main()
             except Exception as e:
                 import traceback
                 traceback.print_exc()
