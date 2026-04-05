@@ -45,7 +45,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.4"
+CURRENT_VERSION = "v2.41"
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
     _fields_ = [
@@ -2386,7 +2386,11 @@ class RGBControllerApp(QMainWindow):
             except Exception:
                 pass
 
-        cmd = [sys.executable, self.temperature_worker_script_path, str(os.getpid())]
+        if hasattr(sys, '_MEIPASS'):
+            cmd = [sys.executable, "--run-temperature-worker", str(os.getpid())]
+        else:
+            cmd = [sys.executable, self.temperature_worker_script_path, str(os.getpid())]
+            
         env = os.environ.copy()
         if "PYTHONPATH" not in env:
             env["PYTHONPATH"] = os.path.dirname(os.path.normpath(__file__))
@@ -2943,6 +2947,7 @@ class RGBControllerApp(QMainWindow):
                                 try:
                                     with open(out_file, "r") as f:
                                         self.last_temps = json.load(f)
+                                        print(f"[Temperature Mode] CPU: {self.last_temps.get('cpu', 0.0):.1f}°C | GPU: {self.last_temps.get('gpu', 0.0):.1f}°C | ERR: {self.last_temps.get('error')}")
                                 except Exception:
                                     pass
                         
