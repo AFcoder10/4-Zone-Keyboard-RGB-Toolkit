@@ -2,8 +2,10 @@ from pathlib import Path
 
 try:
     import clr
-except Exception:
+    clr_error = None
+except Exception as e:
     clr = None
+    clr_error = str(e)
 
 
 def _iter_hardware_tree(hardware):
@@ -32,22 +34,18 @@ def _resolve_lhm_dll_path():
 
 
 def get_cpu_core_temperatures():
-    """
-    Returns a list of CPU temperature sensors from LibreHardwareMonitor.
-    Each item has: name, temp_c, identifier
-    """
     if clr is None:
-        return []
+        return [], "CLR module missing"
 
     dll_path = _resolve_lhm_dll_path()
     if dll_path is None:
-        return []
+        return [], "LHM DLL not found"
 
     try:
         clr.AddReference(str(dll_path.resolve()))
         from LibreHardwareMonitor.Hardware import Computer, HardwareType, SensorType  # type: ignore
-    except Exception:
-        return []
+    except Exception as e:
+        return [], f"LHM Init Error: {e}"
 
     rows = []
     computer = Computer()
@@ -62,6 +60,8 @@ def get_cpu_core_temperatures():
         computer.IsBatteryEnabled = False
 
     computer.Open()
+    hardware_nodes_count = len(computer.Hardware)
+    
     try:
         for hw in computer.Hardware:
             hw.Update()
@@ -77,13 +77,6 @@ def get_cpu_core_temperatures():
                     lower_name = sensor_name.lower()
                     if "distance to tjmax" in lower_name:
                         continue
-                    if not (
-                        "p-core #" in lower_name
-                        or "e-core #" in lower_name
-                        or "core #" in lower_name
-                        or "cpu package" in lower_name
-                    ):
-                        continue
 
                     value = sensor.Value
                     rows.append(
@@ -97,8 +90,9 @@ def get_cpu_core_temperatures():
         computer.Close()
 
     rows.sort(key=lambda x: x["name"])
-    return rows
-
+    if len(rows) == 0:
+        return rows, f"Found 0 CPU sensors across {hardware_nodes_count} LHM hardware nodes."
+    return rows, None
 
 def get_cpu_temperature_summary():
     """
@@ -108,65 +102,63 @@ def get_cpu_temperature_summary():
     - cpu_package_c: CPU package temperature when available
     - delta_cpu_minus_average_c: package minus core average
     """
-    sensors = get_cpu_core_temperatures()
+    sensors, sys_error = get_cpu_core_temperatures()
 
-    core_rows = []
-    package_row = None
+    core_average = None
+    cpu_package = None
 
     for sensor in sensors:
         name = str(sensor.get("name", ""))
         temp_c = sensor.get("temp_c")
         lower_name = name.lower()
 
-        if "distance to tjmax" in lower_name:
+        if "distance" in lower_name:
             continue
 
-        if "cpu package" in lower_name:
-            if isinstance(temp_c, (int, float)):
-                package_row = sensor
-            continue
+        if isinstance(temp_c, (int, float)):
+            if "package" in lower_name or "tctl/tdie" in lower_name:
+                cpu_package = temp_c
+            if "average" in lower_name:
+                core_average = temp_c
 
-        if any(marker in lower_name for marker in ("p-core #", "e-core #", "core #")):
-            if isinstance(temp_c, (int, float)):
-                core_rows.append(sensor)
+    # If LHM didn't outright give us an "average", calculate it from specific cores
+    if core_average is None:
+        core_rows = [s for s in sensors if any(m in str(s.get("name", "")).lower() for m in ("core #", "p-core", "e-core", "ccd"))]
+        valid_temps = [s["temp_c"] for s in core_rows if isinstance(s.get("temp_c"), (int, float))]
+        if valid_temps:
+            core_average = sum(valid_temps) / len(valid_temps)
 
-    core_average = None
-    if core_rows:
-        core_average = sum(float(row["temp_c"]) for row in core_rows) / len(core_rows)
+    # Ultimate fallback: Average ANY CPU temperature sensor
+    if core_average is None and cpu_package is None:
+        valid_temps = [s["temp_c"] for s in sensors if "distance" not in str(s.get("name", "")).lower() and isinstance(s.get("temp_c"), (int, float))]
+        if valid_temps:
+            core_average = sum(valid_temps) / len(valid_temps)
 
-    cpu_package = None
-    if package_row is not None:
-        cpu_package = float(package_row["temp_c"])
-
-    delta = None
-    if cpu_package is not None and core_average is not None:
-        delta = cpu_package - core_average
+    final_avg = core_average if core_average is not None else cpu_package
 
     return {
-        "cores": core_rows,
-        "core_average_c": core_average,
+        "cores": sensors,
+        "core_average_c": final_avg,
         "cpu_package_c": cpu_package,
-        "delta_cpu_minus_average_c": delta,
+        "delta_cpu_minus_average_c": None,
+        "clr_error": clr_error,
+        "sys_error": sys_error
     }
 
 
 def get_gpu_core_temperature():
-    """
-    Returns the GPU Core temperature from LibreHardwareMonitor.
-    It returns a float value or None if not found.
-    """
     if clr is None:
-        return None
+        return None, "CLR missing"
 
     dll_path = _resolve_lhm_dll_path()
     if dll_path is None:
-        return None
+        return None, "DLL missing"
 
     try:
         clr.AddReference(str(dll_path.resolve()))
         from LibreHardwareMonitor.Hardware import Computer, HardwareType, SensorType  # type: ignore
-    except Exception:
-        return None
+    except Exception as e:
+        return None, f"GPU Init Error: {e}"
 
     computer = Computer()
     computer.IsCpuEnabled = False
@@ -180,7 +172,9 @@ def get_gpu_core_temperature():
         computer.IsBatteryEnabled = False
 
     computer.Open()
+    hw_count = len(computer.Hardware)
     try:
+        best_temp = None
         for hw in computer.Hardware:
             hw.Update()
             for node in _iter_hardware_tree(hw):
@@ -191,13 +185,22 @@ def get_gpu_core_temperature():
                     if sensor.SensorType != SensorType.Temperature:
                         continue
 
+                    val = sensor.Value
+                    if val is None:
+                        continue
+                        
                     sensor_name = str(sensor.Name).lower()
-                    if "gpu core" in sensor_name or "gpu" in sensor_name:
-                        value = sensor.Value
-                        if value is not None:
-                            return float(value)
+                    if "core" in sensor_name or "die" in sensor_name or "edge" in sensor_name:
+                        return float(val), None
+                        
+                    if best_temp is None:
+                        best_temp = float(val)
+                        
+        if best_temp is not None:
+            return best_temp, None
+        return None, f"Found 0 GPU sensors across {hw_count} LHM hardware nodes."
     finally:
         computer.Close()
 
-    return None
+    return None, None
 

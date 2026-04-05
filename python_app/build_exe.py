@@ -36,6 +36,12 @@ def build_standalone_exe():
         "--add-data=assets/rgb_wheel.ico;assets",
         "--add-data=python_controller.py;.",
         "--add-data=audio_visualizer.py;.",
+        "--add-data=temperature_worker.py;.",
+        "--add-data=../wintemp.py;.",
+        "--add-data=../LibreHardwareMonitor;LibreHardwareMonitor",
+        "--hidden-import=clr",
+        "--hidden-import=System",
+        "--hidden-import=psutil",
         
         "main.py"
     ]
