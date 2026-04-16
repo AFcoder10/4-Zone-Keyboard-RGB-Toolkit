@@ -45,7 +45,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.41"
+CURRENT_VERSION = "v2.5"
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
     _fields_ = [
@@ -90,8 +90,9 @@ def _normalize_hotkey_key_name(key_name, shift_active=False):
         return ""
     key_name = str(key_name).lower().strip()
     if shift_active:
+        # Map shift-modified symbols back to their base number keys for consistency
         shift_map = {
-            "!": "1", "@": "2", "#": "3", "$": "4", "%": "5",
+            "!": "1", "@": "2", "#": "3", "£": "3", "$": "4", "₹": "4", "€": "4", "%": "5",
             "^": "6", "&": "7", "*": "8", "(": "9", ")": "0",
             "_": "-", "+": "=", "{": "[", "}": "]", ":": ";",
             "\"": "'", "<": ",", ">": ".", "?": "/"
@@ -454,6 +455,130 @@ class KeyboardPreviewWindow(FadeDialog):
         layout.addWidget(self.preview_widget)
 
 
+class HotkeyDialog(FadeDialog):
+    def __init__(self, parent_app, existing_key=None, existing_data=None):
+        super().__init__(parent_app)
+        self.parent_app = parent_app
+        self.existing_key = existing_key
+        self.setWindowTitle("Edit Hotkey" if existing_key else "Add Hotkey")
+        self.setFixedWidth(400)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # Header
+        title = QLabel("Hotkey Configuration")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #00E5FF; margin-bottom: 5px;")
+        layout.addWidget(title)
+        
+        # Key Combination
+        layout.addWidget(QLabel("KEY COMBINATION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.recorder = HotkeyRecorderButton(existing_key)
+        self.recorder.setFixedHeight(35)
+        self.recorder.setToolTip("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9")
+        layout.addWidget(self.recorder)
+        layout.addWidget(QLabel("Tip: Click and press your key combo (e.g., Ctrl+Shift+A)", styleSheet="color: #7A838F; font-size: 10px;"))
+        
+        # Action Type
+        layout.addWidget(QLabel("TRIGGER ACTION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["Mode", "Preset"])
+        self.type_combo.setFixedHeight(35)
+        self.type_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
+        self.type_combo.currentTextChanged.connect(self.populate_targets)
+        layout.addWidget(self.type_combo)
+        
+        # Action Target
+        layout.addWidget(QLabel("ACTION TARGET:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.target_combo = QComboBox()
+        self.target_combo.setFixedHeight(35)
+        self.target_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
+        layout.addWidget(self.target_combo)
+        
+        # Spacer
+        layout.addSpacing(10)
+        
+        # Buttons
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+        
+        self.btn_cancel = GlowButton("Cancel")
+        self.btn_cancel.setFixedHeight(35)
+        self.btn_cancel.clicked.connect(self.reject)
+        self.btn_cancel.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.05); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }')
+        
+        self.btn_save = GlowButton("Save Binding")
+        self.btn_save.setFixedHeight(35)
+        self.btn_save.clicked.connect(self.on_save)
+        self.btn_save.setStyleSheet('QPushButton { background: #00E5FF; color: black; font-weight: bold; border-radius: 6px; } QPushButton:hover { background: #00D5FF; }')
+        
+        btn_row.addWidget(self.btn_cancel, 1)
+        btn_row.addWidget(self.btn_save, 2)
+        layout.addLayout(btn_row)
+        
+        self.recorder.recording_state_changed.connect(self._toggle_global_listener)
+        
+        # Initialize
+        if existing_data:
+            self.type_combo.setCurrentText(existing_data.get('type', 'Mode').title())
+            self.populate_targets(existing_data.get('type', 'Mode').title())
+            self.target_combo.setCurrentText(existing_data.get('target', ''))
+        else:
+            self.populate_targets("Mode")
+            
+    def _toggle_global_listener(self, is_recording):
+        if hasattr(self.parent_app, 'hotkey_listener'):
+            self.parent_app.hotkey_listener.set_paused(is_recording)
+            
+    def populate_targets(self, h_type):
+        self.target_combo.clear()
+        if h_type == "Mode":
+            hardware = getattr(self.parent_app, 'HARDWARE_MODES', [])
+            software = getattr(self.parent_app, 'SOFTWARE_MODES', [])
+            self.target_combo.addItems(hardware + software)
+        else:
+            self.target_combo.addItems(list(getattr(self.parent_app, 'presets', {}).keys()))
+        
+        has_targets = self.target_combo.count() > 0
+        self.target_combo.setEnabled(has_targets)
+        self.btn_save.setEnabled(has_targets)
+
+    def on_save(self):
+        key = self.recorder.key_combination
+        if not key or key == "Click to record...":
+            QMessageBox.warning(self, "Invalid Key", "Please record a key combination first.")
+            return
+            
+        h_type = self.type_combo.currentText().lower()
+        target = self.target_combo.currentText()
+        
+        is_valid, err = self.parent_app.validate_hotkey_combo(key)
+        if not is_valid:
+            QMessageBox.warning(self, "Invalid Hotkey", err)
+            return
+            
+        # Reserved warnings
+        warnings = self.parent_app.get_reserved_hotkey_warnings(key)
+        if warnings:
+            warn_msg = "The following potential conflicts were detected:\n\n" + "\n".join(warnings) + "\n\nSave anyway?"
+            res = QMessageBox.warning(self, "System Shortcut Conflict", warn_msg, QMessageBox.Yes | QMessageBox.No)
+            if res == QMessageBox.No: return
+
+        # Check for conflict if it's a NEW key or changed from existing
+        if key != self.existing_key and key in self.parent_app.hotkeys:
+            existing = self.parent_app.hotkeys[key]
+            QMessageBox.warning(self, "Conflict", f"'{key}' is already assigned to [{existing['type'].title()}] {existing['target']}.")
+            return
+            
+            # Successful validation
+            self.result_data = (key, h_type, target)
+            self.accept()
+
+    def get_data(self):
+        return getattr(self, 'result_data', None)
+
+
 class HotkeyRecorderButton(QPushButton):
     recording_state_changed = Signal(bool)
 
@@ -616,10 +741,16 @@ class GlobalHotkeyListener(QThread):
     def stop(self):
         self.running = False
         if self.listener:
-            try: self.listener.stop()
-            except: pass
+            try:
+                self.listener.stop()
+            except:
+                pass
         self.quit()
-        self.wait()
+        # Give the thread a moment to finish, but don't hang indefinitely
+        if not self.wait(1000):
+            # If it didn't finish, we might need to be more aggressive, 
+            # but usually quit/wait is enough if listener stopped.
+            pass
 
 
 class UpdateDownloader(QThread):
@@ -863,29 +994,6 @@ class RGBControllerApp(QMainWindow):
         hotkeys_layout.setContentsMargins(10, 10, 10, 10)
         hotkeys_layout.setSpacing(10)
 
-        profile_row = QHBoxLayout()
-        profile_row.setSpacing(10)
-        profile_row.addWidget(QLabel("PROFILE:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
-
-        self.hotkey_profile_combo = QComboBox()
-        self.hotkey_profile_combo.setFixedHeight(32)
-        self.hotkey_profile_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
-        self.hotkey_profile_combo.currentTextChanged.connect(self.on_hotkey_profile_changed)
-
-        self.btn_add_hotkey_profile = GlowButton('New Profile')
-        self.btn_add_hotkey_profile.setFixedHeight(32)
-        self.btn_add_hotkey_profile.clicked.connect(self.add_hotkey_profile)
-        self.btn_add_hotkey_profile.setStyleSheet('QPushButton { background-color: rgba(0, 229, 255, 0.08); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 6px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.15); }')
-
-        self.btn_delete_hotkey_profile = GlowButton('Delete Profile')
-        self.btn_delete_hotkey_profile.setFixedHeight(32)
-        self.btn_delete_hotkey_profile.clicked.connect(self.delete_hotkey_profile)
-        self.btn_delete_hotkey_profile.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.08); color: #FF7777; border: 1px solid rgba(255, 85, 85, 0.25); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 85, 85, 0.15); }')
-
-        profile_row.addWidget(self.hotkey_profile_combo, 1)
-        profile_row.addWidget(self.btn_add_hotkey_profile)
-        profile_row.addWidget(self.btn_delete_hotkey_profile)
-        hotkeys_layout.addLayout(profile_row)
 
         self.hotkeys_filter_input = QLineEdit()
         self.hotkeys_filter_input.setPlaceholderText("Search hotkeys...")
@@ -918,7 +1026,6 @@ class RGBControllerApp(QMainWindow):
                 border: 1px solid rgba(0, 229, 255, 0.3);
             }
         """)
-        self.hotkeys_list.itemSelectionChanged.connect(self.on_hotkey_selected)
         self.hotkeys_list.itemDoubleClicked.connect(self.on_hotkey_item_activated)
         hotkeys_layout.addWidget(self.hotkeys_list)
         
@@ -940,12 +1047,6 @@ class RGBControllerApp(QMainWindow):
         self.btn_remove_hotkey.clicked.connect(self.remove_hotkey)
         self.btn_remove_hotkey.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }')
 
-        self.btn_duplicate_hotkey = GlowButton(' Duplicate Selected')
-        self.btn_duplicate_hotkey.setIcon(QIcon(plus_icon_path))
-        self.btn_duplicate_hotkey.setFixedHeight(35)
-        self.btn_duplicate_hotkey.clicked.connect(self.duplicate_selected_hotkey)
-        self.btn_duplicate_hotkey.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }')
-
         self.btn_clear_hotkeys = GlowButton(' Clear All')
         self.btn_clear_hotkeys.setFixedHeight(35)
         self.btn_clear_hotkeys.clicked.connect(self.clear_all_hotkeys)
@@ -953,7 +1054,6 @@ class RGBControllerApp(QMainWindow):
         
         hotkey_btns_row.addWidget(self.btn_add_hotkey)
         hotkey_btns_row.addWidget(self.btn_remove_hotkey)
-        hotkey_btns_row.addWidget(self.btn_duplicate_hotkey)
         hotkey_btns_row.addWidget(self.btn_clear_hotkeys)
         hotkeys_layout.addLayout(hotkey_btns_row)
 
@@ -974,65 +1074,6 @@ class RGBControllerApp(QMainWindow):
         hotkey_io_row.addWidget(self.btn_import_hotkeys)
         hotkeys_layout.addLayout(hotkey_io_row)
         
-        hk_config_group = QGroupBox("Configuration")
-        hk_config_group.setStyleSheet("""
-            QGroupBox { 
-                background: rgba(255, 255, 255, 0.02); 
-                border: 1px solid rgba(255, 255, 255, 0.06); 
-                border-radius: 10px;
-                margin-top: 10px;
-                padding: 10px;
-            }
-            QGroupBox::title { color: #00E5FF; subcontrol-origin: margin; left: 10px; background-color: transparent; }
-        """)
-        hk_form_layout = QVBoxLayout(hk_config_group)
-        hk_form_layout.setSpacing(10)
-        hk_form_layout.setContentsMargins(10, 20, 10, 10)
-        
-        # Row 1: Key Combo & Action Type
-        row1 = QHBoxLayout()
-        row1.setSpacing(15)
-        
-        vbox_key = QVBoxLayout()
-        vbox_key.addWidget(QLabel("KEY COMBINATION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
-        self.hotkey_recorder = HotkeyRecorderButton()
-        self.hotkey_recorder.setFixedHeight(32)
-        self.hotkey_recorder.setToolTip("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9")
-        self.hotkey_recorder.recording_state_changed.connect(self.on_hotkey_recording_state_changed)
-        vbox_key.addWidget(self.hotkey_recorder)
-        vbox_key.addWidget(QLabel("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9", styleSheet="color: #7A838F; font-size: 10px;"))
-        row1.addLayout(vbox_key, 1)
-        
-        vbox_type = QVBoxLayout()
-        vbox_type.addWidget(QLabel("TRIGGER ACTION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
-        self.hotkey_type_combo = QComboBox()
-        self.hotkey_type_combo.addItems(["Mode", "Preset"])
-        self.hotkey_type_combo.currentTextChanged.connect(self.on_hotkey_type_changed)
-        self.hotkey_type_combo.setFixedHeight(32)
-        self.hotkey_type_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
-        vbox_type.addWidget(self.hotkey_type_combo)
-        row1.addLayout(vbox_type, 1)
-        
-        hk_form_layout.addLayout(row1)
-        
-        # Row 2: Target
-        vbox_target = QVBoxLayout()
-        vbox_target.addWidget(QLabel("ACTION TARGET:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
-        self.hotkey_target_combo = QComboBox()
-        self.hotkey_target_combo.setFixedHeight(32)
-        self.hotkey_target_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
-        vbox_target.addWidget(self.hotkey_target_combo)
-        hk_form_layout.addLayout(vbox_target)
-        
-        # Row 3: Save Button
-        self.btn_save_hotkey = GlowButton('Update Binding')
-        self.btn_save_hotkey.setFixedHeight(35)
-        self.btn_save_hotkey.clicked.connect(self.save_current_hotkey)
-        self.btn_save_hotkey.setStyleSheet('QPushButton { background: #00E5FF; color: black; font-weight: bold; border-radius: 6px; } QPushButton:hover { background: #00D5FF; }')
-        hk_form_layout.addWidget(self.btn_save_hotkey)
-        
-        hotkeys_layout.addWidget(hk_config_group)
-        
         hotkeys_layout.addStretch()
         if not HAS_PYNPUT:
             hotkeys_layout.addWidget(QLabel("⚠️ 'pynput' not installed. Hotkeys will not work globally.", styleSheet="color: #FF5555; font-size: 12px; margin-top: 10px;"))
@@ -1042,7 +1083,6 @@ class RGBControllerApp(QMainWindow):
         hotkeys_scroll.setWidget(hotkeys_content)
         hotkeys_tab_layout.addWidget(hotkeys_scroll)
 
-        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
         self.update_hotkeys_list_height()
         
         self.settings_tabs.addTab(hotkeys_tab, "Hotkeys")
@@ -1606,7 +1646,6 @@ class RGBControllerApp(QMainWindow):
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
-        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
 
         self.mode_description_label = QLabel('Select an effect to see a quick description.')
         self.mode_description_label.setWordWrap(True)
@@ -1703,9 +1742,7 @@ class RGBControllerApp(QMainWindow):
         except ValueError as e:
             print(f'Error initializing keyboard: {e}')
         self.force_quit = False
-        self.hotkey_profiles = {'Default': {}}
-        self.active_hotkey_profile = 'Default'
-        self.hotkeys = self.hotkey_profiles[self.active_hotkey_profile]
+        self.hotkeys = {}
         self.hotkey_listener = GlobalHotkeyListener(self.hotkeys)
         self.hotkey_listener.hotkey_triggered.connect(self.on_global_hotkey_triggered)
         self.hotkey_listener.start()
@@ -2076,79 +2113,6 @@ class RGBControllerApp(QMainWindow):
             self.hotkeys_list.addItem(item)
         self.apply_hotkeys_filter()
 
-    def refresh_hotkey_profile_combo(self):
-        if not hasattr(self, 'hotkey_profile_combo') or not hasattr(self, 'hotkey_profiles'):
-            return
-        self.hotkey_profile_combo.blockSignals(True)
-        self.hotkey_profile_combo.clear()
-        self.hotkey_profile_combo.addItems(sorted(self.hotkey_profiles.keys()))
-        if self.active_hotkey_profile in self.hotkey_profiles:
-            self.hotkey_profile_combo.setCurrentText(self.active_hotkey_profile)
-        self.hotkey_profile_combo.blockSignals(False)
-
-    def apply_active_hotkey_profile(self, profile_name):
-        if not hasattr(self, 'hotkey_profiles'):
-            return
-        if profile_name not in self.hotkey_profiles:
-            return
-        self.active_hotkey_profile = profile_name
-        self.hotkeys = self.hotkey_profiles[profile_name]
-        self.refresh_hotkeys_ui()
-        if hasattr(self, 'hotkey_listener'):
-            self.hotkey_listener.update_hotkeys(self.hotkeys)
-
-    def on_hotkey_profile_changed(self, profile_name):
-        if not hasattr(self, 'hotkey_profiles'):
-            return
-        if not profile_name or profile_name not in self.hotkey_profiles:
-            return
-        self.apply_active_hotkey_profile(profile_name)
-        self.save_settings()
-
-    def add_hotkey_profile(self):
-        if not hasattr(self, 'hotkey_profiles'):
-            self.hotkey_profiles = {'Default': {}}
-            self.active_hotkey_profile = 'Default'
-            self.hotkeys = self.hotkey_profiles['Default']
-        name, ok = QInputDialog.getText(self, 'New Hotkey Profile', 'Profile name:')
-        if not ok:
-            return
-        name = str(name or '').strip()
-        if not name:
-            QMessageBox.warning(self, 'New Hotkey Profile', 'Profile name cannot be empty.')
-            return
-        if name in self.hotkey_profiles:
-            QMessageBox.warning(self, 'New Hotkey Profile', f"A profile named '{name}' already exists.")
-            return
-        self.hotkey_profiles[name] = {}
-        self.apply_active_hotkey_profile(name)
-        self.refresh_hotkey_profile_combo()
-        self.save_settings()
-
-    def delete_hotkey_profile(self):
-        if not hasattr(self, 'hotkey_profiles'):
-            return
-        profile_name = self.active_hotkey_profile
-        if profile_name not in self.hotkey_profiles:
-            return
-        if len(self.hotkey_profiles) <= 1:
-            QMessageBox.information(self, 'Delete Hotkey Profile', 'At least one hotkey profile must remain.')
-            return
-        reply = QMessageBox.question(
-            self,
-            'Delete Hotkey Profile',
-            f"Delete profile '{profile_name}' and all its bindings?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if reply != QMessageBox.Yes:
-            return
-        del self.hotkey_profiles[profile_name]
-        fallback_profile = 'Default' if 'Default' in self.hotkey_profiles else sorted(self.hotkey_profiles.keys())[0]
-        self.apply_active_hotkey_profile(fallback_profile)
-        self.refresh_hotkey_profile_combo()
-        self.save_settings()
-
     def apply_hotkeys_filter(self):
         query = ""
         if hasattr(self, 'hotkeys_filter_input'):
@@ -2167,50 +2131,14 @@ class RGBControllerApp(QMainWindow):
         self.hotkeys_list.setMinimumHeight(target_height)
 
     def on_hotkey_item_activated(self, item):
-        if not item:
-            return
-        self.hotkeys_list.setCurrentItem(item)
-        self.on_hotkey_selected()
-        self.hotkey_recorder.setFocus()
-    
-    def on_hotkey_selected(self):
-        items = self.hotkeys_list.selectedItems()
-        if not items: return
-        key_part = items[0].data(Qt.UserRole) or items[0].text().split("  →  ")[0]
-        data = self.hotkeys.get(key_part)
+        key = item.data(Qt.UserRole)
+        data = self.hotkeys.get(key)
         if data:
-            self.hotkey_recorder.key_combination = key_part
-            self.hotkey_recorder.setText(key_part)
-            self.hotkey_type_combo.setCurrentText(data['type'].title())
-            self.on_hotkey_type_changed(data['type'].title())
-            self.hotkey_target_combo.setCurrentText(data['target'])
-            
-    def on_hotkey_type_changed(self, h_type):
-        self.hotkey_target_combo.clear()
-        hint_text = ""
-        if h_type == "Mode":
-            hardware_modes = getattr(self, 'HARDWARE_MODES', [])
-            software_modes = getattr(self, 'SOFTWARE_MODES', [])
-            targets = hardware_modes + software_modes
-            self.hotkey_target_combo.addItems(targets)
-            if not targets:
-                hint_text = "No modes available."
-        else:
-            targets = list(getattr(self, 'presets', {}).keys())
-            self.hotkey_target_combo.addItems(targets)
-            if not targets:
-                hint_text = "No presets available. Create a preset first."
-
-        has_targets = self.hotkey_target_combo.count() > 0
-        self.hotkey_target_combo.setEnabled(has_targets)
-        self.hotkey_target_combo.setToolTip("" if has_targets else hint_text)
-        if hasattr(self, 'btn_save_hotkey'):
-            self.btn_save_hotkey.setEnabled(has_targets)
-            self.btn_save_hotkey.setToolTip("" if has_targets else hint_text)
-
-    def on_hotkey_recording_state_changed(self, is_recording):
-        if hasattr(self, 'hotkey_listener'):
-            self.hotkey_listener.set_paused(is_recording)
+            dialog = HotkeyDialog(self, key, data)
+            if dialog.exec():
+                new_data = dialog.get_data()
+                if new_data:
+                    self._do_update_hotkey(key, *new_data)
 
     def validate_hotkey_combo(self, combo):
         parts = [p.strip().lower() for p in str(combo or '').split('+') if p.strip()]
@@ -2288,66 +2216,41 @@ class RGBControllerApp(QMainWindow):
 
         return cleaned, changed
 
-    def sanitize_hotkey_profiles_data(self, raw_profiles):
-        cleaned_profiles = {}
-        changed = False
-
-        if not isinstance(raw_profiles, dict):
-            return {'Default': {}}, True
-
-        for raw_name, raw_hotkeys in raw_profiles.items():
-            profile_name = str(raw_name or '').strip()
-            if not profile_name:
-                changed = True
-                continue
-            cleaned_hotkeys, profile_changed = self.sanitize_hotkeys_data(raw_hotkeys)
-            cleaned_profiles[profile_name] = cleaned_hotkeys
-            if raw_name != profile_name or profile_changed:
-                changed = True
-
-        if not cleaned_profiles:
-            cleaned_profiles = {'Default': {}}
-            changed = True
-
-        return cleaned_profiles, changed
-            
     def add_hotkey(self):
-        self.hotkey_recorder.key_combination = ""
-        self.hotkey_recorder.setText("Click to record...")
-        self.hotkey_target_combo.setCurrentIndex(0)
+        dialog = HotkeyDialog(self)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data:
+                self._do_update_hotkey(None, *data)
 
-    def duplicate_selected_hotkey(self):
-        items = self.hotkeys_list.selectedItems()
-        if not items:
-            QMessageBox.information(self, 'Duplicate Hotkey', 'Select a hotkey to duplicate first.')
-            return
-        key_part = items[0].data(Qt.UserRole) or items[0].text().split("  →  ")[0]
-        data = self.hotkeys.get(key_part)
-        if not data:
-            return
-        self.hotkey_type_combo.setCurrentText(data.get('type', 'mode').title())
-        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
-        self.hotkey_target_combo.setCurrentText(data.get('target', ''))
-        self.hotkey_recorder.key_combination = ""
-        self.hotkey_recorder.setText("Click to record...")
-        self.hotkey_recorder.setFocus()
+    def _do_update_hotkey(self, old_key, new_key, h_type, target):
+        if old_key and old_key in self.hotkeys:
+            del self.hotkeys[old_key]
+        
+        self.hotkeys[new_key] = {
+            "type": h_type,
+            "target": target
+        }
+        self.refresh_hotkeys_ui()
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
+        self.save_settings()
 
     def clear_all_hotkeys(self):
         if not self.hotkeys:
-            QMessageBox.information(self, 'Clear Hotkeys', 'No hotkeys to clear in this profile.')
+            QMessageBox.information(self, 'Clear Hotkeys', 'No hotkeys to clear.')
             return
         reply = QMessageBox.question(
-            self,
-            'Clear Hotkeys',
-            f"Remove all hotkeys from profile '{self.active_hotkey_profile}'?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            self, 'Clear Hotkeys',
+            'Remove all hotkeys?',
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply != QMessageBox.Yes:
             return
         self.hotkeys.clear()
         self.refresh_hotkeys_ui()
-        self.hotkey_listener.update_hotkeys(self.hotkeys)
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
         self.save_settings()
         
     def remove_hotkey(self):
@@ -2357,65 +2260,9 @@ class RGBControllerApp(QMainWindow):
             if key_part in self.hotkeys:
                 del self.hotkeys[key_part]
             self.refresh_hotkeys_ui()
-            self.hotkey_listener.update_hotkeys(self.hotkeys)
+            if hasattr(self, 'hotkey_listener'):
+                self.hotkey_listener.update_hotkeys(self.hotkeys)
             self.save_settings()
-
-    def save_current_hotkey(self):
-        key = self.hotkey_recorder.key_combination
-        if not key or "record" in key:
-            QMessageBox.warning(self, "Invalid Hotkey", "Please record a valid key combination first.")
-            return
-
-        is_valid_combo, validation_error = self.validate_hotkey_combo(key)
-        if not is_valid_combo:
-            QMessageBox.warning(self, "Unsafe Hotkey", validation_error)
-            return
-
-        reserved_warnings = self.get_reserved_hotkey_warnings(key)
-        if reserved_warnings:
-            reply = QMessageBox.question(
-                self,
-                "Potential Shortcut Conflict",
-                "This key combination may conflict with Windows shortcuts:\n\n" + "\n".join(reserved_warnings) + "\n\nSave anyway?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if reply != QMessageBox.Yes:
-                return
-
-        h_type = self.hotkey_type_combo.currentText().lower()
-        target = self.hotkey_target_combo.currentText()
-        if not target:
-            QMessageBox.warning(self, "Invalid Target", "Please select a valid target for the action.")
-            return
-
-        selected_key = None
-        selected_items = self.hotkeys_list.selectedItems()
-        if selected_items:
-            selected_key = selected_items[0].data(Qt.UserRole) or selected_items[0].text().split("  →  ")[0]
-
-        existing = self.hotkeys.get(key)
-        if existing and key != selected_key:
-            QMessageBox.warning(self, "Conflict", f"'{key}' is already assigned to [{existing['type'].title()}] {existing['target']}.")
-            return
-
-        for existing_key, existing_data in self.hotkeys.items():
-            if existing_key == selected_key:
-                continue
-            if existing_data.get('type') == h_type and existing_data.get('target') == target:
-                QMessageBox.warning(self, "Conflict", f"[{h_type.title()}] {target} is already assigned to '{existing_key}'.")
-                return
-
-        if selected_key and selected_key != key and selected_key in self.hotkeys:
-            del self.hotkeys[selected_key]
-            
-        self.hotkeys[key] = {
-            "type": h_type,
-            "target": target
-        }
-        self.refresh_hotkeys_ui()
-        self.hotkey_listener.update_hotkeys(self.hotkeys)
-        self.save_settings()
 
     def export_hotkeys(self):
         if not self.hotkeys:
@@ -2476,50 +2323,47 @@ class RGBControllerApp(QMainWindow):
     def load_settings(self):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
 
-        self.hotkey_profiles = {'Default': {}}
-        self.active_hotkey_profile = 'Default'
-
+        self.hotkeys = {}
+        
+        # 1. Load existing flat hotkeys if any
         hotkeys_json = settings.value('hotkeys', '{}')
-        base_hotkeys = {}
-        base_hotkeys_changed = False
         if isinstance(hotkeys_json, str) and hotkeys_json:
             try:
-                loaded_hotkeys = json.loads(hotkeys_json)
-                base_hotkeys, base_hotkeys_changed = self.sanitize_hotkeys_data(loaded_hotkeys)
-            except Exception as e:
-                print(f"Failed to load hotkeys: {e}")
+                loaded = json.loads(hotkeys_json)
+                self.hotkeys, _ = self.sanitize_hotkeys_data(loaded)
+            except Exception:
+                pass
 
+        # 2. Check for profiles and migrate the active one if it exists
         profiles_json = settings.value('hotkey_profiles', '')
-        profiles_changed = False
         if isinstance(profiles_json, str) and profiles_json:
             try:
-                parsed_profiles = json.loads(profiles_json)
-                self.hotkey_profiles, profiles_changed = self.sanitize_hotkey_profiles_data(parsed_profiles)
-            except Exception as e:
-                print(f"Failed to load hotkey profiles: {e}")
-                self.hotkey_profiles = {'Default': base_hotkeys}
-                profiles_changed = True
-        else:
-            self.hotkey_profiles = {'Default': base_hotkeys}
-            profiles_changed = True
+                profiles = json.loads(profiles_json)
+                active_profile_name = settings.value('active_hotkey_profile', 'Default')
+                
+                migration_data = None
+                if active_profile_name in profiles:
+                    migration_data = profiles[active_profile_name]
+                elif profiles:
+                    migration_data = list(profiles.values())[0]
+                
+                if migration_data:
+                    cleaned_migration, _ = self.sanitize_hotkeys_data(migration_data)
+                    # Profiles take precedence during migration if flat hotkeys were empty
+                    if not self.hotkeys:
+                        self.hotkeys = cleaned_migration
+                    else:
+                        self.hotkeys.update(cleaned_migration)
+                
+                # Cleanup legacy keys after migration check
+                settings.remove('hotkey_profiles')
+                settings.remove('active_hotkey_profile')
+            except Exception:
+                pass
 
-        active_profile = str(settings.value('active_hotkey_profile', 'Default') or 'Default').strip() or 'Default'
-        if active_profile not in self.hotkey_profiles:
-            active_profile = 'Default' if 'Default' in self.hotkey_profiles else sorted(self.hotkey_profiles.keys())[0]
-            profiles_changed = True
-
-        self.apply_active_hotkey_profile(active_profile)
-        self.refresh_hotkey_profile_combo()
         self.refresh_hotkeys_ui()
-
         if hasattr(self, 'hotkey_listener'):
             self.hotkey_listener.update_hotkeys(self.hotkeys)
-
-        if base_hotkeys_changed:
-            settings.setValue('hotkeys', json.dumps(self.hotkeys))
-        if profiles_changed:
-            settings.setValue('hotkey_profiles', json.dumps(self.hotkey_profiles))
-            settings.setValue('active_hotkey_profile', self.active_hotkey_profile)
 
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
@@ -2593,11 +2437,7 @@ class RGBControllerApp(QMainWindow):
 
     def save_settings(self, *args):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
-        if hasattr(self, 'hotkey_profiles') and hasattr(self, 'active_hotkey_profile'):
-            self.hotkey_profiles[self.active_hotkey_profile] = self.hotkeys
         settings.setValue('hotkeys', json.dumps(self.hotkeys))
-        settings.setValue('hotkey_profiles', json.dumps(getattr(self, 'hotkey_profiles', {'Default': self.hotkeys})))
-        settings.setValue('active_hotkey_profile', getattr(self, 'active_hotkey_profile', 'Default'))
         settings.setValue('minimize_to_tray', self.minimize_to_tray_cb.isChecked())
         settings.setValue('startup_preset', self.startup_preset_combo.currentText())
         settings.setValue('saved_presets', json.dumps(self.presets))
@@ -2870,8 +2710,7 @@ class RGBControllerApp(QMainWindow):
         if curr_startup in self.presets or curr_startup == 'None (Use Last State)':
             self.startup_preset_combo.setCurrentText(curr_startup)
         self.startup_preset_combo.blockSignals(False)
-        if hasattr(self, 'hotkey_type_combo') and self.hotkey_type_combo.currentText() == 'Preset':
-            self.on_hotkey_type_changed('Preset')
+        # Auto-refresh logic if relevant
     def manage_startup_registry(self, enabled):
         key_path = 'Software\\Microsoft\\Windows\\CurrentVersion\\Run'
         key_name = '4ZoneRgbToolkit'
