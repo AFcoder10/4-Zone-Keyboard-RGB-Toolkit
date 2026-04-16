@@ -32,9 +32,9 @@ try:
 except Exception:
     HAS_WMI = False
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame, QFileDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QSlider, QColorDialog, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy, QStackedLayout, QCheckBox, QSystemTrayIcon, QMenu, QStyle, QComboBox, QInputDialog, QMessageBox, QDialog, QPlainTextEdit, QProgressDialog, QTextBrowser, QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QFrame, QFileDialog, QTabWidget, QScrollArea, QLineEdit
 from PySide6.QtCore import Qt, QSize, QTimer, QPoint, QSettings, Signal, QThread, QPropertyAnimation, QEasingCurve, QVariantAnimation
-from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter
+from PySide6.QtGui import QColor, QFont, QPalette, QIcon, QMouseEvent, QAction, QPainter, QKeyEvent, QKeySequence
 import winreg
 from python_controller import L5PKeyboard
 import threading
@@ -84,6 +84,20 @@ def _guid_equals(a, b):
 # Battery cache: updated every 500ms to avoid expensive repeated calls in tight loops
 _battery_cache = {'percent': 0, 'charging': True, 'last_update': 0}
 _mouse_aura_error_throttle = {'last_error': '', 'last_time': 0}
+
+def _normalize_hotkey_key_name(key_name, shift_active=False):
+    if not key_name:
+        return ""
+    key_name = str(key_name).lower().strip()
+    if shift_active:
+        shift_map = {
+            "!": "1", "@": "2", "#": "3", "$": "4", "%": "5",
+            "^": "6", "&": "7", "*": "8", "(": "9", ")": "0",
+            "_": "-", "+": "=", "{": "[", "}": "]", ":": ";",
+            "\"": "'", "<": ",", ">": ".", "?": "/"
+        }
+        key_name = shift_map.get(key_name, key_name)
+    return key_name
 
 def _resolve_original_exe_path():
     if not getattr(sys, 'frozen', False):
@@ -237,22 +251,25 @@ class AnimatedSlider(QSlider):
 class GlowButton(QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.effect = QGraphicsOpacityEffect(self)
-        self.effect.setOpacity(1.0)
-        self.setGraphicsEffect(self.effect)
-        self.anim = QPropertyAnimation(self.effect, b"opacity")
-        self.anim.setDuration(150)
+        self.setCursor(Qt.PointingHandCursor)
+        self.fade_effect = QGraphicsOpacityEffect(self)
+        self.fade_effect.setOpacity(0.9)
+        self.setGraphicsEffect(self.fade_effect)
+        
+    def enterEvent(self, event):
+        self.fade_effect.setOpacity(1.0)
+        super().enterEvent(event)
+        
+    def leaveEvent(self, event):
+        self.fade_effect.setOpacity(0.9)
+        super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        self.anim.stop()
-        self.anim.setEndValue(0.5)
-        self.anim.start()
+        self.fade_effect.setOpacity(0.7)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        self.anim.stop()
-        self.anim.setEndValue(1.0)
-        self.anim.start()
+        self.fade_effect.setOpacity(1.0)
         super().mouseReleaseEvent(event)
 
 class CustomTitleBar(QWidget):
@@ -437,6 +454,173 @@ class KeyboardPreviewWindow(FadeDialog):
         layout.addWidget(self.preview_widget)
 
 
+class HotkeyRecorderButton(QPushButton):
+    recording_state_changed = Signal(bool)
+
+    def __init__(self, key_combination="", parent=None):
+        super().__init__(parent)
+        self.key_combination = key_combination or "Click to record..."
+        self.setText(self.key_combination)
+        self.recording = False
+        self.setCursor(Qt.PointingHandCursor)
+        self.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; } QWidget:focus { border: 1px solid #00E5FF; }')
+        
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.recording = True
+            self.recording_state_changed.emit(True)
+            self.setText("Recording... (Press keys)")
+            self.setStyleSheet('QPushButton { background-color: rgba(0, 229, 255, 0.2); color: #00E5FF; border: 1px solid #00E5FF; border-radius: 4px; padding: 5px; }')
+            self.setFocus()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+            
+    def keyPressEvent(self, event):
+        if self.recording:
+            if event.key() in (Qt.Key_Shift, Qt.Key_Control, Qt.Key_Meta, Qt.Key_Alt, Qt.Key_AltGr):
+                return
+            modifiers = event.modifiers()
+            parts = []
+            if modifiers & Qt.ControlModifier: parts.append("ctrl")
+            if modifiers & Qt.AltModifier: parts.append("alt")
+            if modifiers & Qt.ShiftModifier: parts.append("shift")
+            if modifiers & Qt.MetaModifier: parts.append("win")
+            
+            # Get the key name from Qt
+            key_name = QKeySequence(event.key()).toString()
+            key_name = _normalize_hotkey_key_name(key_name, bool(modifiers & Qt.ShiftModifier))
+            
+            if key_name:
+                parts.append(key_name)
+                combo = "+".join(parts)
+            else:
+                combo = ""
+                
+            self.key_combination = combo
+            self.setText(combo if combo else "Click to record...")
+            self.recording = False
+            self.recording_state_changed.emit(False)
+            self.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; }')
+            self.clearFocus()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+            
+    def focusOutEvent(self, event):
+        if self.recording:
+            self.recording = False
+            self.recording_state_changed.emit(False)
+            self.setText(self.key_combination or "Click to record...")
+            self.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; }')
+        super().focusOutEvent(event)
+
+
+class GlobalHotkeyListener(QThread):
+    hotkey_triggered = Signal(str)
+    
+    def __init__(self, hotkeys_dict, parent=None):
+        super().__init__(parent)
+        self.hotkeys_dict = hotkeys_dict
+        self.modifiers = set()
+        self.running = True
+        self.paused = False
+        self.listener = None
+        self.trigger_cooldown_ms = 220
+        self.last_trigger_times = {}
+        
+    def run(self):
+        if not HAS_PYNPUT: return
+        from pynput import keyboard
+        
+        def on_press(key):
+            if not self.running: return False
+            if self.paused: return
+            
+            # Map modifier keys
+            if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r): self.modifiers.add("ctrl")
+            elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr): self.modifiers.add("alt")
+            elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r): self.modifiers.add("shift")
+            elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r): self.modifiers.add("win")
+            else:
+                # Regular key pressed, build combination
+                parts = []
+                # Ensure the same order as the recorder: ctrl, alt, shift, win
+                if "ctrl" in self.modifiers: parts.append("ctrl")
+                if "alt" in self.modifiers: parts.append("alt")
+                if "shift" in self.modifiers: parts.append("shift")
+                if "win" in self.modifiers: parts.append("win")
+                
+                char = None
+                try:
+                    # Use canonical to get the unmodified character
+                    # This avoids issues where Ctrl+A becomes \x01
+                    if self.listener:
+                        base_key = self.listener.canonical(key)
+                        if hasattr(base_key, 'char') and base_key.char:
+                            char = base_key.char.lower()
+                        elif hasattr(base_key, 'name') and base_key.name:
+                            char = base_key.name.lower()
+                except Exception:
+                    pass
+
+                # Fallback to standard pynput key detection if canonical failed
+                if not char:
+                    try:
+                        if hasattr(key, 'char') and key.char:
+                            char = key.char.lower()
+                        elif hasattr(key, 'name') and key.name:
+                            char = key.name.lower()
+                        elif hasattr(key, 'vk') and key.vk:
+                            # Final fallback for some Windows letters
+                            if 65 <= key.vk <= 90:
+                                char = chr(key.vk + 32)
+                            else:
+                                char = str(key.vk)
+                    except:
+                        pass
+
+                if char:
+                    char = _normalize_hotkey_key_name(char, "shift" in self.modifiers)
+
+                    parts.append(char)
+                    combo = "+".join(parts)
+                    if combo in self.hotkeys_dict:
+                        now = time.monotonic()
+                        last_time = self.last_trigger_times.get(combo, 0)
+                        if (now - last_time) * 1000 >= self.trigger_cooldown_ms:
+                            self.last_trigger_times[combo] = now
+                            self.hotkey_triggered.emit(combo)
+                        
+        def on_release(key):
+            if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r): self.modifiers.discard("ctrl")
+            elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr): self.modifiers.discard("alt")
+            elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r): self.modifiers.discard("shift")
+            elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r): self.modifiers.discard("win")
+            
+        self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+        with self.listener:
+            try:
+                self.listener.join()
+            except Exception as e:
+                print(f"Hotkey listener thread error: {e}")
+            
+    def update_hotkeys(self, new_hotkeys):
+        self.hotkeys_dict = new_hotkeys
+
+    def set_paused(self, paused):
+        self.paused = bool(paused)
+        if self.paused:
+            self.modifiers.clear()
+        
+    def stop(self):
+        self.running = False
+        if self.listener:
+            try: self.listener.stop()
+            except: pass
+        self.quit()
+        self.wait()
+
 
 class UpdateDownloader(QThread):
     progress = Signal(int)
@@ -513,6 +697,7 @@ class RGBControllerApp(QMainWindow):
         settings_layout = QVBoxLayout(self.settings_view)
         settings_layout.setContentsMargins(20, 10, 20, 20)
         settings_header = QHBoxLayout()
+        settings_header.addWidget(QLabel('Settings', styleSheet='color: #00E5FF; font-size: 20px; font-weight: bold;'))
         settings_header.addStretch()
         self.btn_close_settings = QPushButton('✕')
         self.btn_close_settings.setFixedSize(30, 30)
@@ -520,60 +705,348 @@ class RGBControllerApp(QMainWindow):
         self.btn_close_settings.clicked.connect(self.toggle_settings)
         settings_header.addWidget(self.btn_close_settings)
         settings_layout.addLayout(settings_header)
-        settings_layout.addWidget(QLabel('Settings', styleSheet='color: #00E5FF; font-size: 20px; font-weight: bold;'))
+        self.settings_tabs = QTabWidget()
+        self.settings_tabs.setStyleSheet("""
+            QTabWidget::pane { 
+                border: 1px solid rgba(255, 255, 255, 0.05); 
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 8px;
+                margin-top: -1px;
+            }
+            QTabBar::tab {
+                background: transparent; 
+                color: #888888; 
+                padding: 10px 20px; 
+                border-bottom: 2px solid transparent;
+                font-family: 'Segoe UI Variable'; 
+                font-size: 13px;
+                font-weight: 500;
+                margin-right: 4px;
+            }
+            QTabBar::tab:selected { 
+                color: #00E5FF; 
+                border-bottom: 2px solid #00E5FF;
+                font-weight: bold; 
+                background: rgba(0, 229, 255, 0.05);
+            }
+            QTabBar::tab:hover:!selected { 
+                color: #E2E2E2;
+                background: rgba(255, 255, 255, 0.05); 
+            }
+        """)
+        
+        general_tab = QWidget()
+        general_layout = QVBoxLayout(general_tab)
+        general_layout.setContentsMargins(0, 10, 0, 0)
+        gen_scroll = QScrollArea()
+        gen_scroll.setWidgetResizable(True)
+        gen_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; } QWidget#GenScrollContent { background: transparent; }")
+        gen_content = QWidget()
+        gen_content.setObjectName("GenScrollContent")
+        gen_content_layout = QVBoxLayout(gen_content)
+        gen_content_layout.setContentsMargins(0, 0, 10, 0)
+
         on_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'toggle_on.svg').replace('\\', '/')
         off_icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'toggle_off.svg').replace('\\', '/')
-        toggle_css = f'\n            QCheckBox {{ color: white; font-size: 14px; spacing: 10px; }}\n            QCheckBox::indicator {{ width: 40px; height: 24px; }}\n            QCheckBox::indicator:unchecked {{ image: url("{off_icon_path}"); }}\n            QCheckBox::indicator:checked {{ image: url("{on_icon_path}"); }}\n        '
+        toggle_css = f'\n            QCheckBox {{ color: #E2E2E2; font-size: 13px; spacing: 12px; padding: 4px; }}\n            QCheckBox::indicator {{ width: 36px; height: 20px; }}\n            QCheckBox::indicator:unchecked {{ image: url("{off_icon_path}"); }}\n            QCheckBox::indicator:checked {{ image: url("{on_icon_path}"); }}\n        '
+        
+        def create_section_header(title):
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 15, 0, 5)
+            label = QLabel(title.upper())
+            label.setStyleSheet("color: #00E5FF; font-size: 11px; font-weight: 800; letter-spacing: 1px;")
+            line = QFrame()
+            line.setFrameShape(QFrame.HLine)
+            line.setStyleSheet("background: rgba(0, 229, 255, 0.15); height: 1px; border: none;")
+            layout.addWidget(label)
+            layout.addWidget(line)
+            layout.setStretch(1, 1)
+            return container
+
+        # --- Section: Behavior ---
+        gen_content_layout.addWidget(create_section_header("Application Behavior"))
+        behavior_card = QFrame()
+        behavior_card.setStyleSheet("QFrame { background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }")
+        behavior_layout = QVBoxLayout(behavior_card)
+        
         self.minimize_to_tray_cb = QCheckBox('Minimize to Tray')
         self.minimize_to_tray_cb.setStyleSheet(toggle_css)
         self.minimize_to_tray_cb.toggled.connect(self.save_settings)
-        settings_layout.addWidget(self.minimize_to_tray_cb)
-        self.launch_on_start_cb = QCheckBox('Launch on Startup (Hidden in Tray)')
+        behavior_layout.addWidget(self.minimize_to_tray_cb)
+        
+        self.launch_on_start_cb = QCheckBox('Launch on Windows Startup')
         self.launch_on_start_cb.setStyleSheet(toggle_css)
         self.launch_on_start_cb.toggled.connect(self.save_settings)
-        settings_layout.addWidget(self.launch_on_start_cb)
-        self.turn_off_unplugged_cb = QCheckBox('Turn Off Lights When Unplugged')
+        behavior_layout.addWidget(self.launch_on_start_cb)
+        
+        gen_content_layout.addWidget(behavior_card)
+
+        # --- Section: Power ---
+        gen_content_layout.addWidget(create_section_header("Power Management"))
+        power_card = QFrame()
+        power_card.setStyleSheet("QFrame { background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }")
+        power_layout = QVBoxLayout(power_card)
+        
+        self.turn_off_unplugged_cb = QCheckBox('Eco Mode: Turn off when unplugged')
         self.turn_off_unplugged_cb.setStyleSheet(toggle_css)
         self.turn_off_unplugged_cb.toggled.connect(self.on_power_policy_setting_changed)
-        settings_layout.addWidget(self.turn_off_unplugged_cb)
-        self.turn_off_battery_saver_cb = QCheckBox('Turn Off Lights When Battery Saver Is On')
+        power_layout.addWidget(self.turn_off_unplugged_cb)
+        
+        self.turn_off_battery_saver_cb = QCheckBox('Eco Mode: Turn off on Battery Saver')
         self.turn_off_battery_saver_cb.setStyleSheet(toggle_css)
         self.turn_off_battery_saver_cb.toggled.connect(self.on_power_policy_setting_changed)
-        settings_layout.addWidget(self.turn_off_battery_saver_cb)
-        settings_layout.addWidget(QLabel('Startup Preset:', styleSheet='color: #00E5FF; font-weight: bold; margin-top: 15px;'))
-        self.startup_preset_combo = QComboBox()
-        self.startup_preset_combo.setStyleSheet('\n            QComboBox { background-color: #1A1A1E; color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 6px; font-family: \'Segoe UI Variable\'; }\n            QComboBox::drop-down { border: none; }\n        ')
-        self.startup_preset_combo.currentTextChanged.connect(self.save_settings)
-        settings_layout.addWidget(self.startup_preset_combo)
-        settings_layout.addSpacing(20)
-        self.btn_clear_cache = GlowButton('Clear Cache && Reset')
-        self.btn_clear_cache.setFixedHeight(35)
-        self.btn_clear_cache.setCursor(Qt.PointingHandCursor)
-        self.btn_clear_cache.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.1); color: #FF5555; border: 1px solid #FF5555; border-radius: 6px; font-weight: bold; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: #FF5555; color: white; }')
-        self.btn_clear_cache.clicked.connect(self.clear_cache)
-        settings_layout.addWidget(self.btn_clear_cache)
+        power_layout.addWidget(self.turn_off_battery_saver_cb)
+        
+        gen_content_layout.addWidget(power_card)
 
-        # Logs viewer button
+        # --- Section: Startup ---
+        gen_content_layout.addWidget(create_section_header("Startup Configuration"))
+        startup_box = QFrame()
+        startup_box.setStyleSheet("QFrame { background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }")
+        startup_layout = QVBoxLayout(startup_box)
+        startup_layout.addWidget(QLabel('Default Startup Preset:', styleSheet='color: #AAAAAA; font-size: 12px; font-weight: 500;'))
+        self.startup_preset_combo = QComboBox()
+        self.startup_preset_combo.setFixedHeight(32)
+        self.startup_preset_combo.setStyleSheet('\n            QComboBox { background-color: #1A1A1E; color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 4px 10px; font-family: \'Segoe UI Variable\'; }\n            QComboBox::drop-down { border: none; }\n        ')
+        self.startup_preset_combo.currentTextChanged.connect(self.save_settings)
+        startup_layout.addWidget(self.startup_preset_combo)
+        gen_content_layout.addWidget(startup_box)
+
+        # --- Section: Maintenance ---
+        gen_content_layout.addWidget(create_section_header("Maintenance & Tools"))
+        maintenance_grid = QGridLayout()
+        maintenance_grid.setSpacing(10)
+        
         self.btn_view_logs = GlowButton('View Logs')
         self.btn_view_logs.setFixedHeight(35)
-        self.btn_view_logs.setCursor(Qt.PointingHandCursor)
-        self.btn_view_logs.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #E2E2E2; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
+        self.btn_view_logs.setStyleSheet('QPushButton { background-color: rgba(0, 229, 255, 0.06); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px; font-weight: 600; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.12); }')
         self.btn_view_logs.clicked.connect(self.show_logs)
-        settings_layout.addWidget(self.btn_view_logs)
+        maintenance_grid.addWidget(self.btn_view_logs, 0, 0)
 
-        self.btn_clear_update_cache = GlowButton('Clear Update Cache')
+        self.btn_clear_update_cache = GlowButton('Update Cache')
         self.btn_clear_update_cache.setFixedHeight(35)
-        self.btn_clear_update_cache.setCursor(Qt.PointingHandCursor)
-        self.btn_clear_update_cache.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #AAAAAA; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-family: \'Segoe UI Variable\'; font-size: 13px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.08); color: white; }')
+        self.btn_clear_update_cache.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.03); color: #AAAAAA; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.08); }')
         self.btn_clear_update_cache.clicked.connect(self.clear_update_cache)
-        settings_layout.addWidget(self.btn_clear_update_cache)
+        maintenance_grid.addWidget(self.btn_clear_update_cache, 0, 1)
+
+        self.btn_clear_cache = GlowButton('Reset Application')
+        self.btn_clear_cache.setFixedHeight(40)
+        self.btn_clear_cache.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.1); color: #FF5555; border: 1px solid rgba(255, 85, 85, 0.3); border-radius: 6px; font-size: 13px; font-weight: bold; } QPushButton:hover { background-color: #FF5555; color: white; }')
+        self.btn_clear_cache.clicked.connect(self.clear_cache)
+        maintenance_grid.addWidget(self.btn_clear_cache, 1, 0, 1, 2)
+        
+        gen_content_layout.addLayout(maintenance_grid)
         
         version_label = QLabel(f'Version: {CURRENT_VERSION}')
         version_label.setAlignment(Qt.AlignCenter)
-        version_label.setStyleSheet('color: #666666; margin-top: 15px; font-size: 11px; font-weight: bold; font-family: "Segoe UI Variable", sans-serif;')
-        settings_layout.addWidget(version_label)
+        version_label.setStyleSheet('color: #444444; margin-top: 20px; font-size: 10px; font-weight: bold; font-family: "Segoe UI Variable";')
+        gen_content_layout.addWidget(version_label)
         
-        settings_layout.addStretch()
+        gen_content_layout.addStretch()
+        gen_scroll.setWidget(gen_content)
+        general_layout.addWidget(gen_scroll)
+        self.settings_tabs.addTab(general_tab, "General")
+        # --- Hotkeys Tab ---
+        hotkeys_tab = QWidget()
+        hotkeys_tab_layout = QVBoxLayout(hotkeys_tab)
+        hotkeys_tab_layout.setContentsMargins(0, 0, 0, 0)
+        hotkeys_tab_layout.setSpacing(0)
+
+        hotkeys_scroll = QScrollArea()
+        hotkeys_scroll.setWidgetResizable(True)
+        hotkeys_scroll.setFrameShape(QFrame.NoFrame)
+        hotkeys_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+
+        hotkeys_content = QWidget()
+        hotkeys_layout = QVBoxLayout(hotkeys_content)
+        hotkeys_layout.setContentsMargins(10, 10, 10, 10)
+        hotkeys_layout.setSpacing(10)
+
+        profile_row = QHBoxLayout()
+        profile_row.setSpacing(10)
+        profile_row.addWidget(QLabel("PROFILE:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+
+        self.hotkey_profile_combo = QComboBox()
+        self.hotkey_profile_combo.setFixedHeight(32)
+        self.hotkey_profile_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
+        self.hotkey_profile_combo.currentTextChanged.connect(self.on_hotkey_profile_changed)
+
+        self.btn_add_hotkey_profile = GlowButton('New Profile')
+        self.btn_add_hotkey_profile.setFixedHeight(32)
+        self.btn_add_hotkey_profile.clicked.connect(self.add_hotkey_profile)
+        self.btn_add_hotkey_profile.setStyleSheet('QPushButton { background-color: rgba(0, 229, 255, 0.08); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 6px; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.15); }')
+
+        self.btn_delete_hotkey_profile = GlowButton('Delete Profile')
+        self.btn_delete_hotkey_profile.setFixedHeight(32)
+        self.btn_delete_hotkey_profile.clicked.connect(self.delete_hotkey_profile)
+        self.btn_delete_hotkey_profile.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.08); color: #FF7777; border: 1px solid rgba(255, 85, 85, 0.25); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 85, 85, 0.15); }')
+
+        profile_row.addWidget(self.hotkey_profile_combo, 1)
+        profile_row.addWidget(self.btn_add_hotkey_profile)
+        profile_row.addWidget(self.btn_delete_hotkey_profile)
+        hotkeys_layout.addLayout(profile_row)
+
+        self.hotkeys_filter_input = QLineEdit()
+        self.hotkeys_filter_input.setPlaceholderText("Search hotkeys...")
+        self.hotkeys_filter_input.setClearButtonEnabled(True)
+        self.hotkeys_filter_input.setFixedHeight(32)
+        self.hotkeys_filter_input.setStyleSheet('QLineEdit { background: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 10px; }')
+        self.hotkeys_filter_input.textChanged.connect(self.apply_hotkeys_filter)
+        hotkeys_layout.addWidget(self.hotkeys_filter_input)
+        
+        self.hotkeys_list = QListWidget()
+        self.hotkeys_list.setMinimumHeight(130)
+        self.hotkeys_list.setMaximumHeight(300)
+        self.hotkeys_list.setSpacing(2)
+        self.hotkeys_list.setStyleSheet("""
+            QListWidget {
+                background: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+            }
+            QListWidget::item {
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 4px;
+                padding: 10px;
+                color: #FFFFFF;
+                margin: 2px 5px;
+            }
+            QListWidget::item:selected {
+                background: rgba(0, 229, 255, 0.15);
+                color: #00E5FF;
+                border: 1px solid rgba(0, 229, 255, 0.3);
+            }
+        """)
+        self.hotkeys_list.itemSelectionChanged.connect(self.on_hotkey_selected)
+        self.hotkeys_list.itemDoubleClicked.connect(self.on_hotkey_item_activated)
+        hotkeys_layout.addWidget(self.hotkeys_list)
+        
+        plus_icon_path  = os.path.join(os.path.dirname(__file__), 'assets', 'plus.svg').replace('\\', '/')
+        minus_icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'minus.svg').replace('\\', '/')
+
+        hotkey_btns_row = QHBoxLayout()
+        hotkey_btns_row.setSpacing(10)
+        
+        self.btn_add_hotkey = GlowButton(' Add Hotkey')
+        self.btn_add_hotkey.setIcon(QIcon(plus_icon_path))
+        self.btn_add_hotkey.setFixedHeight(35)
+        self.btn_add_hotkey.clicked.connect(self.add_hotkey)
+        self.btn_add_hotkey.setStyleSheet('QPushButton { background-color: rgba(0, 229, 255, 0.1); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; font-weight: bold; }')
+        
+        self.btn_remove_hotkey = GlowButton(' Remove Selected')
+        self.btn_remove_hotkey.setIcon(QIcon(minus_icon_path))
+        self.btn_remove_hotkey.setFixedHeight(35)
+        self.btn_remove_hotkey.clicked.connect(self.remove_hotkey)
+        self.btn_remove_hotkey.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }')
+
+        self.btn_duplicate_hotkey = GlowButton(' Duplicate Selected')
+        self.btn_duplicate_hotkey.setIcon(QIcon(plus_icon_path))
+        self.btn_duplicate_hotkey.setFixedHeight(35)
+        self.btn_duplicate_hotkey.clicked.connect(self.duplicate_selected_hotkey)
+        self.btn_duplicate_hotkey.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }')
+
+        self.btn_clear_hotkeys = GlowButton(' Clear All')
+        self.btn_clear_hotkeys.setFixedHeight(35)
+        self.btn_clear_hotkeys.clicked.connect(self.clear_all_hotkeys)
+        self.btn_clear_hotkeys.setStyleSheet('QPushButton { background-color: rgba(255, 85, 85, 0.08); color: #FF7777; border: 1px solid rgba(255, 85, 85, 0.25); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 85, 85, 0.16); color: #FFAAAA; }')
+        
+        hotkey_btns_row.addWidget(self.btn_add_hotkey)
+        hotkey_btns_row.addWidget(self.btn_remove_hotkey)
+        hotkey_btns_row.addWidget(self.btn_duplicate_hotkey)
+        hotkey_btns_row.addWidget(self.btn_clear_hotkeys)
+        hotkeys_layout.addLayout(hotkey_btns_row)
+
+        hotkey_io_row = QHBoxLayout()
+        hotkey_io_row.setSpacing(10)
+
+        self.btn_export_hotkeys = GlowButton('Export Hotkeys')
+        self.btn_export_hotkeys.setFixedHeight(32)
+        self.btn_export_hotkeys.clicked.connect(self.export_hotkeys)
+        self.btn_export_hotkeys.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.08); color: #E2E2E2; }')
+
+        self.btn_import_hotkeys = GlowButton('Import Hotkeys')
+        self.btn_import_hotkeys.setFixedHeight(32)
+        self.btn_import_hotkeys.clicked.connect(self.import_hotkeys)
+        self.btn_import_hotkeys.setStyleSheet('QPushButton { background-color: rgba(255, 255, 255, 0.04); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.08); color: #E2E2E2; }')
+
+        hotkey_io_row.addWidget(self.btn_export_hotkeys)
+        hotkey_io_row.addWidget(self.btn_import_hotkeys)
+        hotkeys_layout.addLayout(hotkey_io_row)
+        
+        hk_config_group = QGroupBox("Configuration")
+        hk_config_group.setStyleSheet("""
+            QGroupBox { 
+                background: rgba(255, 255, 255, 0.02); 
+                border: 1px solid rgba(255, 255, 255, 0.06); 
+                border-radius: 10px;
+                margin-top: 10px;
+                padding: 10px;
+            }
+            QGroupBox::title { color: #00E5FF; subcontrol-origin: margin; left: 10px; background-color: transparent; }
+        """)
+        hk_form_layout = QVBoxLayout(hk_config_group)
+        hk_form_layout.setSpacing(10)
+        hk_form_layout.setContentsMargins(10, 20, 10, 10)
+        
+        # Row 1: Key Combo & Action Type
+        row1 = QHBoxLayout()
+        row1.setSpacing(15)
+        
+        vbox_key = QVBoxLayout()
+        vbox_key.addWidget(QLabel("KEY COMBINATION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.hotkey_recorder = HotkeyRecorderButton()
+        self.hotkey_recorder.setFixedHeight(32)
+        self.hotkey_recorder.setToolTip("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9")
+        self.hotkey_recorder.recording_state_changed.connect(self.on_hotkey_recording_state_changed)
+        vbox_key.addWidget(self.hotkey_recorder)
+        vbox_key.addWidget(QLabel("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9", styleSheet="color: #7A838F; font-size: 10px;"))
+        row1.addLayout(vbox_key, 1)
+        
+        vbox_type = QVBoxLayout()
+        vbox_type.addWidget(QLabel("TRIGGER ACTION:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.hotkey_type_combo = QComboBox()
+        self.hotkey_type_combo.addItems(["Mode", "Preset"])
+        self.hotkey_type_combo.currentTextChanged.connect(self.on_hotkey_type_changed)
+        self.hotkey_type_combo.setFixedHeight(32)
+        self.hotkey_type_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
+        vbox_type.addWidget(self.hotkey_type_combo)
+        row1.addLayout(vbox_type, 1)
+        
+        hk_form_layout.addLayout(row1)
+        
+        # Row 2: Target
+        vbox_target = QVBoxLayout()
+        vbox_target.addWidget(QLabel("ACTION TARGET:", styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;"))
+        self.hotkey_target_combo = QComboBox()
+        self.hotkey_target_combo.setFixedHeight(32)
+        self.hotkey_target_combo.setStyleSheet('QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }')
+        vbox_target.addWidget(self.hotkey_target_combo)
+        hk_form_layout.addLayout(vbox_target)
+        
+        # Row 3: Save Button
+        self.btn_save_hotkey = GlowButton('Update Binding')
+        self.btn_save_hotkey.setFixedHeight(35)
+        self.btn_save_hotkey.clicked.connect(self.save_current_hotkey)
+        self.btn_save_hotkey.setStyleSheet('QPushButton { background: #00E5FF; color: black; font-weight: bold; border-radius: 6px; } QPushButton:hover { background: #00D5FF; }')
+        hk_form_layout.addWidget(self.btn_save_hotkey)
+        
+        hotkeys_layout.addWidget(hk_config_group)
+        
+        hotkeys_layout.addStretch()
+        if not HAS_PYNPUT:
+            hotkeys_layout.addWidget(QLabel("⚠️ 'pynput' not installed. Hotkeys will not work globally.", styleSheet="color: #FF5555; font-size: 12px; margin-top: 10px;"))
+        else:
+            hotkeys_layout.addWidget(QLabel("ⓘ Hotkeys work globally, even when minimized.", styleSheet="color: #AAAAAA; font-size: 11px; margin-top: 10px;"))
+
+        hotkeys_scroll.setWidget(hotkeys_content)
+        hotkeys_tab_layout.addWidget(hotkeys_scroll)
+
+        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
+        self.update_hotkeys_list_height()
+        
+        self.settings_tabs.addTab(hotkeys_tab, "Hotkeys")
+        settings_layout.addWidget(self.settings_tabs)
         self.stack.addWidget(self.settings_view)
         
         # --- Pomodoro Fullscreen View ---
@@ -1133,6 +1606,7 @@ class RGBControllerApp(QMainWindow):
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
         right_layout.addWidget(self.mode_list)
+        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
 
         self.mode_description_label = QLabel('Select an effect to see a quick description.')
         self.mode_description_label.setWordWrap(True)
@@ -1229,6 +1703,12 @@ class RGBControllerApp(QMainWindow):
         except ValueError as e:
             print(f'Error initializing keyboard: {e}')
         self.force_quit = False
+        self.hotkey_profiles = {'Default': {}}
+        self.active_hotkey_profile = 'Default'
+        self.hotkeys = self.hotkey_profiles[self.active_hotkey_profile]
+        self.hotkey_listener = GlobalHotkeyListener(self.hotkeys)
+        self.hotkey_listener.hotkey_triggered.connect(self.on_global_hotkey_triggered)
+        self.hotkey_listener.start()
         self.load_settings()
         self.apply_effect()
 
@@ -1345,6 +1825,8 @@ class RGBControllerApp(QMainWindow):
             env=updater_env
         )
         self.force_quit = True
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.stop()
         QApplication.quit()
 
     def _get_preview_open_height(self):
@@ -1585,8 +2067,460 @@ class RGBControllerApp(QMainWindow):
         else:
             self.colors_group.setStyleSheet('QGroupBox { color: #555555; font-size: 16px; font-weight: bold; padding-top: 22px; }')
 
+    # --- Hotkeys UI Logic ---
+    def refresh_hotkeys_ui(self):
+        self.hotkeys_list.clear()
+        for k, v in self.hotkeys.items():
+            item = QListWidgetItem(f"{k}  →  [{v['type'].title()}] {v['target']}")
+            item.setData(Qt.UserRole, k)
+            self.hotkeys_list.addItem(item)
+        self.apply_hotkeys_filter()
+
+    def refresh_hotkey_profile_combo(self):
+        if not hasattr(self, 'hotkey_profile_combo') or not hasattr(self, 'hotkey_profiles'):
+            return
+        self.hotkey_profile_combo.blockSignals(True)
+        self.hotkey_profile_combo.clear()
+        self.hotkey_profile_combo.addItems(sorted(self.hotkey_profiles.keys()))
+        if self.active_hotkey_profile in self.hotkey_profiles:
+            self.hotkey_profile_combo.setCurrentText(self.active_hotkey_profile)
+        self.hotkey_profile_combo.blockSignals(False)
+
+    def apply_active_hotkey_profile(self, profile_name):
+        if not hasattr(self, 'hotkey_profiles'):
+            return
+        if profile_name not in self.hotkey_profiles:
+            return
+        self.active_hotkey_profile = profile_name
+        self.hotkeys = self.hotkey_profiles[profile_name]
+        self.refresh_hotkeys_ui()
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
+
+    def on_hotkey_profile_changed(self, profile_name):
+        if not hasattr(self, 'hotkey_profiles'):
+            return
+        if not profile_name or profile_name not in self.hotkey_profiles:
+            return
+        self.apply_active_hotkey_profile(profile_name)
+        self.save_settings()
+
+    def add_hotkey_profile(self):
+        if not hasattr(self, 'hotkey_profiles'):
+            self.hotkey_profiles = {'Default': {}}
+            self.active_hotkey_profile = 'Default'
+            self.hotkeys = self.hotkey_profiles['Default']
+        name, ok = QInputDialog.getText(self, 'New Hotkey Profile', 'Profile name:')
+        if not ok:
+            return
+        name = str(name or '').strip()
+        if not name:
+            QMessageBox.warning(self, 'New Hotkey Profile', 'Profile name cannot be empty.')
+            return
+        if name in self.hotkey_profiles:
+            QMessageBox.warning(self, 'New Hotkey Profile', f"A profile named '{name}' already exists.")
+            return
+        self.hotkey_profiles[name] = {}
+        self.apply_active_hotkey_profile(name)
+        self.refresh_hotkey_profile_combo()
+        self.save_settings()
+
+    def delete_hotkey_profile(self):
+        if not hasattr(self, 'hotkey_profiles'):
+            return
+        profile_name = self.active_hotkey_profile
+        if profile_name not in self.hotkey_profiles:
+            return
+        if len(self.hotkey_profiles) <= 1:
+            QMessageBox.information(self, 'Delete Hotkey Profile', 'At least one hotkey profile must remain.')
+            return
+        reply = QMessageBox.question(
+            self,
+            'Delete Hotkey Profile',
+            f"Delete profile '{profile_name}' and all its bindings?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+        del self.hotkey_profiles[profile_name]
+        fallback_profile = 'Default' if 'Default' in self.hotkey_profiles else sorted(self.hotkey_profiles.keys())[0]
+        self.apply_active_hotkey_profile(fallback_profile)
+        self.refresh_hotkey_profile_combo()
+        self.save_settings()
+
+    def apply_hotkeys_filter(self):
+        query = ""
+        if hasattr(self, 'hotkeys_filter_input'):
+            query = self.hotkeys_filter_input.text().strip().lower()
+        for i in range(self.hotkeys_list.count()):
+            item = self.hotkeys_list.item(i)
+            visible = query in item.text().lower() if query else True
+            item.setHidden(not visible)
+
+    def update_hotkeys_list_height(self):
+        if not hasattr(self, 'hotkeys_list'):
+            return
+        # Keep the list comfortably sized based on current window height.
+        target_height = int(self.height() * 0.24)
+        target_height = max(130, min(300, target_height))
+        self.hotkeys_list.setMinimumHeight(target_height)
+
+    def on_hotkey_item_activated(self, item):
+        if not item:
+            return
+        self.hotkeys_list.setCurrentItem(item)
+        self.on_hotkey_selected()
+        self.hotkey_recorder.setFocus()
+    
+    def on_hotkey_selected(self):
+        items = self.hotkeys_list.selectedItems()
+        if not items: return
+        key_part = items[0].data(Qt.UserRole) or items[0].text().split("  →  ")[0]
+        data = self.hotkeys.get(key_part)
+        if data:
+            self.hotkey_recorder.key_combination = key_part
+            self.hotkey_recorder.setText(key_part)
+            self.hotkey_type_combo.setCurrentText(data['type'].title())
+            self.on_hotkey_type_changed(data['type'].title())
+            self.hotkey_target_combo.setCurrentText(data['target'])
+            
+    def on_hotkey_type_changed(self, h_type):
+        self.hotkey_target_combo.clear()
+        hint_text = ""
+        if h_type == "Mode":
+            hardware_modes = getattr(self, 'HARDWARE_MODES', [])
+            software_modes = getattr(self, 'SOFTWARE_MODES', [])
+            targets = hardware_modes + software_modes
+            self.hotkey_target_combo.addItems(targets)
+            if not targets:
+                hint_text = "No modes available."
+        else:
+            targets = list(getattr(self, 'presets', {}).keys())
+            self.hotkey_target_combo.addItems(targets)
+            if not targets:
+                hint_text = "No presets available. Create a preset first."
+
+        has_targets = self.hotkey_target_combo.count() > 0
+        self.hotkey_target_combo.setEnabled(has_targets)
+        self.hotkey_target_combo.setToolTip("" if has_targets else hint_text)
+        if hasattr(self, 'btn_save_hotkey'):
+            self.btn_save_hotkey.setEnabled(has_targets)
+            self.btn_save_hotkey.setToolTip("" if has_targets else hint_text)
+
+    def on_hotkey_recording_state_changed(self, is_recording):
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.set_paused(is_recording)
+
+    def validate_hotkey_combo(self, combo):
+        parts = [p.strip().lower() for p in str(combo or '').split('+') if p.strip()]
+        if not parts:
+            return False, "Please record a valid key combination first."
+
+        modifiers = {"ctrl", "alt", "shift", "win"}
+        has_modifier = any(part in modifiers for part in parts)
+        has_trigger_key = any(part not in modifiers for part in parts)
+
+        if not has_modifier:
+            return False, "Use at least one modifier key (Ctrl, Alt, Shift, or Win)."
+        if not has_trigger_key:
+            return False, "Add a non-modifier key (recommended: Ctrl+Shift+1 to Ctrl+Shift+9)."
+
+        return True, ""
+
+    def get_reserved_hotkey_warnings(self, combo):
+        key = str(combo or '').strip().lower()
+        warnings = []
+
+        exact_reserved = {
+            'ctrl+alt+delete': 'Secure Attention Sequence and cannot be captured reliably.',
+            'alt+tab': 'Windows task switcher shortcut and may conflict with normal app usage.',
+            'alt+f4': 'Close window shortcut and may close the active application.',
+            'win+l': 'Locks Windows session.',
+            'win+d': 'Shows desktop and may interrupt focus.',
+        }
+
+        if key in exact_reserved:
+            warnings.append(f"{combo}: {exact_reserved[key]}")
+
+        if key.startswith('win+'):
+            warnings.append(f"{combo}: Windows key combinations are often reserved by the OS.")
+
+        return warnings
+
+    def sanitize_hotkeys_data(self, raw_hotkeys):
+        cleaned = {}
+        changed = False
+
+        if not isinstance(raw_hotkeys, dict):
+            return {}, True
+
+        for raw_key, raw_value in raw_hotkeys.items():
+            key = str(raw_key or '').strip().lower()
+            if not key:
+                changed = True
+                continue
+
+            if not isinstance(raw_value, dict):
+                changed = True
+                continue
+
+            h_type = str(raw_value.get('type', '')).strip().lower()
+            target = str(raw_value.get('target', '')).strip()
+            if h_type not in ('mode', 'preset') or not target:
+                changed = True
+                continue
+
+            is_valid_combo, _ = self.validate_hotkey_combo(key)
+            if not is_valid_combo:
+                changed = True
+                continue
+
+            normalized = {'type': h_type, 'target': target}
+            if key in cleaned and cleaned[key] != normalized:
+                changed = True
+
+            cleaned[key] = normalized
+            if raw_key != key:
+                changed = True
+            if raw_value.get('type') != h_type or raw_value.get('target') != target:
+                changed = True
+
+        return cleaned, changed
+
+    def sanitize_hotkey_profiles_data(self, raw_profiles):
+        cleaned_profiles = {}
+        changed = False
+
+        if not isinstance(raw_profiles, dict):
+            return {'Default': {}}, True
+
+        for raw_name, raw_hotkeys in raw_profiles.items():
+            profile_name = str(raw_name or '').strip()
+            if not profile_name:
+                changed = True
+                continue
+            cleaned_hotkeys, profile_changed = self.sanitize_hotkeys_data(raw_hotkeys)
+            cleaned_profiles[profile_name] = cleaned_hotkeys
+            if raw_name != profile_name or profile_changed:
+                changed = True
+
+        if not cleaned_profiles:
+            cleaned_profiles = {'Default': {}}
+            changed = True
+
+        return cleaned_profiles, changed
+            
+    def add_hotkey(self):
+        self.hotkey_recorder.key_combination = ""
+        self.hotkey_recorder.setText("Click to record...")
+        self.hotkey_target_combo.setCurrentIndex(0)
+
+    def duplicate_selected_hotkey(self):
+        items = self.hotkeys_list.selectedItems()
+        if not items:
+            QMessageBox.information(self, 'Duplicate Hotkey', 'Select a hotkey to duplicate first.')
+            return
+        key_part = items[0].data(Qt.UserRole) or items[0].text().split("  →  ")[0]
+        data = self.hotkeys.get(key_part)
+        if not data:
+            return
+        self.hotkey_type_combo.setCurrentText(data.get('type', 'mode').title())
+        self.on_hotkey_type_changed(self.hotkey_type_combo.currentText())
+        self.hotkey_target_combo.setCurrentText(data.get('target', ''))
+        self.hotkey_recorder.key_combination = ""
+        self.hotkey_recorder.setText("Click to record...")
+        self.hotkey_recorder.setFocus()
+
+    def clear_all_hotkeys(self):
+        if not self.hotkeys:
+            QMessageBox.information(self, 'Clear Hotkeys', 'No hotkeys to clear in this profile.')
+            return
+        reply = QMessageBox.question(
+            self,
+            'Clear Hotkeys',
+            f"Remove all hotkeys from profile '{self.active_hotkey_profile}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+        self.hotkeys.clear()
+        self.refresh_hotkeys_ui()
+        self.hotkey_listener.update_hotkeys(self.hotkeys)
+        self.save_settings()
+        
+    def remove_hotkey(self):
+        items = self.hotkeys_list.selectedItems()
+        if items:
+            key_part = items[0].data(Qt.UserRole) or items[0].text().split("  →  ")[0]
+            if key_part in self.hotkeys:
+                del self.hotkeys[key_part]
+            self.refresh_hotkeys_ui()
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
+            self.save_settings()
+
+    def save_current_hotkey(self):
+        key = self.hotkey_recorder.key_combination
+        if not key or "record" in key:
+            QMessageBox.warning(self, "Invalid Hotkey", "Please record a valid key combination first.")
+            return
+
+        is_valid_combo, validation_error = self.validate_hotkey_combo(key)
+        if not is_valid_combo:
+            QMessageBox.warning(self, "Unsafe Hotkey", validation_error)
+            return
+
+        reserved_warnings = self.get_reserved_hotkey_warnings(key)
+        if reserved_warnings:
+            reply = QMessageBox.question(
+                self,
+                "Potential Shortcut Conflict",
+                "This key combination may conflict with Windows shortcuts:\n\n" + "\n".join(reserved_warnings) + "\n\nSave anyway?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if reply != QMessageBox.Yes:
+                return
+
+        h_type = self.hotkey_type_combo.currentText().lower()
+        target = self.hotkey_target_combo.currentText()
+        if not target:
+            QMessageBox.warning(self, "Invalid Target", "Please select a valid target for the action.")
+            return
+
+        selected_key = None
+        selected_items = self.hotkeys_list.selectedItems()
+        if selected_items:
+            selected_key = selected_items[0].data(Qt.UserRole) or selected_items[0].text().split("  →  ")[0]
+
+        existing = self.hotkeys.get(key)
+        if existing and key != selected_key:
+            QMessageBox.warning(self, "Conflict", f"'{key}' is already assigned to [{existing['type'].title()}] {existing['target']}.")
+            return
+
+        for existing_key, existing_data in self.hotkeys.items():
+            if existing_key == selected_key:
+                continue
+            if existing_data.get('type') == h_type and existing_data.get('target') == target:
+                QMessageBox.warning(self, "Conflict", f"[{h_type.title()}] {target} is already assigned to '{existing_key}'.")
+                return
+
+        if selected_key and selected_key != key and selected_key in self.hotkeys:
+            del self.hotkeys[selected_key]
+            
+        self.hotkeys[key] = {
+            "type": h_type,
+            "target": target
+        }
+        self.refresh_hotkeys_ui()
+        self.hotkey_listener.update_hotkeys(self.hotkeys)
+        self.save_settings()
+
+    def export_hotkeys(self):
+        if not self.hotkeys:
+            QMessageBox.information(self, 'Export Hotkeys', 'There are no hotkeys to export yet.')
+            return
+        default_name = f'4_zone_rgb_hotkeys_{CURRENT_VERSION}.json'
+        file_path, _ = QFileDialog.getSaveFileName(self, 'Export Hotkeys', default_name, 'JSON Files (*.json)')
+        if not file_path:
+            return
+        payload = {
+            'version': CURRENT_VERSION,
+            'exported_at': int(time.time()),
+            'hotkeys': self.hotkeys,
+        }
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=2)
+            QMessageBox.information(self, 'Export Hotkeys', f'Exported {len(self.hotkeys)} hotkey(s) successfully.')
+        except Exception as e:
+            QMessageBox.warning(self, 'Export Hotkeys', f'Failed to export hotkeys:\n{e}')
+
+    def import_hotkeys(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Import Hotkeys', '', 'JSON Files (*.json)')
+        if not file_path:
+            return
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            imported = payload.get('hotkeys', payload) if isinstance(payload, dict) else None
+            cleaned, _ = self.sanitize_hotkeys_data(imported)
+            if not cleaned:
+                raise ValueError('File does not contain any valid hotkey bindings.')
+            self.hotkeys.update(cleaned)
+            self.refresh_hotkeys_ui()
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
+            self.save_settings()
+            QMessageBox.information(self, 'Import Hotkeys', f'Imported {len(cleaned)} hotkey(s) successfully.')
+        except Exception as e:
+            QMessageBox.warning(self, 'Import Hotkeys', f'Failed to import hotkeys:\n{e}')
+        
+    def on_global_hotkey_triggered(self, hotkey_id):
+        # Called from background thread signal
+        data = self.hotkeys.get(hotkey_id)
+        if not data: return
+        
+        target = data["target"]
+        if data["type"] == "mode":
+            items = self.mode_list.findItems(target, Qt.MatchExactly)
+            if items:
+                self.mode_list.setCurrentItem(items[0])
+                self.on_mode_changed(target)
+        elif data["type"] == "preset":
+            self.apply_preset_logic(target)
+            idx = self.preset_combo.findText(target)
+            if idx >= 0: self.preset_combo.setCurrentIndex(idx)
+
+
     def load_settings(self):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
+
+        self.hotkey_profiles = {'Default': {}}
+        self.active_hotkey_profile = 'Default'
+
+        hotkeys_json = settings.value('hotkeys', '{}')
+        base_hotkeys = {}
+        base_hotkeys_changed = False
+        if isinstance(hotkeys_json, str) and hotkeys_json:
+            try:
+                loaded_hotkeys = json.loads(hotkeys_json)
+                base_hotkeys, base_hotkeys_changed = self.sanitize_hotkeys_data(loaded_hotkeys)
+            except Exception as e:
+                print(f"Failed to load hotkeys: {e}")
+
+        profiles_json = settings.value('hotkey_profiles', '')
+        profiles_changed = False
+        if isinstance(profiles_json, str) and profiles_json:
+            try:
+                parsed_profiles = json.loads(profiles_json)
+                self.hotkey_profiles, profiles_changed = self.sanitize_hotkey_profiles_data(parsed_profiles)
+            except Exception as e:
+                print(f"Failed to load hotkey profiles: {e}")
+                self.hotkey_profiles = {'Default': base_hotkeys}
+                profiles_changed = True
+        else:
+            self.hotkey_profiles = {'Default': base_hotkeys}
+            profiles_changed = True
+
+        active_profile = str(settings.value('active_hotkey_profile', 'Default') or 'Default').strip() or 'Default'
+        if active_profile not in self.hotkey_profiles:
+            active_profile = 'Default' if 'Default' in self.hotkey_profiles else sorted(self.hotkey_profiles.keys())[0]
+            profiles_changed = True
+
+        self.apply_active_hotkey_profile(active_profile)
+        self.refresh_hotkey_profile_combo()
+        self.refresh_hotkeys_ui()
+
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.update_hotkeys(self.hotkeys)
+
+        if base_hotkeys_changed:
+            settings.setValue('hotkeys', json.dumps(self.hotkeys))
+        if profiles_changed:
+            settings.setValue('hotkey_profiles', json.dumps(self.hotkey_profiles))
+            settings.setValue('active_hotkey_profile', self.active_hotkey_profile)
+
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
         self.turn_off_unplugged_cb.blockSignals(True)
@@ -1659,6 +2593,11 @@ class RGBControllerApp(QMainWindow):
 
     def save_settings(self, *args):
         settings = QSettings('4ZoneRgbToolkit', 'Preferences')
+        if hasattr(self, 'hotkey_profiles') and hasattr(self, 'active_hotkey_profile'):
+            self.hotkey_profiles[self.active_hotkey_profile] = self.hotkeys
+        settings.setValue('hotkeys', json.dumps(self.hotkeys))
+        settings.setValue('hotkey_profiles', json.dumps(getattr(self, 'hotkey_profiles', {'Default': self.hotkeys})))
+        settings.setValue('active_hotkey_profile', getattr(self, 'active_hotkey_profile', 'Default'))
         settings.setValue('minimize_to_tray', self.minimize_to_tray_cb.isChecked())
         settings.setValue('startup_preset', self.startup_preset_combo.currentText())
         settings.setValue('saved_presets', json.dumps(self.presets))
@@ -1766,6 +2705,11 @@ class RGBControllerApp(QMainWindow):
             self.turn_off_when_battery_saver = False
             self._is_power_policy_forcing_off = False
             self.presets = {}
+            self.hotkeys = {}
+            if hasattr(self, 'hotkey_listener'):
+                self.hotkey_listener.update_hotkeys(self.hotkeys)
+            if hasattr(self, 'refresh_hotkeys_ui'):
+                self.refresh_hotkeys_ui()
             self.mode_settings = self.build_default_mode_settings()
             self.wave_direction = 'left'
             self.smooth_wave_direction = 'left'
@@ -1926,6 +2870,8 @@ class RGBControllerApp(QMainWindow):
         if curr_startup in self.presets or curr_startup == 'None (Use Last State)':
             self.startup_preset_combo.setCurrentText(curr_startup)
         self.startup_preset_combo.blockSignals(False)
+        if hasattr(self, 'hotkey_type_combo') and self.hotkey_type_combo.currentText() == 'Preset':
+            self.on_hotkey_type_changed('Preset')
     def manage_startup_registry(self, enabled):
         key_path = 'Software\\Microsoft\\Windows\\CurrentVersion\\Run'
         key_name = '4ZoneRgbToolkit'
@@ -2198,6 +3144,8 @@ class RGBControllerApp(QMainWindow):
         self.save_settings()
         self.stop_visualizer()
         self.stop_temperature_worker()
+        if hasattr(self, 'hotkey_listener'):
+            self.hotkey_listener.stop()
         QApplication.instance().quit()
     def on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
@@ -2541,6 +3489,7 @@ class RGBControllerApp(QMainWindow):
         super().resizeEvent(event)
         self.update_preset_toolbar_layout()
         self.sync_control_label_widths()
+        self.update_hotkeys_list_height()
         if getattr(self, 'preview_enabled', False) and hasattr(self, 'embedded_preview'):
             self.embedded_preview.setMaximumHeight(self._get_preview_open_height())
 
@@ -2552,6 +3501,8 @@ class RGBControllerApp(QMainWindow):
         else:
             self.stop_visualizer()
             self.stop_temperature_worker()
+            if hasattr(self, 'hotkey_listener'):
+                self.hotkey_listener.stop()
             self.custom_timer.stop()
             if self.sct:
                 self.sct.close()

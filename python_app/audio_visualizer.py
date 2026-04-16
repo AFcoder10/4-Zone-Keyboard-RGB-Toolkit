@@ -157,8 +157,15 @@ class AudioVisualizer:
                 target_device = default_speakers
 
             print(f"=> Capturing from: {target_device['name']}")
-        except OSError:
-            print("CRITICAL: WASAPI unavailable.")
+        except Exception as e:
+            print(f"CRITICAL: WASAPI unavailable or error during initialization: {e}")
+            # Try to print available device info to help debugging
+            try:
+                print("\nAvailable Audio Devices:")
+                for i in range(self.p.get_device_count()):
+                    dev = self.p.get_device_info_by_index(i)
+                    print(f"[{i}] {dev['name']} (Inputs: {dev['maxInputChannels']}, Outputs: {dev['maxOutputChannels']})")
+            except: pass
             sys.exit(1)
 
         self.channels = target_device["maxInputChannels"]
