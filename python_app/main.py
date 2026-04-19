@@ -45,7 +45,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.5"
+CURRENT_VERSION = "v2.51"
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
     _fields_ = [
@@ -571,9 +571,9 @@ class HotkeyDialog(FadeDialog):
             QMessageBox.warning(self, "Conflict", f"'{key}' is already assigned to [{existing['type'].title()}] {existing['target']}.")
             return
             
-            # Successful validation
-            self.result_data = (key, h_type, target)
-            self.accept()
+        # Successful validation
+        self.result_data = (key, h_type, target)
+        self.accept()
 
     def get_data(self):
         return getattr(self, 'result_data', None)
