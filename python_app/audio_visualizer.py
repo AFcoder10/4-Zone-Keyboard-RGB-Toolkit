@@ -26,14 +26,14 @@ import pyaudiowpatch as pyaudio
 from python_controller import L5PKeyboard
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
-CHUNK  = 1024
+CHUNK = 1024
 FORMAT = pyaudio.paInt16
 
 # ── Frequency bands (one per zone) ────────────────────────────────────────────
 BAND_RANGES = [
-    (20,   150),    # Sub-Bass / Kick
-    (150,  500),    # Bass
-    (500,  3000),   # Mids / Vocals
+    (20, 150),  # Sub-Bass / Kick
+    (150, 500),  # Bass
+    (500, 3000),  # Mids / Vocals
     (3000, 10000),  # Highs / Cymbals
 ]
 
@@ -46,10 +46,10 @@ DEFAULT_ZONE_COLORS = [
 ]
 
 # ── Beat detection ─────────────────────────────────────────────────────────────
-BEAT_HISTORY_LONG  = 40    # frames (~1.3 s)
-BEAT_HISTORY_SHORT =  5    # frames (~160 ms)
-BEAT_THRESHOLD     = 1.35  # short/long ratio to call a beat
-BEAT_COOLDOWN      = 0.10  # seconds min between beats per zone
+BEAT_HISTORY_LONG = 40  # frames (~1.3 s)
+BEAT_HISTORY_SHORT = 5  # frames (~160 ms)
+BEAT_THRESHOLD = 1.35  # short/long ratio to call a beat
+BEAT_COOLDOWN = 0.10  # seconds min between beats per zone
 
 # ── Sensitivity → reference energy ────────────────────────────────────────────
 # slider 0  → ref_mult ≈ 0.10  (very sensitive)
@@ -69,8 +69,10 @@ def parse_int_arg(args, index, default, min_value=None, max_value=None):
         value = min(max_value, value)
     return value
 
+
 def slider_to_ref_mult(val: int) -> float:
     return 10.0 ** ((val - 50) / 25.0)
+
 
 # ── Smoothness → attack + decay speeds ────────────────────────────────────────
 # Low smoothness  = instant attack + fast decay  → sharp flicker on every beat
@@ -84,10 +86,12 @@ def slider_to_ref_mult(val: int) -> float:
 #   0.1 = very fast fall (flickery)
 #   0.95 = very slow fall (smoothly fading glow)
 def slider_to_attack(val: int) -> float:
-    return val / 100.0 * 0.70   # 0% → 0.00 (instant),  100% → 0.70 (smooth)
+    return val / 100.0 * 0.70  # 0% → 0.00 (instant),  100% → 0.70 (smooth)
+
 
 def slider_to_decay(val: int) -> float:
     return 0.10 + (val / 100.0) * 0.85  # 0% → 0.10 (flicker), 100% → 0.95 (glow)
+
 
 # ── Brightness Boost → master output multiplier ────────────────────────────────
 # Applied to the FINAL brightness value before converting to RGB.
@@ -126,9 +130,9 @@ class AudioVisualizer:
         self.zone_colors = []
         if len(args) >= 15:
             for i in range(4):
-                r = parse_int_arg(args, 3 + i*3, 255, 0, 255)
-                g = parse_int_arg(args, 4 + i*3, 252, 0, 255)
-                b = parse_int_arg(args, 5 + i*3, 247, 0, 255)
+                r = parse_int_arg(args, 3 + i * 3, 255, 0, 255)
+                g = parse_int_arg(args, 4 + i * 3, 252, 0, 255)
+                b = parse_int_arg(args, 5 + i * 3, 247, 0, 255)
                 self.zone_colors.append((r, g, b))
         else:
             self.zone_colors = [(255, 252, 247) for _ in range(4)]
@@ -136,15 +140,19 @@ class AudioVisualizer:
         self.ref_levels = [r * slider_to_ref_mult(sensitivity) for r in BASE_REFS]
         # Note: attack_factor, decay_factor, brightness_mult already set above
 
-        print(f"Sensitivity: {sensitivity}%  |  Smoothness: {smoothness}%  |  Brightness Boost: 30%  |  Reduce Flicker: {flicker_raw}% (window={self.flicker_window} frames)")
+        print(
+            f"Sensitivity: {sensitivity}%  |  Smoothness: {smoothness}%  |  Brightness Boost: 30%  |  Reduce Flicker: {flicker_raw}% (window={self.flicker_window} frames)"
+        )
         print(f"Zone colors: {self.zone_colors}")
 
         # ── Locate WASAPI loopback ────────────────────────────────────────────
         print("Locating WASAPI Loopback Desktop Audio...")
         self.p = pyaudio.PyAudio()
         try:
-            wasapi_info      = self.p.get_host_api_info_by_type(pyaudio.paWASAPI)
-            default_speakers = self.p.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
+            wasapi_info = self.p.get_host_api_info_by_type(pyaudio.paWASAPI)
+            default_speakers = self.p.get_device_info_by_index(
+                wasapi_info["defaultOutputDevice"]
+            )
 
             if not default_speakers["isLoopbackDevice"]:
                 for loopback in self.p.get_loopback_device_info_generator():
@@ -164,12 +172,15 @@ class AudioVisualizer:
                 print("\nAvailable Audio Devices:")
                 for i in range(self.p.get_device_count()):
                     dev = self.p.get_device_info_by_index(i)
-                    print(f"[{i}] {dev['name']} (Inputs: {dev['maxInputChannels']}, Outputs: {dev['maxOutputChannels']})")
-            except: pass
+                    print(
+                        f"[{i}] {dev['name']} (Inputs: {dev['maxInputChannels']}, Outputs: {dev['maxOutputChannels']})"
+                    )
+            except Exception:
+                pass
             sys.exit(1)
 
         self.channels = target_device["maxInputChannels"]
-        self.rate     = int(target_device["defaultSampleRate"])
+        self.rate = int(target_device["defaultSampleRate"])
 
         try:
             self.stream = self.p.open(
@@ -188,9 +199,9 @@ class AudioVisualizer:
         # ── Keyboard ──────────────────────────────────────────────────────────
         print("Initializing Keyboard...")
         self.kb = L5PKeyboard()
-        self.kb.set_effect('static')
-        self.kb.set_brightness(2)   # max HW brightness; SW controls levels
-        
+        self.kb.set_effect("static")
+        self.kb.set_brightness(2)  # max HW brightness; SW controls levels
+
         # ── Precomputed FFT data ──────────────────────────────────────────────
         # Create a sample buffer of CHUNK size to compute frequency bins once
         self.window = np.hanning(CHUNK)
@@ -210,8 +221,8 @@ class AudioVisualizer:
             collections.deque(maxlen=BEAT_HISTORY_SHORT) for _ in range(4)
         ]
         self.short_energy_sums = [0.0] * 4
-        self.last_beat_time  = [0.0] * 4
-        self.brightness      = [0.0] * 4   # internal brightness state (0–1, pre-boost)
+        self.last_beat_time = [0.0] * 4
+        self.brightness = [0.0] * 4  # internal brightness state (0–1, pre-boost)
         # Rolling window of recent brightness values for flicker reduction
         self.brightness_history = [
             collections.deque(maxlen=self.flicker_window) for _ in range(4)
@@ -227,7 +238,7 @@ class AudioVisualizer:
             while True:
                 try:
                     # 1. Read audio chunk
-                    data       = self.stream.read(CHUNK, exception_on_overflow=False)
+                    data = self.stream.read(CHUNK, exception_on_overflow=False)
                     audio_data = np.frombuffer(data, dtype=np.int16).astype(np.float32)
 
                     # Downmix to mono
@@ -243,14 +254,18 @@ class AudioVisualizer:
                     fft_mag = np.abs(np.fft.rfft(audio_data * self.window))
 
                     # 3. Per-band energy + beat detection
-                    now    = time.monotonic()
+                    now = time.monotonic()
                     colors = [0] * 12
 
                     for i in range(4):
                         idx = self.band_indices[i]
 
                         # RMS energy of this frequency band
-                        energy = float(np.sqrt(np.mean(fft_mag[idx] ** 2))) if len(idx) > 0 else 0.0
+                        energy = (
+                            float(np.sqrt(np.mean(fft_mag[idx] ** 2)))
+                            if len(idx) > 0
+                            else 0.0
+                        )
 
                         # Normalised 0–1 vs reference
                         norm = min(1.0, energy / (self.ref_levels[i] + 1e-9))
@@ -285,9 +300,10 @@ class AudioVisualizer:
                             self.last_beat_time[i] = now
                             # Attack: blend from current brightness toward beat_target
                             # attack_factor=0.0 → instant jump, higher → gradual rise
-                            self.brightness[i] = (
-                                self.brightness[i] * self.attack_factor
-                                + beat_target * (1.0 - self.attack_factor)
+                            self.brightness[i] = self.brightness[
+                                i
+                            ] * self.attack_factor + beat_target * (
+                                1.0 - self.attack_factor
                             )
                         else:
                             # Ambient floor: very dim continuous glow from ongoing audio
@@ -326,13 +342,13 @@ class AudioVisualizer:
         except KeyboardInterrupt:
             print("\nShutting down visualizer...")
         finally:
-            if hasattr(self, 'kb'):
+            if hasattr(self, "kb"):
                 self.kb.set_solid_color(0, 0, 255)
                 self.kb.close()
-            if hasattr(self, 'stream'):
+            if hasattr(self, "stream"):
                 self.stream.stop_stream()
                 self.stream.close()
-            if hasattr(self, 'p'):
+            if hasattr(self, "p"):
                 self.p.terminate()
 
 
