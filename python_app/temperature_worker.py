@@ -102,12 +102,6 @@ def main():
     # Now we are admin.
     import psutil
 
-    # We expect sys.path to include the project root so we can import wintemp
-    # since we are inside python_app/, project root is one level up
-    project_root = Path(__file__).resolve().parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-
     import wintemp
 
     parent_pid = None

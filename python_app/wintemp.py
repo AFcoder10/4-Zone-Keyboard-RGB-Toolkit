@@ -23,7 +23,7 @@ def _resolve_lhm_dll_path():
     if hasattr(sys, "_MEIPASS"):
         base = Path(sys._MEIPASS)
     else:
-        # Fallback for source execution. Assume this file is one level up from python_app or at root
+        # Fallback for source execution. Assume LibreHardwareMonitor is side-by-side with this script.
         base = Path(os.path.abspath(os.path.dirname(__file__)))
 
     candidates = [
