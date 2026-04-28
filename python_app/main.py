@@ -1009,7 +1009,7 @@ class UpdateDownloader(QThread):
 import platform
 
 class TelemetryClient:
-    def __init__(self, app_ref, endpoint_url="http://localhost:3000/api"):
+    def __init__(self, app_ref, endpoint_url="https://rgb-toolkit-telemetry.vercel.app/api"):
         self.app_ref = app_ref
         self.endpoint_url = endpoint_url
         self.laptop_name = platform.node()
