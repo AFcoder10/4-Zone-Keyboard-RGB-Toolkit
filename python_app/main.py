@@ -94,7 +94,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.51"
+CURRENT_VERSION = "v2.52"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -338,6 +338,33 @@ class AnimatedSlider(QSlider):
         self.anim.setStartValue(self.value())
         self.anim.setEndValue(val)
         self.anim.start()
+class AnimatedInfoIcon(QLabel):
+    def __init__(self, tooltip_text, parent=None):
+        super().__init__("ⓘ", parent)
+        self.setToolTip(tooltip_text)
+        self.setCursor(Qt.PointingHandCursor)
+        
+        self.anim = QVariantAnimation(self)
+        self.anim.setDuration(150)
+        self.anim.valueChanged.connect(self._on_color_change)
+        self._on_color_change(QColor(122, 131, 143, 128))
+        
+    def _on_color_change(self, color):
+        self.setStyleSheet(f"color: {color.name(QColor.HexArgb)}; font-size: 14px; font-weight: bold;")
+        
+    def enterEvent(self, event):
+        self.anim.stop()
+        self.anim.setStartValue(QColor(122, 131, 143, 128))
+        self.anim.setEndValue(QColor(122, 131, 143, 255))
+        self.anim.start()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.anim.stop()
+        self.anim.setStartValue(QColor(122, 131, 143, 255))
+        self.anim.setEndValue(QColor(122, 131, 143, 128))
+        self.anim.start()
+        super().leaveEvent(event)
 
 
 class GlowButton(QPushButton):
@@ -979,6 +1006,55 @@ class UpdateDownloader(QThread):
                 self.finished.emit(dest_path)
         except Exception as e:
             self.error.emit(str(e))
+import platform
+
+class TelemetryClient:
+    def __init__(self, app_ref, endpoint_url="http://localhost:3000/api"):
+        self.app_ref = app_ref
+        self.endpoint_url = endpoint_url
+        self.laptop_name = platform.node()
+        self.running = False
+        self.thread = None
+
+    def start(self):
+        if self.running: return
+        self.running = True
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
+        
+    def stop(self):
+        self.running = False
+        self._send_status("offline")
+        if self.thread:
+            self.thread.join(timeout=2.0)
+
+    def _loop(self):
+        self._send_status("online")
+        while self.running:
+            for _ in range(300): # 5 minutes sleep in 1s increments to allow fast shutdown
+                if not self.running: return
+                time.sleep(1)
+            self._send_status("online")
+
+    def _send_status(self, status):
+        try:
+            from PySide6.QtCore import QSettings
+            settings = QSettings("4ZoneRgbToolkit", "Preferences")
+            val = settings.value("telemetry_enabled", True)
+            enabled = str(val).lower() == "true" if isinstance(val, str) else bool(val)
+            if not enabled:
+                return
+        except Exception:
+            pass
+        try:
+            data = json.dumps({
+                "laptopName": self.laptop_name,
+                "status": status
+            }).encode('utf-8')
+            req = urllib.request.Request(self.endpoint_url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+            urllib.request.urlopen(req, timeout=5.0)
+        except Exception:
+            pass
 
 
 class RGBControllerApp(QMainWindow):
@@ -989,6 +1065,9 @@ class RGBControllerApp(QMainWindow):
         # ***<module>.RGBControllerApp.__init__: Failure: Compilation Error
         super().__init__()
         self.setWindowTitle("4 Zone Rgb Toolkit")
+        
+        self.telemetry = TelemetryClient(self)
+        self.telemetry.start()
         self.original_exe_path = _resolve_original_exe_path()
         self.setMinimumSize(500, 480)
         self.icon_path = os.path.join(
@@ -1130,17 +1209,50 @@ class RGBControllerApp(QMainWindow):
         )
         behavior_layout = QVBoxLayout(behavior_card)
 
+        min_tray_row = QHBoxLayout()
+        min_tray_row.setContentsMargins(0, 0, 0, 0)
         self.minimize_to_tray_cb = QCheckBox("Minimize to Tray")
         self.minimize_to_tray_cb.setStyleSheet(toggle_css)
         self.minimize_to_tray_cb.toggled.connect(self.save_settings)
-        behavior_layout.addWidget(self.minimize_to_tray_cb)
+        min_tray_row.addWidget(self.minimize_to_tray_cb)
+        min_tray_row.addWidget(AnimatedInfoIcon("Keeps the app running in the background system tray\nwhen you close the main window."))
+        min_tray_row.addStretch()
+        behavior_layout.addLayout(min_tray_row)
 
+        launch_row = QHBoxLayout()
+        launch_row.setContentsMargins(0, 0, 0, 0)
         self.launch_on_start_cb = QCheckBox("Launch on Windows Startup")
         self.launch_on_start_cb.setStyleSheet(toggle_css)
         self.launch_on_start_cb.toggled.connect(self.save_settings)
-        behavior_layout.addWidget(self.launch_on_start_cb)
+        launch_row.addWidget(self.launch_on_start_cb)
+        launch_row.addWidget(AnimatedInfoIcon("Automatically starts the RGB toolkit silently\nwhen you log into Windows."))
+        launch_row.addStretch()
+        behavior_layout.addLayout(launch_row)
 
         gen_content_layout.addWidget(behavior_card)
+
+        # --- Section: Telemetry ---
+        gen_content_layout.addWidget(create_section_header("Telemetry"))
+        telemetry_card = QFrame()
+        telemetry_card.setStyleSheet(
+            "QFrame { background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }"
+        )
+        telemetry_layout = QVBoxLayout(telemetry_card)
+
+        telemetry_row = QHBoxLayout()
+        telemetry_row.setContentsMargins(0, 0, 0, 0)
+        
+        self.telemetry_cb = QCheckBox("Enable Telemetry")
+        self.telemetry_cb.setStyleSheet(toggle_css)
+        self.telemetry_cb.toggled.connect(self.save_settings)
+        telemetry_row.addWidget(self.telemetry_cb)
+        
+        telemetry_row.addWidget(AnimatedInfoIcon("When enabled, the app periodically sends an anonymous ping\ncontaining your computer name to the dashboard\nto display the total active user count."))
+        telemetry_row.addStretch()
+        
+        telemetry_layout.addLayout(telemetry_row)
+
+        gen_content_layout.addWidget(telemetry_card)
 
         # --- Section: Power ---
         gen_content_layout.addWidget(create_section_header("Power Management"))
@@ -1150,19 +1262,25 @@ class RGBControllerApp(QMainWindow):
         )
         power_layout = QVBoxLayout(power_card)
 
+        unplugged_row = QHBoxLayout()
+        unplugged_row.setContentsMargins(0, 0, 0, 0)
         self.turn_off_unplugged_cb = QCheckBox("Eco Mode: Turn off when unplugged")
         self.turn_off_unplugged_cb.setStyleSheet(toggle_css)
         self.turn_off_unplugged_cb.toggled.connect(self.on_power_policy_setting_changed)
-        power_layout.addWidget(self.turn_off_unplugged_cb)
+        unplugged_row.addWidget(self.turn_off_unplugged_cb)
+        unplugged_row.addWidget(AnimatedInfoIcon("Automatically turns off all RGB lighting to save power\nwhen the laptop charger is disconnected."))
+        unplugged_row.addStretch()
+        power_layout.addLayout(unplugged_row)
 
-        self.turn_off_battery_saver_cb = QCheckBox(
-            "Eco Mode: Turn off on Battery Saver"
-        )
+        saver_row = QHBoxLayout()
+        saver_row.setContentsMargins(0, 0, 0, 0)
+        self.turn_off_battery_saver_cb = QCheckBox("Eco Mode: Turn off on Battery Saver")
         self.turn_off_battery_saver_cb.setStyleSheet(toggle_css)
-        self.turn_off_battery_saver_cb.toggled.connect(
-            self.on_power_policy_setting_changed
-        )
-        power_layout.addWidget(self.turn_off_battery_saver_cb)
+        self.turn_off_battery_saver_cb.toggled.connect(self.on_power_policy_setting_changed)
+        saver_row.addWidget(self.turn_off_battery_saver_cb)
+        saver_row.addWidget(AnimatedInfoIcon("Turns off RGB lighting when Windows\nenters Battery Saver mode."))
+        saver_row.addStretch()
+        power_layout.addLayout(saver_row)
 
         gen_content_layout.addWidget(power_card)
 
@@ -2954,6 +3072,7 @@ class RGBControllerApp(QMainWindow):
 
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
+        self.telemetry_cb.blockSignals(True)
         self.turn_off_unplugged_cb.blockSignals(True)
         self.turn_off_battery_saver_cb.blockSignals(True)
         if hasattr(self, "startup_preset_combo"):
@@ -2972,6 +3091,12 @@ class RGBControllerApp(QMainWindow):
             else bool(launch_val)
         )
         self.launch_on_start_cb.setChecked(launch_start)
+        telemetry_val = settings.value("telemetry_enabled", True)
+        self.telemetry_cb.setChecked(
+            str(telemetry_val).lower() == "true"
+            if isinstance(telemetry_val, str)
+            else bool(telemetry_val)
+        )
         unplugged_val = settings.value("turn_off_when_unplugged", False)
         self.turn_off_when_unplugged = (
             str(unplugged_val).lower() == "true"
@@ -3024,6 +3149,7 @@ class RGBControllerApp(QMainWindow):
             self.startup_preset_combo.blockSignals(False)
         self.minimize_to_tray_cb.blockSignals(False)
         self.launch_on_start_cb.blockSignals(False)
+        self.telemetry_cb.blockSignals(False)
         self.turn_off_unplugged_cb.blockSignals(False)
         self.turn_off_battery_saver_cb.blockSignals(False)
         if startup_p in self.presets:
@@ -3066,6 +3192,7 @@ class RGBControllerApp(QMainWindow):
         )
         launch_start = self.launch_on_start_cb.isChecked()
         settings.setValue("launch_on_start", launch_start)
+        settings.setValue("telemetry_enabled", self.telemetry_cb.isChecked())
         settings.setValue(
             "turn_off_when_unplugged", self.turn_off_unplugged_cb.isChecked()
         )
@@ -4163,6 +4290,8 @@ class RGBControllerApp(QMainWindow):
             self.hide()
             return
         else:
+            if hasattr(self, "telemetry"):
+                self.telemetry.stop()
             self.stop_visualizer()
             self.stop_temperature_worker()
             if hasattr(self, "hotkey_listener"):
