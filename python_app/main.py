@@ -96,7 +96,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.6"
+CURRENT_VERSION = "v2.62"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -440,31 +440,7 @@ class CustomTitleBar(QWidget):
 
         self.btn_help.clicked.connect(self.parent.show_help_dialog)
 
-        self.btn_frames = QPushButton("Frames")
-        self.btn_frames.setFixedHeight(22)
-        self.btn_frames.setCursor(Qt.PointingHandCursor)
-        self.btn_frames.setToolTip("Custom Frames Editor")
-        self.btn_frames.setStyleSheet(
-            """
-            QPushButton {
-                background: transparent;
-                border: 1px solid rgba(255,255,255,0.3);
-                border-radius: 4px;
-                color: #00E5FF;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 0 10px;
-                margin-bottom: 2px;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 229, 255, 0.1);
-            }
-        """
-        )
-        self.btn_frames.clicked.connect(self.parent.open_frames_editor)
-
         layout.addWidget(self.btn_help)
-        layout.addWidget(self.btn_frames)
         layout.addWidget(self.btn_settings)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(spacer)
@@ -566,379 +542,6 @@ class LogsDialog(FadeDialog):
         except Exception:
             pass
 
-
-class FramesEditorDialog(FadeDialog):
-    def __init__(self, parent_app):
-        super().__init__(parent_app)
-        self.parent_app = parent_app
-        self.setWindowTitle("Custom Frames Editor")
-        self.setMinimumSize(760, 520)
-        self.setWindowFlags(self.windowFlags() | Qt.Window)
-
-        self._updating_controls = False
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-
-        header = QHBoxLayout()
-        title = QLabel("Custom Frames")
-        title.setStyleSheet(
-            "color: #00E5FF; font-size: 18px; font-weight: bold;"
-        )
-        header.addWidget(title)
-        header.addStretch()
-        self.btn_import = QPushButton("Import JSON")
-        self.btn_export = QPushButton("Export JSON")
-        self.btn_import.setCursor(Qt.PointingHandCursor)
-        self.btn_export.setCursor(Qt.PointingHandCursor)
-        self.btn_import.clicked.connect(self.import_frames)
-        self.btn_export.clicked.connect(self.export_frames)
-        header.addWidget(self.btn_import)
-        header.addWidget(self.btn_export)
-        layout.addLayout(header)
-
-        body = QHBoxLayout()
-        body.setSpacing(16)
-        layout.addLayout(body, 1)
-
-        # Left: frame list
-        left_col = QVBoxLayout()
-        left_col.setSpacing(8)
-        body.addLayout(left_col, 1)
-
-        self.frames_list = QListWidget()
-        self.frames_list.currentRowChanged.connect(self.on_frame_selected)
-        left_col.addWidget(self.frames_list, 1)
-
-        list_btns = QHBoxLayout()
-        self.btn_add_frame = QPushButton("Add")
-        self.btn_duplicate_frame = QPushButton("Duplicate")
-        self.btn_delete_frame = QPushButton("Delete")
-        for btn in (self.btn_add_frame, self.btn_duplicate_frame, self.btn_delete_frame):
-            btn.setCursor(Qt.PointingHandCursor)
-        self.btn_add_frame.clicked.connect(self.add_frame)
-        self.btn_duplicate_frame.clicked.connect(self.duplicate_frame)
-        self.btn_delete_frame.clicked.connect(self.delete_frame)
-        list_btns.addWidget(self.btn_add_frame)
-        list_btns.addWidget(self.btn_duplicate_frame)
-        list_btns.addWidget(self.btn_delete_frame)
-        left_col.addLayout(list_btns)
-
-        # Right: frame settings
-        right_col = QVBoxLayout()
-        right_col.setSpacing(10)
-        body.addLayout(right_col, 2)
-
-        controls_group = QGroupBox("Frame Settings")
-        controls_layout = QVBoxLayout(controls_group)
-        controls_layout.setSpacing(10)
-
-        brightness_row = QHBoxLayout()
-        self.brightness_label = QLabel("Brightness: 100%")
-        brightness_row.addWidget(self.brightness_label)
-        brightness_row.addStretch()
-        self.btn_apply_brightness = QPushButton("Apply to All")
-        self.btn_apply_brightness.setCursor(Qt.PointingHandCursor)
-        self.btn_apply_brightness.clicked.connect(self.apply_brightness_to_all)
-        brightness_row.addWidget(self.btn_apply_brightness)
-        controls_layout.addLayout(brightness_row)
-
-        self.brightness_slider = AnimatedSlider(Qt.Horizontal)
-        self.brightness_slider.setRange(0, 100)
-        self.brightness_slider.setValue(100)
-        self.brightness_slider.valueChanged.connect(self.on_brightness_changed)
-        controls_layout.addWidget(self.brightness_slider)
-
-        delay_row = QHBoxLayout()
-        delay_row.addWidget(QLabel("Delay (ms):"))
-        self.delay_spin = QSpinBox()
-        self.delay_spin.setRange(50, 5000)
-        self.delay_spin.setSingleStep(50)
-        self.delay_spin.setValue(600)
-        self.delay_spin.valueChanged.connect(self.on_delay_changed)
-        delay_row.addWidget(self.delay_spin)
-        self.btn_apply_delay = QPushButton("Apply to All")
-        self.btn_apply_delay.setCursor(Qt.PointingHandCursor)
-        self.btn_apply_delay.clicked.connect(self.apply_delay_to_all)
-        delay_row.addWidget(self.btn_apply_delay)
-        delay_row.addStretch()
-        controls_layout.addLayout(delay_row)
-
-        transition_row = QHBoxLayout()
-        transition_row.addWidget(QLabel("Transition:"))
-        self.transition_combo = QComboBox()
-        self.transition_combo.addItems(
-            ["Smooth", "Snap", "Ease In", "Ease Out", "Ease In Out"]
-        )
-        self.transition_combo.currentTextChanged.connect(self.on_transition_changed)
-        transition_row.addWidget(self.transition_combo)
-        transition_row.addWidget(QLabel("Direction:"))
-        self.direction_combo = QComboBox()
-        self.direction_combo.addItems(["Left", "Right"])
-        self.direction_combo.currentTextChanged.connect(self.on_direction_changed)
-        transition_row.addWidget(self.direction_combo)
-        self.btn_apply_transition = QPushButton("Apply to All")
-        self.btn_apply_transition.setCursor(Qt.PointingHandCursor)
-        self.btn_apply_transition.clicked.connect(self.apply_transition_to_all)
-        transition_row.addWidget(self.btn_apply_transition)
-        transition_row.addStretch()
-        controls_layout.addLayout(transition_row)
-
-        zone_group = QGroupBox("Zone Colors")
-        zone_layout = QGridLayout(zone_group)
-        zone_layout.setHorizontalSpacing(10)
-        zone_layout.setVerticalSpacing(10)
-
-        self.zone_buttons = []
-        for i in range(4):
-            btn = QPushButton(f"Zone {i + 1}")
-            btn.setFixedHeight(34)
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda _, idx=i: self.pick_zone_color(idx))
-            self.zone_buttons.append(btn)
-            zone_layout.addWidget(btn, i // 2, i % 2)
-
-        self.btn_apply_colors = QPushButton("Apply Colors to All")
-        self.btn_apply_colors.setCursor(Qt.PointingHandCursor)
-        self.btn_apply_colors.clicked.connect(self.apply_colors_to_all)
-        zone_layout.addWidget(self.btn_apply_colors, 2, 0, 1, 2)
-
-        controls_layout.addWidget(zone_group)
-        right_col.addWidget(controls_group)
-        right_col.addStretch()
-
-        self.load_frames(self.parent_app.custom_frames)
-
-    def load_frames(self, frames):
-        self.frames = [self._sanitize_frame(f) for f in (frames or [])]
-        if not self.frames:
-            self.frames = [self._default_frame("Frame 1")]
-        self._refresh_frame_list(select_index=0)
-
-    def _default_frame(self, name):
-        base_colors = getattr(self.parent_app, "zone_colors", None) or [
-            (255, 0, 0),
-            (0, 255, 0),
-            (0, 122, 255),
-            (255, 45, 85),
-        ]
-        return {
-            "name": name,
-            "colors": [tuple(c) for c in base_colors],
-            "brightness": 100,
-            "delay_ms": 600,
-            "transition": "Smooth",
-            "direction": "Left",
-        }
-
-    def _sanitize_frame(self, frame):
-        if not isinstance(frame, dict):
-            return self._default_frame("Frame")
-        colors = frame.get("colors")
-        if not isinstance(colors, list) or len(colors) != 4:
-            colors = [(255, 0, 0), (0, 255, 0), (0, 122, 255), (255, 45, 85)]
-        fixed_colors = []
-        for c in colors:
-            if isinstance(c, (list, tuple)) and len(c) == 3:
-                r, g, b = (int(c[0]), int(c[1]), int(c[2]))
-                fixed_colors.append(
-                    (max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b)))
-                )
-            else:
-                fixed_colors.append((255, 255, 255))
-        direction = str(frame.get("direction", "Left"))
-        if direction not in ["Left", "Right"]:
-            direction = "Left"
-        return {
-            "name": str(frame.get("name", "Frame")),
-            "colors": fixed_colors,
-            "brightness": int(max(0, min(100, frame.get("brightness", 100)))),
-            "delay_ms": int(max(50, min(5000, frame.get("delay_ms", 600)))),
-            "transition": str(frame.get("transition", "Smooth")),
-            "direction": direction,
-        }
-
-    def _refresh_frame_list(self, select_index=0):
-        self.frames_list.blockSignals(True)
-        self.frames_list.clear()
-        for i, frame in enumerate(self.frames):
-            text = (
-                f"{i + 1}. {frame.get('name', 'Frame')}  |  {frame.get('delay_ms', 600)} ms"
-                f"  |  {frame.get('transition', 'Smooth')}  |  {frame.get('direction', 'Left')}"
-            )
-            self.frames_list.addItem(QListWidgetItem(text))
-        self.frames_list.blockSignals(False)
-        if self.frames:
-            self.frames_list.setCurrentRow(
-                max(0, min(select_index, len(self.frames) - 1))
-            )
-        self._push_frames_to_app()
-
-    def _push_frames_to_app(self):
-        self.parent_app.set_custom_frames(self.frames)
-
-    def _current_index(self):
-        return self.frames_list.currentRow()
-
-    def _current_frame(self):
-        idx = self._current_index()
-        if idx is None or idx < 0 or idx >= len(self.frames):
-            return None
-        return self.frames[idx]
-
-    def on_frame_selected(self, index):
-        frame = self._current_frame()
-        if not frame:
-            return
-        self._updating_controls = True
-        try:
-            self.brightness_slider.setValue(frame.get("brightness", 100))
-            self.brightness_label.setText(
-                f"Brightness: {frame.get('brightness', 100)}%"
-            )
-            self.delay_spin.setValue(frame.get("delay_ms", 600))
-            transition = frame.get("transition", "Smooth")
-            if transition not in [
-                "Smooth",
-                "Snap",
-                "Ease In",
-                "Ease Out",
-                "Ease In Out",
-            ]:
-                transition = "Smooth"
-            self.transition_combo.setCurrentText(transition)
-            direction = frame.get("direction", "Left")
-            if direction not in ["Left", "Right"]:
-                direction = "Left"
-            self.direction_combo.setCurrentText(direction)
-            self._update_zone_buttons(frame.get("colors", []))
-        finally:
-            self._updating_controls = False
-
-    def _update_zone_buttons(self, colors):
-        for i, btn in enumerate(self.zone_buttons):
-            if i < len(colors):
-                r, g, b = colors[i]
-            else:
-                r, g, b = (0, 0, 0)
-            btn.setStyleSheet(
-                f"background-color: rgb({r},{g},{b}); border: 1px solid rgba(255,255,255,0.2);"
-            )
-
-    def _update_frame(self, key, value):
-        if self._updating_controls:
-            return
-        frame = self._current_frame()
-        if not frame:
-            return
-        frame[key] = value
-        if key == "brightness":
-            self.brightness_label.setText(f"Brightness: {value}%")
-        self._refresh_frame_list(select_index=self._current_index())
-
-    def on_brightness_changed(self, value):
-        self._update_frame("brightness", value)
-
-    def on_delay_changed(self, value):
-        self._update_frame("delay_ms", value)
-
-    def on_transition_changed(self, value):
-        self._update_frame("transition", value)
-
-    def on_direction_changed(self, value):
-        self._update_frame("direction", value)
-
-    def _apply_to_all_frames(self, key, value):
-        if not self.frames:
-            return
-        for frame in self.frames:
-            frame[key] = value
-        self._refresh_frame_list(select_index=self._current_index())
-
-    def apply_brightness_to_all(self):
-        self._apply_to_all_frames("brightness", self.brightness_slider.value())
-
-    def apply_delay_to_all(self):
-        self._apply_to_all_frames("delay_ms", self.delay_spin.value())
-
-    def apply_transition_to_all(self):
-        transition = self.transition_combo.currentText()
-        direction = self.direction_combo.currentText()
-        for frame in self.frames:
-            frame["transition"] = transition
-            frame["direction"] = direction
-        self._refresh_frame_list(select_index=self._current_index())
-
-    def apply_colors_to_all(self):
-        frame = self._current_frame()
-        if not frame:
-            return
-        colors = list(frame.get("colors", [(0, 0, 0)] * 4))
-        for target in self.frames:
-            target["colors"] = [tuple(c) for c in colors]
-        self._refresh_frame_list(select_index=self._current_index())
-
-    def pick_zone_color(self, index):
-        frame = self._current_frame()
-        if not frame:
-            return
-        current = frame.get("colors", [(0, 0, 0)] * 4)[index]
-        color = QColorDialog.getColor(QColor(*current), self)
-        if not color.isValid():
-            return
-        colors = list(frame.get("colors", [(0, 0, 0)] * 4))
-        colors[index] = (color.red(), color.green(), color.blue())
-        frame["colors"] = colors
-        self._update_zone_buttons(colors)
-        self._refresh_frame_list(select_index=self._current_index())
-
-    def add_frame(self):
-        name = f"Frame {len(self.frames) + 1}"
-        self.frames.append(self._default_frame(name))
-        self._refresh_frame_list(select_index=len(self.frames) - 1)
-
-    def duplicate_frame(self):
-        frame = self._current_frame()
-        if not frame:
-            return
-        copy_frame = dict(frame)
-        copy_frame["name"] = f"{frame.get('name', 'Frame')} Copy"
-        self.frames.insert(self._current_index() + 1, copy_frame)
-        self._refresh_frame_list(select_index=self._current_index() + 1)
-
-    def delete_frame(self):
-        idx = self._current_index()
-        if idx < 0 or len(self.frames) <= 1:
-            return
-        self.frames.pop(idx)
-        self._refresh_frame_list(select_index=max(0, idx - 1))
-
-    def import_frames(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Import Frames", "", "JSON Files (*.json)"
-        )
-        if not path:
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                payload = json.load(f)
-            frames = payload.get("frames", []) if isinstance(payload, dict) else []
-            self.load_frames(frames)
-        except Exception as e:
-            QMessageBox.warning(self, "Import Failed", f"Failed to load: {e}")
-
-    def export_frames(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export Frames", "custom_frames.json", "JSON Files (*.json)"
-        )
-        if not path:
-            return
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump({"frames": self.frames}, f, indent=2)
-        except Exception as e:
-            QMessageBox.warning(self, "Export Failed", f"Failed to save: {e}")
 
 
 class KeyboardPreviewWidget(QWidget):
@@ -2570,7 +2173,6 @@ class RGBControllerApp(QMainWindow):
         left_layout.addWidget(self.preview_panel)
         self.SOFTWARE_MODES = [
             "Smooth Wave",
-            "Custom Frames",
             "Lightning",
             "Party",
             "Realistic Fire",
@@ -2705,9 +2307,6 @@ class RGBControllerApp(QMainWindow):
         self.battery_cache_timer.timeout.connect(self.update_battery_cache)
         self.battery_cache_timer.start()
         self.custom_colors = [0] * 12
-        self.custom_frames = []
-        self.custom_frames_version = 0
-        self.custom_frames_state = None
         self.transition_ticks = 0
         self.last_activity = time.monotonic()
         self.sct = None
@@ -2894,7 +2493,8 @@ class RGBControllerApp(QMainWindow):
         self.force_quit = True
         if hasattr(self, "hotkey_listener"):
             self.hotkey_listener.stop()
-        QApplication.quit()
+        self.close()
+        sys.exit(0)
 
     def _get_preview_open_height(self):
         if not hasattr(self, "preview_panel"):
@@ -3082,7 +2682,6 @@ class RGBControllerApp(QMainWindow):
             "Smooth": "Runs the keyboard firmware smooth transition effect.",
             "Wave": "Uses the hardware wave effect with selectable direction.",
             "Smooth Wave": "Software gradient sweep across zones. Fill Mode can cycle fixed palettes.",
-            "Custom Frames": "Build a multi-frame animation with per-frame colors, brightness, and transitions.",
             "Lightning": "Cinematic storm flashes with staged strikes, flicker, and afterglow.",
             "Party": "Beat-style party lighting with tempo-driven color bursts.",
             "Realistic Fire": "Hot ember-style flicker with deep red and orange motion.",
@@ -3552,7 +3151,6 @@ class RGBControllerApp(QMainWindow):
             else bool(preview_val)
         )
         self.update_preset_combos()
-        self.load_custom_frames_cache()
         startup_p = settings.value("startup_preset", "None (Use Last State)")
         if startup_p in self.presets or startup_p == "None (Use Last State)":
             self.startup_preset_combo.setCurrentText(startup_p)
@@ -3593,7 +3191,6 @@ class RGBControllerApp(QMainWindow):
         settings.setValue("startup_preset", self.startup_preset_combo.currentText())
         settings.setValue("saved_presets", json.dumps(self.presets))
         settings.setValue("mode_settings", json.dumps(self.mode_settings))
-        settings.setValue("custom_frames_cache", json.dumps(self.custom_frames))
         current_mode = (
             self.mode_list.currentItem().text()
             if self.mode_list.currentItem()
@@ -4320,17 +3917,6 @@ class RGBControllerApp(QMainWindow):
         else:
             self.switch_view_animated(0)
 
-    def open_frames_editor(self):
-        if not getattr(self, "frames_editor", None):
-            self.frames_editor = FramesEditorDialog(self)
-            self.frames_editor.finished.connect(self._on_frames_editor_closed)
-        self._set_mode_by_name("Custom Frames")
-        self.frames_editor.show()
-        self.frames_editor.raise_()
-        self.frames_editor.activateWindow()
-
-    def _on_frames_editor_closed(self):
-        self.frames_editor = None
 
     def _set_mode_by_name(self, mode_name):
         if not hasattr(self, "mode_list"):
@@ -4339,89 +3925,6 @@ class RGBControllerApp(QMainWindow):
         if items:
             self.mode_list.setCurrentItem(items[0])
 
-    def set_custom_frames(self, frames, save_cache=True):
-        sanitized = []
-        for frame in frames or []:
-            if not isinstance(frame, dict):
-                continue
-            colors = frame.get("colors", [(0, 0, 0)] * 4)
-            fixed_colors = []
-            for c in colors:
-                if isinstance(c, (list, tuple)) and len(c) == 3:
-                    r, g, b = (int(c[0]), int(c[1]), int(c[2]))
-                    fixed_colors.append(
-                        (
-                            max(0, min(255, r)),
-                            max(0, min(255, g)),
-                            max(0, min(255, b)),
-                        )
-                    )
-                else:
-                    fixed_colors.append((0, 0, 0))
-            direction = str(frame.get("direction", "Left"))
-            if direction not in ["Left", "Right"]:
-                direction = "Left"
-            sanitized.append(
-                {
-                    "name": str(frame.get("name", "Frame")),
-                    "colors": fixed_colors,
-                    "brightness": int(
-                        max(0, min(100, frame.get("brightness", 100)))
-                    ),
-                    "delay_ms": int(
-                        max(50, min(5000, frame.get("delay_ms", 600)))
-                    ),
-                    "transition": str(frame.get("transition", "Smooth")),
-                    "direction": direction,
-                }
-            )
-        self.custom_frames = sanitized
-        self.custom_frames_version += 1
-        self.custom_frames_state = None
-        if save_cache:
-            self.save_custom_frames_cache()
-
-    def save_custom_frames_cache(self):
-        try:
-            settings = QSettings("4ZoneRgbToolkit", "Preferences")
-            settings.setValue("custom_frames_cache", json.dumps(self.custom_frames))
-        except Exception:
-            pass
-
-    def load_custom_frames_cache(self):
-        try:
-            settings = QSettings("4ZoneRgbToolkit", "Preferences")
-            cache = settings.value("custom_frames_cache", "")
-            if isinstance(cache, str) and cache:
-                parsed = json.loads(cache)
-                if isinstance(parsed, list):
-                    self.set_custom_frames(parsed, save_cache=False)
-        except Exception:
-            pass
-
-    def _frame_to_colors(self, frame):
-        brightness = max(0.0, min(1.0, frame.get("brightness", 100) / 100.0))
-        colors = frame.get("colors", [(0, 0, 0)] * 4)
-        flat = []
-        for c in colors:
-            r, g, b = c
-            flat.extend([r * brightness, g * brightness, b * brightness])
-        return flat
-
-    def _apply_frame_easing(self, t, mode):
-        t = max(0.0, min(1.0, t))
-        if mode == "Snap":
-            return 1.0
-        if mode == "Ease In":
-            return t * t
-        if mode == "Ease Out":
-            return 1.0 - (1.0 - t) * (1.0 - t)
-        if mode == "Ease In Out":
-            if t < 0.5:
-                return 2.0 * t * t
-            return 1.0 - 2.0 * (1.0 - t) * (1.0 - t)
-        # Smooth (default)
-        return 0.5 - 0.5 * math.cos(math.pi * t)
 
     def show_help_dialog(self):
         dialog = FadeDialog(self)
@@ -5219,81 +4722,7 @@ class RGBControllerApp(QMainWindow):
                 target_colors = list(self.custom_colors)
                 smooth_amount = 0.5
                 try:
-                    if "Custom Frames" in mode_name:
-                        smooth_amount = 0.0
-                        frames = list(self.custom_frames or [])
-                        if not frames:
-                            frames = [
-                                {
-                                    "colors": [tuple(c) for c in self.zone_colors],
-                                    "brightness": 100,
-                                    "delay_ms": 600,
-                                    "transition": "Smooth",
-                                    "direction": "Left",
-                                }
-                            ]
-
-                        state = self.custom_frames_state
-                        if (
-                            state is None
-                            or state.get("version") != self.custom_frames_version
-                            or state.get("count") != len(frames)
-                        ):
-                            first = frames[0]
-                            state = {
-                                "version": self.custom_frames_version,
-                                "count": len(frames),
-                                "index": 0,
-                                "start_time": t,
-                                "from_colors": list(self.custom_colors),
-                                "to_colors": self._frame_to_colors(first),
-                                "transition": first.get("transition", "Smooth"),
-                                "direction": first.get("direction", "Left"),
-                                "duration": max(0.05, first.get("delay_ms", 600) / 1000.0),
-                            }
-                            self.custom_frames_state = state
-
-                        elapsed = max(0.0, t - state["start_time"])
-                        duration = max(0.05, float(state["duration"]))
-                        progress = min(1.0, elapsed / duration)
-                        eased = self._apply_frame_easing(progress, state["transition"])
-
-                        target_colors = [
-                            state["from_colors"][i]
-                            + (state["to_colors"][i] - state["from_colors"][i]) * eased
-                            for i in range(12)
-                        ]
-
-                        if state.get("transition") == "Smooth":
-                            direction = state.get("direction", "Left")
-                            blended = target_colors[:]
-                            for zone in range(4):
-                                if direction == "Right":
-                                    neighbor = min(3, zone + 1)
-                                else:
-                                    neighbor = max(0, zone - 1)
-                                for ch in range(3):
-                                    idx = zone * 3 + ch
-                                    n_idx = neighbor * 3 + ch
-                                    blended[idx] = (
-                                        target_colors[idx]
-                                        + (target_colors[n_idx] - target_colors[idx])
-                                        * eased
-                                    )
-                            target_colors = blended
-
-                        if progress >= 1.0 and len(frames) > 0:
-                            state["index"] = (state["index"] + 1) % len(frames)
-                            next_frame = frames[state["index"]]
-                            state["start_time"] = t
-                            state["from_colors"] = state["to_colors"]
-                            state["to_colors"] = self._frame_to_colors(next_frame)
-                            state["transition"] = next_frame.get("transition", "Smooth")
-                            state["direction"] = next_frame.get("direction", "Left")
-                            state["duration"] = max(
-                                0.05, next_frame.get("delay_ms", 600) / 1000.0
-                            )
-                    elif "Smooth Wave" in mode_name:
+                    if "Smooth Wave" in mode_name:
                         smooth_amount = 0.1
                         t *= speed_mult
                         dir_mult = (
