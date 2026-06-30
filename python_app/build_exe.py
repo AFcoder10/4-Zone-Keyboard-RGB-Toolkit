@@ -15,6 +15,28 @@ def install_pyinstaller():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
 
+def compile_csharp_wrapper():
+    print("Compiling secure UAC wrapper (thermal_sensor_access_v3)...")
+    csc_path = os.path.join(os.environ.get("WINDIR", "C:\\Windows"), "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe")
+    if not os.path.exists(csc_path):
+        print(f"Warning: {csc_path} not found. Cannot compile wrapper.")
+        return
+    
+    out_exe = "assets/thermal_sensor_access_v3.exe"
+    cs_file = "thermal_sensor_wrapper.cs"
+    if not os.path.exists("assets"):
+        os.makedirs("assets", exist_ok=True)
+        
+    subprocess.check_call([
+        csc_path,
+        "/t:winexe",
+        "/nologo",
+        f"/out:{out_exe}",
+        cs_file
+    ])
+    print("Wrapper compiled successfully.")
+
+
 def build_standalone_exe():
     print("\n--- COMPILING 4 ZONE RGB TOOLKIT ---")
 
@@ -35,6 +57,7 @@ def build_standalone_exe():
         "--add-data=assets/toggle_off.svg;assets",
         "--add-data=assets/toggle_on.svg;assets",
         "--add-data=assets/rgb_wheel.ico;assets",
+        "--add-data=assets/thermal_sensor_access_v3.exe;assets",
         "--add-data=python_controller.py;.",
         "--add-data=audio_visualizer.py;.",
         "--add-data=temperature_worker.py;.",
@@ -59,4 +82,5 @@ def build_standalone_exe():
 
 if __name__ == "__main__":
     install_pyinstaller()
+    compile_csharp_wrapper()
     build_standalone_exe()

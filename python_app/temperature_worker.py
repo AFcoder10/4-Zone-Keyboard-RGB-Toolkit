@@ -15,61 +15,12 @@ def is_admin():
 
 
 def relaunch_as_admin():
-    import subprocess
-
     script = Path(__file__).resolve()
 
-    wrapper_exe = Path(tempfile.gettempdir()) / "Thermal_Sensor_Access_v2.exe"
-
-    if not wrapper_exe.exists():
-        csc_path = Path("C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe")
-        if csc_path.exists():
-            cs_code = """
-using System;
-using System.Diagnostics;
-using System.Reflection;
-
-[assembly: AssemblyTitle("Thermal Sensor Access")]
-[assembly: AssemblyDescription("Temperature Monitor Background Service")]
-[assembly: AssemblyProduct("4-Zone RGB Toolkit")]
-
-class Program {
-    static void Main(string[] args) {
-        if (args.Length < 2) return;
-        string py = args[0];
-        string script = args[1];
-        string allArgs = "\\"" + script + "\\"";
-        for(int i=2; i<args.Length; i++) {
-            allArgs += " " + args[i];
-        }
-        
-        ProcessStartInfo info = new ProcessStartInfo();
-        info.FileName = py;
-        info.Arguments = allArgs;
-        info.UseShellExecute = false;
-        info.CreateNoWindow = true;
-        
-        Process.Start(info);
-    }
-}
-"""
-            cs_file = wrapper_exe.with_suffix(".cs")
-            try:
-                cs_file.write_text(cs_code)
-                subprocess.run(
-                    [
-                        str(csc_path),
-                        "/t:winexe",
-                        "/nologo",
-                        f"/out:{wrapper_exe}",
-                        str(cs_file),
-                    ],
-                    creationflags=0x08000000,
-                    check=True,
-                )
-                cs_file.unlink()
-            except Exception:
-                pass
+    if hasattr(sys, "_MEIPASS"):
+        wrapper_exe = Path(sys._MEIPASS) / "assets" / "thermal_sensor_access_v3.exe"
+    else:
+        wrapper_exe = Path(__file__).parent / "assets" / "thermal_sensor_access_v3.exe"
 
     if wrapper_exe.exists():
         exe_to_run = str(wrapper_exe)
@@ -129,6 +80,7 @@ def main():
     except Exception:
         pass
 
+    monitor = wintemp.HardwareMonitor()
     try:
         while True:
             # Check parent first: Immediate death if parent application died.
@@ -150,9 +102,9 @@ def main():
                 stop_timer_start = None
 
             # Fetch temps
-            cpu_summary = wintemp.get_cpu_temperature_summary()
+            cpu_summary = monitor.get_cpu_temperature_summary()
             cpu_temp = cpu_summary.get("core_average_c")
-            gpu_temp, gpu_err = wintemp.get_gpu_core_temperature()
+            gpu_temp, gpu_err = monitor.get_gpu_core_temperature()
 
             errs = []
             if cpu_summary.get("clr_error"):
@@ -187,6 +139,8 @@ def main():
                 f.write(f"\\nCRITICAL LOOP CRASH:\\n{err_str}\\n")
         except Exception:
             pass
+    finally:
+        monitor.close()
 
 
 if __name__ == "__main__":
