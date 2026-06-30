@@ -113,7 +113,7 @@ class AudioVisualizer:
 
         # Parse CLI arguments (brightness boost fixed at max 30%)
         sensitivity = parse_int_arg(args, 0, 50, 0, 100)
-        smoothness = parse_int_arg(args, 1, 50, 0, 100)
+        smoothness = parse_int_arg(args, 1, 0, 0, 100)
         # brightness boost slider removed – use max boost (30%) with 50% increase
         self.brightness_mult = slider_to_brightness_mult(30) * 1.5
         flicker_raw = parse_int_arg(args, 2, 0, 0, 100)
