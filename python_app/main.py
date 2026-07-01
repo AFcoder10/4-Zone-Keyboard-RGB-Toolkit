@@ -84,8 +84,9 @@ from PySide6.QtCore import (
     QPropertyAnimation,
     QEasingCurve,
     QVariantAnimation,
+    QUrl,
 )
-from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence
+from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices
 import winreg
 from python_controller import L5PKeyboard
 import threading
@@ -321,11 +322,11 @@ class AnimatedSlider(QSlider):
             sr = self.style().subControlRect(
                 QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self
             )
-            if not sr.contains(event.pos()):
+            if not sr.contains(event.position().toPoint()):
                 # Jump to click position smoothly
                 val = (
                     self.minimum()
-                    + ((self.maximum() - self.minimum()) * event.pos().x())
+                    + ((self.maximum() - self.minimum()) * event.position().x())
                     / self.width()
                 )
                 self.set_animated_value(int(val))
@@ -418,6 +419,17 @@ class CustomTitleBar(QWidget):
         )
         self.btn_settings.clicked.connect(self.parent.toggle_settings)
 
+        self.btn_discord = QPushButton()
+        self.btn_discord.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets", "discord.svg")))
+        self.btn_discord.setIconSize(QSize(18, 18))
+        self.btn_discord.setFixedSize(24, 24)
+        self.btn_discord.setCursor(Qt.PointingHandCursor)
+        self.btn_discord.setToolTip("Join our Discord Server!")
+        self.btn_discord.setStyleSheet(
+            "\n            QPushButton {\n                background: transparent;\n                border: none;\n                margin-bottom: 2px;\n            }\n            QPushButton:hover {\n                background-color: rgba(255, 255, 255, 30);\n                border-radius: 4px;\n            }\n        "
+        )
+        self.btn_discord.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://discord.gg/ecKwmsDBXg")))
+
         self.btn_help = QPushButton("Help")
         self.btn_help.setFixedHeight(22)
         self.btn_help.setCursor(Qt.PointingHandCursor)
@@ -442,6 +454,7 @@ class CustomTitleBar(QWidget):
 
         layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
+        layout.addWidget(self.btn_discord)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(spacer)
         self.btn_minimize = QPushButton()
@@ -1234,6 +1247,16 @@ class RGBControllerApp(QMainWindow):
         launch_row.addStretch()
         behavior_layout.addLayout(launch_row)
 
+        auto_update_row = QHBoxLayout()
+        auto_update_row.setContentsMargins(0, 0, 0, 0)
+        self.auto_update_cb = QCheckBox("Auto-Update (Silent)")
+        self.auto_update_cb.setStyleSheet(toggle_css)
+        self.auto_update_cb.toggled.connect(self.save_settings)
+        auto_update_row.addWidget(self.auto_update_cb)
+        auto_update_row.addWidget(AnimatedInfoIcon("When enabled, the app will automatically download and apply\nnew updates on startup without prompting you."))
+        auto_update_row.addStretch()
+        behavior_layout.addLayout(auto_update_row)
+
         gen_content_layout.addWidget(behavior_card)
 
         # --- Section: Telemetry ---
@@ -1256,6 +1279,8 @@ class RGBControllerApp(QMainWindow):
         telemetry_row.addStretch()
         
         telemetry_layout.addLayout(telemetry_row)
+
+
 
         gen_content_layout.addWidget(telemetry_card)
 
@@ -2079,6 +2104,44 @@ class RGBControllerApp(QMainWindow):
         bottom_layout.addWidget(self.wave_fill_cb)
         controls_layout.addWidget(bottom_row, 7, 0, 1, 4, Qt.AlignVCenter)
 
+        # Valorant Spike Timer specific controls
+        self.spike_timer_widget = QWidget()
+        spike_layout = QVBoxLayout(self.spike_timer_widget)
+        spike_layout.setContentsMargins(0, 10, 0, 0)
+        
+        self.spike_info_label = QLabel("The app is automatically scanning the top center of your screen for the Spike icon.\nPlay in Borderless Windowed mode for screen capture to work.")
+        self.spike_info_label.setWordWrap(True)
+        self.spike_info_label.setStyleSheet("color: #E2E2E2; margin-bottom: 5px;")
+        
+        spike_controls_layout = QHBoxLayout()
+        self.spike_res_combo = QComboBox()
+        self.spike_res_combo.addItems(["1920x1080 (16:9)", "2560x1440 (16:9)", "3840x2160 (16:9)"])
+        self.spike_res_combo.setStyleSheet(
+            "QComboBox { background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 8px; font-weight: 600; }"
+            "QComboBox::drop-down { border: none; width: 20px; }"
+            "QComboBox QAbstractItemView { background-color: #1A1A1E; color: #E2E2E2; selection-background-color: #00E5FF; selection-color: #0E0E12; }"
+        )
+        
+        self.btn_spike_calibrate = QPushButton("Calibrate UI Red")
+        self.btn_spike_calibrate.setCursor(Qt.PointingHandCursor)
+        self.btn_spike_calibrate.setStyleSheet("QPushButton { padding: 6px 12px; background-color: #E03C31; color: white; border-radius: 4px; font-weight: bold; } QPushButton:hover { background-color: #FF4A3D; }")
+        self.btn_spike_calibrate.clicked.connect(self.calibrate_spike_red)
+        self.btn_spike_calibrate.setToolTip("Go to a custom game, plant the spike, and click this to learn the exact Red color of the Spike UI.")
+        
+        self.btn_spike_test = QPushButton("Test 45s Detonation")
+        self.btn_spike_test.setCursor(Qt.PointingHandCursor)
+        self.btn_spike_test.setStyleSheet("QPushButton { padding: 6px 12px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; } QPushButton:hover { background-color: rgba(255,255,255,0.1); }")
+        self.btn_spike_test.clicked.connect(self.test_spike_timer)
+        
+        spike_controls_layout.addWidget(self.spike_res_combo)
+        spike_controls_layout.addWidget(self.btn_spike_calibrate)
+        spike_controls_layout.addWidget(self.btn_spike_test)
+        spike_controls_layout.addStretch()
+        
+        spike_layout.addWidget(self.spike_info_label)
+        spike_layout.addLayout(spike_controls_layout)
+        self.spike_timer_widget.hide()
+
         left_layout.addWidget(self.controls_slot)
         left_layout.addSpacing(-52)
 
@@ -2170,6 +2233,7 @@ class RGBControllerApp(QMainWindow):
         self.preview_user_enabled = True
         self.preview_forced_by_mode = False
 
+        left_layout.addWidget(self.spike_timer_widget)
         left_layout.addWidget(self.preview_panel)
         self.SOFTWARE_MODES = [
             "Smooth Wave",
@@ -2292,7 +2356,13 @@ class RGBControllerApp(QMainWindow):
         self.visualizer_restart_timer.setInterval(180)
         self.visualizer_restart_timer.timeout.connect(self._run_live_visualizer_restart)
         self.timer_interval_active_ms = 33
-        self.timer_interval_idle_ms = 90
+        self.timer_interval_idle_ms = 150
+        
+        # Valorant Spike Timer states
+        self.spike_active = False
+        self.spike_start_time = 0
+        self.spike_target_red = (224, 60, 49)
+
         self.current_timer_base_ms = self.timer_interval_active_ms
         self.is_window_active = True
         self.turn_off_when_unplugged = False
@@ -2356,6 +2426,10 @@ class RGBControllerApp(QMainWindow):
             print("Update check failed:", e)
 
     def prompt_update(self, latest_version, exe_url, release_notes):
+        if self.auto_update_cb.isChecked():
+            self.perform_update_download(exe_url, latest_version)
+            return
+
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Update Available: {latest_version}")
         dialog.setFixedSize(980, 500)
@@ -2363,7 +2437,8 @@ class RGBControllerApp(QMainWindow):
         layout = QVBoxLayout(dialog)
 
         lbl = QLabel(
-            f"A new version of 4 Zone RGB Toolkit ({latest_version}) is available!\n\nRelease Notes:"
+            f"A new version of 4 Zone RGB Toolkit ({latest_version}) is available!\n"
+            f"You are currently running {CURRENT_VERSION}.\n\nRelease Notes:"
         )
         lbl.setStyleSheet("font-weight: bold; font-size: 18px; color: #E2E2E2;")
         layout.addWidget(lbl)
@@ -2401,10 +2476,11 @@ class RGBControllerApp(QMainWindow):
 
     def perform_update_download(self, url, version):
         self.progress_dlg = QProgressDialog(
-            "Downloading update...", "Cancel", 0, 100, self
+            f"Downloading update ({CURRENT_VERSION} -> {version})...", "Cancel", 0, 100, None
         )
         self.progress_dlg.setWindowTitle("Update")
-        self.progress_dlg.setWindowModality(Qt.WindowModal)
+        self.progress_dlg.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+        self.progress_dlg.setWindowModality(Qt.ApplicationModal)
         self.progress_dlg.setAutoClose(True)
         self.progress_dlg.show()
 
@@ -2659,6 +2735,8 @@ class RGBControllerApp(QMainWindow):
         }
         if "Live Audio Visualizer" in defaults:
             defaults["Live Audio Visualizer"]["brightness"] = 0
+        if "Valorant Spike Timer" in defaults:
+            defaults["Valorant Spike Timer"]["spike_target_red"] = (224, 60, 49) # Default rough guess
         return defaults
 
     def save_runtime_state_settings(self):
@@ -2694,6 +2772,7 @@ class RGBControllerApp(QMainWindow):
             "Pomodoro Timer": "Turns the keyboard into a full-session progress indicator.",
             "Live Audio Visualizer": "A 4-band audio-reactive equalizer using your selected zone colors.",
             "Temperature Mode (Beta)": "Displays CPU average core temp on Zones 1 & 2, and GPU core temp on Zones 3 & 4. Colors range from Blue (<40°C) to Flashing Red (>100°C).",
+            "Valorant Spike Timer": "Scans the top-center of the screen for the Spike Planted icon and automatically runs a perfectly timed 45s visual detonation countdown.",
         }
         self.mode_description_label.setText(
             descriptions.get(
@@ -3083,6 +3162,7 @@ class RGBControllerApp(QMainWindow):
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
         self.telemetry_cb.blockSignals(True)
+        self.auto_update_cb.blockSignals(True)
         self.turn_off_unplugged_cb.blockSignals(True)
         self.turn_off_battery_saver_cb.blockSignals(True)
         if hasattr(self, "startup_preset_combo"):
@@ -3101,11 +3181,11 @@ class RGBControllerApp(QMainWindow):
             else bool(launch_val)
         )
         self.launch_on_start_cb.setChecked(launch_start)
-        telemetry_val = settings.value("telemetry_enabled", True)
         self.telemetry_cb.setChecked(
-            str(telemetry_val).lower() == "true"
-            if isinstance(telemetry_val, str)
-            else bool(telemetry_val)
+            settings.value("telemetry_enabled", True, type=bool)
+        )
+        self.auto_update_cb.setChecked(
+            settings.value("auto_update", False, type=bool)
         )
         unplugged_val = settings.value("turn_off_when_unplugged", False)
         self.turn_off_when_unplugged = (
@@ -3160,6 +3240,7 @@ class RGBControllerApp(QMainWindow):
         self.minimize_to_tray_cb.blockSignals(False)
         self.launch_on_start_cb.blockSignals(False)
         self.telemetry_cb.blockSignals(False)
+        self.auto_update_cb.blockSignals(False)
         self.turn_off_unplugged_cb.blockSignals(False)
         self.turn_off_battery_saver_cb.blockSignals(False)
         if startup_p in self.presets:
@@ -3203,6 +3284,7 @@ class RGBControllerApp(QMainWindow):
         launch_start = self.launch_on_start_cb.isChecked()
         settings.setValue("launch_on_start", launch_start)
         settings.setValue("telemetry_enabled", self.telemetry_cb.isChecked())
+        settings.setValue("auto_update", self.auto_update_cb.isChecked())
         settings.setValue(
             "turn_off_when_unplugged", self.turn_off_unplugged_cb.isChecked()
         )
@@ -3363,6 +3445,36 @@ class RGBControllerApp(QMainWindow):
             self.logs_dialog.raise_()
         except Exception as e:
             print(f"Failed to show logs dialog: {e}")
+
+    def fade_out_lights(self):
+        if not self.kb:
+            return
+        
+        start_colors = list(self.custom_colors)
+        if sum(start_colors) == 0:
+            # If current custom color buffer is black, we just use a dim white as a starting point to fade from
+            # if we were previously in a hardware effect.
+            start_colors = [100] * 12
+            
+        steps = 20
+        delay = 0.02
+        
+        for step in range(steps):
+            factor = 1.0 - (step / float(steps - 1))
+            faded = [int(c * factor) for c in start_colors]
+            try:
+                self.kb.set_custom_colors(faded)
+            except:
+                pass
+            time.sleep(delay)
+            # Process events so the UI doesn't completely freeze during the 0.4s fade
+            QApplication.processEvents()
+            
+        try:
+            self.kb.set_effect("static")
+            self.kb.set_solid_color(0, 0, 0)
+        except:
+            pass
 
     def apply_preset_from_ui(self, index):
         preset_name = self.preset_combo.itemText(index)
@@ -3723,6 +3835,16 @@ class RGBControllerApp(QMainWindow):
 
     def on_wave_fill_toggled(self, checked):
         self.update_mode_setting("wave_fill", bool(checked))
+        if checked:
+            # Save the user's previous speed before enforcing 40%
+            self._pre_fill_speed = self.speed_slider.value()
+            self.speed_slider.set_animated_value(40)
+            self.update_mode_setting("speed", 40)
+        else:
+            # Restore the user's previous speed if we saved one
+            if hasattr(self, "_pre_fill_speed"):
+                self.speed_slider.set_animated_value(self._pre_fill_speed)
+                self.update_mode_setting("speed", self._pre_fill_speed)
         self.apply_effect()
 
     def on_smooth_wave_palette_changed(self, palette_name):
@@ -4227,14 +4349,16 @@ class RGBControllerApp(QMainWindow):
                     w.hide()
                 for w in self.bright_widgets:
                     w.hide()
+            is_pomo_mode = (mode_name == "Pomodoro Timer")
+            if is_pomo_mode:
                 self.pomo_widget.show()
-                # Disable zone color pickers during timer?
-                # (Plan implies manual colors aren't used for progress calculation)
+                for w in self.speed_widgets:
+                    w.hide()
             else:
+                self.pomo_widget.hide()
                 for w in self.bright_widgets:
                     w.show()
-                self.pomo_widget.hide()
-                if mode_name != "Ambient Screen Color":
+                if mode_name != "Ambient Screen Color" and mode_name != "Valorant Spike Timer":
                     for w in self.speed_widgets:
                         w.show()
 
@@ -4287,6 +4411,13 @@ class RGBControllerApp(QMainWindow):
             else:
                 self.scanner_rainbow_cb.hide()
 
+            if mode_name == "Valorant Spike Timer":
+                self.spike_timer_widget.show()
+                self.colors_group.hide()
+            else:
+                self.spike_timer_widget.hide()
+                self.colors_group.show()
+
             self.apply_preview_mode_policy(mode_name)
             self.sync_control_label_widths()
             self.save_runtime_state_settings()
@@ -4320,8 +4451,7 @@ class RGBControllerApp(QMainWindow):
                 self.sct.close()
             try:
                 if self.kb:
-                    self.kb.set_effect("static")
-                    self.kb.set_solid_color(0, 0, 0)
+                    self.fade_out_lights()
             except Exception as e:
                 print(f"Failed to turn off keyboard LEDs: {e}")
             if hasattr(self, "tray_icon"):
@@ -4402,6 +4532,67 @@ class RGBControllerApp(QMainWindow):
         if "Live Audio Visualizer" in mode_name:
             self.schedule_live_visualizer_restart()
         self.update_mode_setting("flicker", value)
+
+    def _get_spike_bbox(self, monitor):
+        res_text = self.spike_res_combo.currentText()
+        w_center = monitor["left"] + monitor["width"] // 2
+        
+        # We need a very tight box that ONLY contains the red hexagon, dodging the enemy score banner.
+        if "2560x1440" in res_text:
+            return {"top": monitor["top"] + 40, "left": w_center - 13, "width": 26, "height": 33}
+        elif "3840x2160" in res_text:
+            return {"top": monitor["top"] + 60, "left": w_center - 20, "width": 40, "height": 50}
+        else: # 1920x1080 default (16:9)
+            return {"top": monitor["top"] + 30, "left": w_center - 10, "width": 20, "height": 25}
+
+    def calibrate_spike_red(self):
+        if not HAS_MSS:
+            QMessageBox.warning(self, "Missing Library", "The 'mss' library is required for screen capture.")
+            return
+            
+        try:
+            with mss.mss() as sct:
+                monitor = sct.monitors[1]
+                width, height = monitor["width"], monitor["height"]
+                
+                bbox = self._get_spike_bbox(monitor)
+                
+                # Dump to file for debugging
+                sct_img = sct.grab(bbox)
+                try:
+                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    img.save(os.path.join(tempfile.gettempdir(), "spike_calib_debug.png"))
+                except Exception:
+                    pass
+
+                
+                sct_img = sct.grab(bbox)
+                raw = sct_img.bgra
+                red_pixels = []
+                for i in range(0, len(raw), 4):
+                    b, g, r = raw[i], raw[i+1], raw[i+2]
+                    if r > 100 and r > g * 1.5 and r > b * 1.5:
+                        h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+                        if (h > 0.92 or h < 0.08) and s > 0.4 and v > 0.4:
+                            red_pixels.append((r, g, b))
+                
+                if len(red_pixels) > 5:
+                    avg_r = sum(p[0] for p in red_pixels) / len(red_pixels)
+                    avg_g = sum(p[1] for p in red_pixels) / len(red_pixels)
+                    avg_b = sum(p[2] for p in red_pixels) / len(red_pixels)
+                    self.spike_target_red = (avg_r, avg_g, avg_b)
+                    self.update_mode_setting("spike_target_red", self.spike_target_red)
+                    QMessageBox.information(self, "Calibration Success", f"Found Spike Red: ({int(avg_r)}, {int(avg_g)}, {int(avg_b)})")
+                else:
+                    QMessageBox.warning(self, "Calibration Failed", "Could not find a bright red Spike icon at the top center of the screen.\nMake sure the Spike is planted and you are in-game.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to calibrate: {e}")
+
+    def test_spike_timer(self):
+        self.spike_active = True
+        self.spike_start_time = time.monotonic()
+        # Force timer to run fast during test
+        self.custom_timer.start(15)
 
     def schedule_live_visualizer_restart(self):
         mode_name = (
@@ -4626,8 +4817,7 @@ class RGBControllerApp(QMainWindow):
                 else:
                     if mode_name == "Off":
                         if self.kb:
-                            self.kb.set_effect("static")
-                            self.kb.set_solid_color(0, 0, 0)
+                            self.fade_out_lights()
                         return
                     effect = "static"
                     wave_dir = self.wave_direction
@@ -4737,23 +4927,29 @@ class RGBControllerApp(QMainWindow):
                             r_prev, g_prev, b_prev = fill_palette[prev_idx]
                             r_next, g_next, b_next = fill_palette[next_idx]
                             for i in range(4):
-                                zone_pos = (
+                                x = (
                                     i * 0.25
                                     if self.smooth_wave_direction == "left"
                                     else (3 - i) * 0.25
                                 )
-                                margin = 0.2
-                                diff = phase - zone_pos
-                                if diff >= margin:
-                                    R, G, B = (r_next, g_next, b_next)
-                                else:
-                                    if diff <= 0:
-                                        R, G, B = (r_prev, g_prev, b_prev)
-                                    else:
-                                        blend = diff / margin
-                                        R = r_prev * (1 - blend) + r_next * blend
-                                        G = g_prev * (1 - blend) + g_next * blend
-                                        B = b_prev * (1 - blend) + b_next * blend
+                                
+                                # W is the width of the blending gradient. 
+                                # A wider width means a much smoother, sweeping gradient across multiple zones.
+                                W = 0.6 
+                                
+                                # B sweeps from -W to max_x + W to ensure the gradient perfectly clears the keyboard
+                                B = -W + phase * (0.75 + 2.0 * W)
+                                
+                                # Calculate linear blend for this zone
+                                blend = (B - x) / W
+                                blend = max(0.0, min(1.0, blend))
+                                
+                                # Apply sine easing for a silky ease-in-out transition
+                                blend = (1.0 - math.cos(blend * math.pi)) / 2.0
+                                
+                                R = r_prev * (1 - blend) + r_next * blend
+                                G = g_prev * (1 - blend) + g_next * blend
+                                B = b_prev * (1 - blend) + b_next * blend
                                 target_colors[i * 3] = R
                                 target_colors[i * 3 + 1] = G
                                 target_colors[i * 3 + 2] = B
@@ -4814,6 +5010,81 @@ class RGBControllerApp(QMainWindow):
                         target_colors[3], target_colors[4], target_colors[5] = cpu_col
                         target_colors[6], target_colors[7], target_colors[8] = gpu_col
                         target_colors[9], target_colors[10], target_colors[11] = gpu_col
+                    
+                    elif "Valorant Spike Timer" in mode_name:
+                        smooth_amount = 0.5
+                        if getattr(self, "spike_active", False):
+                            elapsed = t - self.spike_start_time
+                            if elapsed >= 48.0:
+                                self.spike_active = False
+                                self.spike_cooldown_until = t + 15.0
+                                self.custom_timer.start(self.get_effective_timer_interval())
+                                for i in range(12): target_colors[i] = 0
+                            elif elapsed >= 45.0:
+                                fade = max(0.0, 1.0 - ((elapsed - 45.0) / 3.0))
+                                val = int(255 * fade)
+                                for i in range(12): target_colors[i] = val
+                            elif elapsed >= 42.5:
+                                if int(elapsed * 20) % 2 == 0:
+                                    for i in range(12): target_colors[i] = 255
+                                else:
+                                    for i in range(4):
+                                        target_colors[i*3], target_colors[i*3+1], target_colors[i*3+2] = (255, 0, 0)
+                            else:
+                                bps = 1.0
+                                if elapsed >= 35.0: bps = 4.0
+                                elif elapsed >= 25.0: bps = 2.0
+                                
+                                beat_phase = (elapsed * bps) % 1.0
+                                if beat_phase < 0.15: intensity = 1.0
+                                else: intensity = max(0.0, 1.0 - ((beat_phase - 0.15) * 2.0))
+                                
+                                val = int(255 * intensity)
+                                dim_red = 20
+                                for i in range(4):
+                                    target_colors[i*3] = max(dim_red, val)
+                                    target_colors[i*3+1] = 0
+                                    target_colors[i*3+2] = 0
+                        else:
+                            for i in range(12): target_colors[i] = 0
+                            if HAS_MSS and (not hasattr(self, "spike_cooldown_until") or t > self.spike_cooldown_until):
+                                if not hasattr(self, "last_spike_scan") or (t - self.last_spike_scan) > 0.1:
+                                    self.last_spike_scan = t
+                                    try:
+                                        with mss.mss() as sct:
+                                            monitor = sct.monitors[1]
+                                            bbox = self._get_spike_bbox(monitor)
+                                            sct_img = sct.grab(bbox)
+                                            raw = sct_img.bgra
+                                            total_pixels = bbox["width"] * bbox["height"]
+                                            red_match = 0
+                                            white_match = 0
+                                            tr, tg, tb = self.spike_target_red
+                                            th, ts, tv = colorsys.rgb_to_hsv(tr/255.0, tg/255.0, tb/255.0)
+                                            
+                                            for i in range(0, len(raw), 4):
+                                                b, g, r = raw[i], raw[i+1], raw[i+2]
+                                                h, s, v = colorsys.rgb_to_hsv(r/255.0, g/255.0, b/255.0)
+                                                
+                                                # Check Bright Core (The spike icon is a very bright cyan/white)
+                                                if v > 0.8 and s < 0.35:
+                                                    white_match += 1
+                                                else:
+                                                    # Check Red Hexagon
+                                                    hd = abs(h - th)
+                                                    if hd > 0.5: hd = 1.0 - hd
+                                                    
+                                                    if hd < 0.1 and s > 0.4 and v > 0.4: 
+                                                        red_match += 1
+                                            
+                                            # We need a solid presence of Red, and the bright Spike core.
+                                            # Red text will fail this because it has no bright core.
+                                            if red_match > (total_pixels * 0.4) and white_match > 2:
+                                                self.spike_active = True
+                                                self.spike_start_time = t
+                                                self.custom_timer.start(15)
+                                    except Exception:
+                                        pass
 
                     else:
                         if "Lightning" in mode_name:
@@ -4966,7 +5237,8 @@ class RGBControllerApp(QMainWindow):
                                         strike["ticks_left"] = strike["flicker_ticks"]
                                 elif stage == "flicker":
                                     color = [200, 220, 255]
-                                    intensity = random.uniform(0.55, 1.0)
+                                    # Smoothly fade intensity in and out instead of random jumps
+                                    intensity = 0.775 + 0.225 * math.sin(t * 25.0)
                                     strike["ticks_left"] -= 1
                                     if strike["ticks_left"] <= 0:
                                         strike["stage"] = "after"
@@ -5054,15 +5326,10 @@ class RGBControllerApp(QMainWindow):
                                 # Spawn a new beat palette when we cross the beat boundary
                                 while self.party_state["acc"] >= beat_len:
                                     self.party_state["acc"] -= beat_len
-                                    base_hue = random.random()
-                                    spread = 0.12 + 0.25 * random.random()
                                     palette = []
                                     for i in range(4):
-                                        hue = (
-                                            base_hue
-                                            + spread * i
-                                            + random.uniform(-0.05, 0.05)
-                                        ) % 1.0
+                                        # Pure random neon hues to break the "wave" look
+                                        hue = random.random()
                                         sat = 0.8 + 0.2 * random.random()
                                         val = 0.9 + 0.1 * random.random()
                                         r, g, b = colorsys.hsv_to_rgb(hue, sat, val)
@@ -5072,19 +5339,25 @@ class RGBControllerApp(QMainWindow):
                                     # Chance to trigger a short strobe burst on beat
                                     if random.random() < 0.18 * speed_factor:
                                         self.party_state["strobe"] = random.randint(
-                                            1, 3
+                                            2, 4
                                         )
 
-                                # Pulse brightness within the beat (saw wave for pump feel)
+                                # EDM Saw-wave sidechain pump
                                 beat_phase = self.party_state["acc"] / max(
                                     beat_len, 1e-6
                                 )
-                                pulse = 0.55 + 0.45 * (1.0 - abs(beat_phase * 2 - 1))
+                                pulse = 0.4 + 0.6 * (1.0 - beat_phase)
+
+                                # Snap color changes immediately on the downbeat
+                                if beat_phase < 0.15:
+                                    smooth_amount = 0.05
 
                                 # Strobe override when active
+                                is_strobing = False
                                 if self.party_state["strobe"] > 0:
-                                    smooth_amount = 0.04
+                                    smooth_amount = 0.02
                                     pulse = 1.0
+                                    is_strobing = True
                                     self.party_state["strobe"] -= 1
 
                                 # Apply palette with pulse and per-zone confetti pops that decay
@@ -5095,9 +5368,13 @@ class RGBControllerApp(QMainWindow):
                                 max_pop = 1.32
 
                                 for i in range(4):
-                                    base_r = self.party_state["palette"][i * 3]
-                                    base_g = self.party_state["palette"][i * 3 + 1]
-                                    base_b = self.party_state["palette"][i * 3 + 2]
+                                    if is_strobing:
+                                        # Blinding white strobe override
+                                        base_r, base_g, base_b = 255, 255, 255
+                                    else:
+                                        base_r = self.party_state["palette"][i * 3]
+                                        base_g = self.party_state["palette"][i * 3 + 1]
+                                        base_b = self.party_state["palette"][i * 3 + 2]
 
                                     # Decay any prior pop
                                     zone_pops[i] = 1.0 + (zone_pops[i] - 1.0) * decay
@@ -5189,8 +5466,8 @@ class RGBControllerApp(QMainWindow):
                                     # Calculate distance from current scanner position
                                     dist = abs(self.scanner_pos - i)
 
-                                    # Gaussian falloff for the trail
-                                    intensity = max(0.0, 1.0 - dist * 0.8)
+                                    # Exponential falloff for a glowing laser tail
+                                    intensity = math.exp(-(dist ** 2) * 1.5)
 
                                     # Apply brightness slider
                                     brightness_factor = (
@@ -5392,7 +5669,9 @@ class RGBControllerApp(QMainWindow):
                                             target_colors[i * 3 + 1] = 0
                                             target_colors[i * 3 + 2] = 0
                                 elif "Mouse-Reactive Aura" in mode_name:
-                                    smooth_amount = 0.8
+                                    # Lower smoothing from 0.8 to 0.2 so it snaps to the cursor instantly
+                                    # but retains a tiny bit of motion blur.
+                                    smooth_amount = 0.2
                                     try:
                                         cursor_pos = QCursor.pos()
                                         screen = QApplication.primaryScreen()
@@ -5414,9 +5693,8 @@ class RGBControllerApp(QMainWindow):
                                                     zone_center_ratio - mouse_ratio
                                                 )
 
-                                                # Intensity falls off based on distance
-                                                # 0.25 is the width of one zone; a 0.4 falloff gives a soft aura
-                                                intensity = max(0.0, 1.0 - (dist / 0.4))
+                                                # Gaussian bloom curve for a soft, spherical aura
+                                                intensity = math.exp(-(dist ** 2) * 20.0)
 
                                                 # Use current zone color with intensity
                                                 target_colors[i * 3] = (
@@ -5548,7 +5826,7 @@ class RGBControllerApp(QMainWindow):
                                             img = img.resize(
                                                 (4, 1), Image.Resampling.BOX
                                             )
-                                            pixels = list(img.getdata())
+                                            pixels = [img.getpixel((i, 0)) for i in range(4)]
                                             for i in range(4):
                                                 r, g, b = pixels[i]
                                                 h, s, v = colorsys.rgb_to_hsv(

@@ -20,6 +20,7 @@ Frequency-to-Zone mapping:
 import time
 import sys
 import collections
+import math
 
 import numpy as np
 import pyaudiowpatch as pyaudio
@@ -223,6 +224,7 @@ class AudioVisualizer:
         self.short_energy_sums = [0.0] * 4
         self.last_beat_time = [0.0] * 4
         self.brightness = [0.0] * 4  # internal brightness state (0–1, pre-boost)
+        self.velocity = [0.0] * 4    # downward velocity for gravity decay
         # Rolling window of recent brightness values for flicker reduction
         self.brightness_history = [
             collections.deque(maxlen=self.flicker_window) for _ in range(4)
@@ -267,8 +269,14 @@ class AudioVisualizer:
                             else 0.0
                         )
 
-                        # Normalised 0–1 vs reference
-                        norm = min(1.0, energy / (self.ref_levels[i] + 1e-9))
+                        # Normalised 0–1 vs reference (Linear energy)
+                        norm_linear = min(1.0, energy / (self.ref_levels[i] + 1e-9))
+                        
+                        # 1. Logarithmic Decibel Scaling (Perceptual Loudness)
+                        # Human hearing is logarithmic. We map the linear energy to a dB-like 
+                        # scale so quiet sounds are visible and loud sounds don't clip instantly.
+                        # log10(1 + 99 * x) / 2 perfectly maps [0, 1] to [0, 1] on a logarithmic curve.
+                        norm = math.log10(1.0 + 99.0 * norm_linear) / 2.0
 
                         # Update rolling energy history
                         hist = self.energy_history[i]
@@ -284,6 +292,10 @@ class AudioVisualizer:
                         short_hist.append(energy)
                         self.short_energy_sums[i] += energy
                         short_avg = self.short_energy_sums[i] / len(short_hist)
+
+                        # Create a smoothed norm for the ambient floor to prevent FFT jitter
+                        smoothed_norm_linear = min(1.0, short_avg / (self.ref_levels[i] + 1e-9))
+                        smoothed_norm = math.log10(1.0 + 99.0 * smoothed_norm_linear) / 2.0
 
                         # Beat: short-term spike well above long-term average
                         beat = (
@@ -305,11 +317,24 @@ class AudioVisualizer:
                             ] * self.attack_factor + beat_target * (
                                 1.0 - self.attack_factor
                             )
+                            # Reset gravity velocity on beat so it "hangs" in the air for a split second
+                            self.velocity[i] = 0.0
                         else:
-                            # Ambient floor: very dim continuous glow from ongoing audio
-                            ambient = min(0.20, norm * 1.0)
-                            # Decay: exponential fall back toward ambient
-                            decayed = self.brightness[i] * self.decay_factor
+                            # Ambient floor: use SMOOTHED norm so sustained notes don't jitter
+                            # Increased the cap to 0.40 so sustained notes (like piano) have a nice steady glow
+                            ambient = min(0.40, smoothed_norm * 1.0)
+                            
+                            # 3. Gravity Peak Decay
+                            # Decreased gravity slightly so beats have a slightly longer "hang time"
+                            gravity = 0.002 + (1.0 - self.decay_factor) * 0.02
+                            self.velocity[i] += gravity
+                            
+                            decayed = self.brightness[i] - self.velocity[i]
+                            
+                            if decayed < ambient:
+                                decayed = ambient
+                                self.velocity[i] = 0.0  # Hit the floor
+
                             self.brightness[i] = max(ambient, decayed)
 
                         # ── Flicker Reduction: average recent brightness frames ──
