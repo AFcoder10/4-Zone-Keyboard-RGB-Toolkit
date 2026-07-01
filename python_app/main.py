@@ -419,16 +419,6 @@ class CustomTitleBar(QWidget):
         )
         self.btn_settings.clicked.connect(self.parent.toggle_settings)
 
-        self.btn_discord = QPushButton()
-        self.btn_discord.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets", "discord.svg")))
-        self.btn_discord.setIconSize(QSize(18, 18))
-        self.btn_discord.setFixedSize(24, 24)
-        self.btn_discord.setCursor(Qt.PointingHandCursor)
-        self.btn_discord.setToolTip("Join our Discord Server!")
-        self.btn_discord.setStyleSheet(
-            "\n            QPushButton {\n                background: transparent;\n                border: none;\n                margin-bottom: 2px;\n            }\n            QPushButton:hover {\n                background-color: rgba(255, 255, 255, 30);\n                border-radius: 4px;\n            }\n        "
-        )
-        self.btn_discord.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://discord.gg/ecKwmsDBXg")))
 
         self.btn_help = QPushButton("Help")
         self.btn_help.setFixedHeight(22)
@@ -454,7 +444,6 @@ class CustomTitleBar(QWidget):
 
         layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
-        layout.addWidget(self.btn_discord)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(spacer)
         self.btn_minimize = QPushButton()
@@ -3456,8 +3445,8 @@ class RGBControllerApp(QMainWindow):
             # if we were previously in a hardware effect.
             start_colors = [100] * 12
             
-        steps = 20
-        delay = 0.02
+        steps = 5
+        delay = 0.01
         
         for step in range(steps):
             factor = 1.0 - (step / float(steps - 1))
@@ -4051,7 +4040,7 @@ class RGBControllerApp(QMainWindow):
     def show_help_dialog(self):
         dialog = FadeDialog(self)
         dialog.setWindowTitle("Help & Support")
-        dialog.setFixedSize(380, 160)
+        dialog.setFixedSize(440, 160)
         # Match app aesthetic
         dialog.setStyleSheet("""
             QDialog {
@@ -4069,35 +4058,54 @@ class RGBControllerApp(QMainWindow):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        label = QLabel("Having issues? Report them on GitHub.")
+        label = QLabel("Having issues or want to connect? Reach out below.")
         label.setAlignment(Qt.AlignCenter)
         layout.addWidget(label)
 
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
 
-        btn_issues = GlowButton("Report Issue")
-        btn_issues.setCursor(Qt.PointingHandCursor)
-        btn_issues.setFixedHeight(35)
-        btn_issues.setStyleSheet("""
+        btn_discord = QPushButton(" Discord")
+        btn_discord.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets", "discord.svg")))
+        btn_discord.setIconSize(QSize(18, 18))
+        btn_discord.setCursor(Qt.PointingHandCursor)
+        btn_discord.setFixedHeight(35)
+        btn_discord.setStyleSheet("""
             QPushButton {
-                background-color: #00E5FF;
-                color: black;
+                background-color: #2C2F33;
+                color: white;
                 font-weight: bold;
                 border-radius: 6px;
-                padding: 0 20px;
+                padding: 0 15px;
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #00B2CC;
+                background-color: #23272A;
             }
         """)
-        btn_issues.clicked.connect(
-            lambda: webbrowser.open(
-                "https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/issues"
-            )
-        )
-        btn_issues.clicked.connect(dialog.accept)
+        btn_discord.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://discord.gg/ecKwmsDBXg")))
+        btn_discord.clicked.connect(dialog.accept)
+
+        btn_github = QPushButton(" GitHub Issues")
+        btn_github.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets", "github.svg")))
+        btn_github.setIconSize(QSize(18, 18))
+        btn_github.setCursor(Qt.PointingHandCursor)
+        btn_github.setFixedHeight(35)
+        btn_github.setStyleSheet("""
+            QPushButton {
+                background-color: #24292F;
+                color: white;
+                font-weight: bold;
+                border-radius: 6px;
+                padding: 0 15px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #1a1e23;
+            }
+        """)
+        btn_github.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/issues")))
+        btn_github.clicked.connect(dialog.accept)
 
         btn_close = QPushButton("Close")
         btn_close.setCursor(Qt.PointingHandCursor)
@@ -4118,7 +4126,8 @@ class RGBControllerApp(QMainWindow):
         btn_close.clicked.connect(dialog.reject)
 
         btn_layout.addStretch()
-        btn_layout.addWidget(btn_issues)
+        btn_layout.addWidget(btn_discord)
+        btn_layout.addWidget(btn_github)
         btn_layout.addWidget(btn_close)
         btn_layout.addStretch()
 
