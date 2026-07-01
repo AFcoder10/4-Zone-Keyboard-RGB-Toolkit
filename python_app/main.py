@@ -86,7 +86,7 @@ from PySide6.QtCore import (
     QVariantAnimation,
     QUrl,
 )
-from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices
+from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap
 import winreg
 from python_controller import L5PKeyboard
 import threading
@@ -97,7 +97,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.62"
+CURRENT_VERSION = "v2.7"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -442,8 +442,8 @@ class CustomTitleBar(QWidget):
 
         self.btn_help.clicked.connect(self.parent.show_help_dialog)
 
-        layout.addWidget(self.btn_help)
         layout.addWidget(self.btn_settings)
+        layout.addWidget(self.btn_help)
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(spacer)
         self.btn_minimize = QPushButton()
@@ -988,6 +988,10 @@ class UpdateDownloader(QThread):
     def __init__(self, url):
         super().__init__()
         self.url = url
+        self._is_canceled = False
+        
+    def cancel(self):
+        self._is_canceled = True
 
     def run(self):
         try:
@@ -1002,6 +1006,8 @@ class UpdateDownloader(QThread):
                 with open(dest_path, "wb") as f:
                     downloaded = 0
                     while True:
+                        if self._is_canceled:
+                            return
                         chunk = response.read(65536)
                         if not chunk:
                             break
@@ -1010,9 +1016,11 @@ class UpdateDownloader(QThread):
                         if total_size > 0:
                             percent = int((downloaded / total_size) * 100)
                             self.progress.emit(percent)
-                self.finished.emit(dest_path)
+                if not self._is_canceled:
+                    self.finished.emit(dest_path)
         except Exception as e:
-            self.error.emit(str(e))
+            if not self._is_canceled:
+                self.error.emit(str(e))
 import platform
 
 class TelemetryClient:
@@ -1555,14 +1563,27 @@ class RGBControllerApp(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.on_tray_activated)
         self.tray_icon.show()
+        title_container = QWidget()
+        title_layout = QHBoxLayout(title_container)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(6)
+        title_layout.addStretch()
+
+        logo_label = QLabel()
+        logo_pixmap = QIcon(self.icon_path).pixmap(32, 32)
+        logo_label.setPixmap(logo_pixmap)
+        title_layout.addWidget(logo_label)
+
         title_label = QLabel("4 ZONE RGB TOOLKIT")
         title_font = QFont("Segoe UI Variable", 24, QFont.Bold)
         title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet(
             "color: #00E5FF; margin-bottom: 2px; letter-spacing: 2px;"
         )
-        main_layout.addWidget(title_label)
+        title_layout.addWidget(title_label)
+        
+        title_layout.addStretch()
+        main_layout.addWidget(title_container)
         subtitle = QLabel("Hardware & Software RGB Customization")
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet(
@@ -2481,7 +2502,18 @@ class RGBControllerApp(QMainWindow):
                 self, "Update Failed", f"Failed to download update:\n{e}"
             )
         )
+        self.progress_dlg.canceled.connect(self._handle_download_cancel)
         self.downloader.start()
+
+    def _handle_download_cancel(self):
+        self.downloader.cancel()
+        try:
+            self.downloader.progress.disconnect(self.progress_dlg.setValue)
+        except Exception:
+            pass
+        self.progress_dlg.reset()
+        self.progress_dlg.hide()
+        self.progress_dlg.deleteLater()
 
     def apply_update_and_restart(self, downloaded_exe):
         if hasattr(self, "progress_dlg"):
@@ -5419,11 +5451,14 @@ class RGBControllerApp(QMainWindow):
                                         random.random() for _ in range(4)
                                     ]
 
+                                t = time.time() * speed_mult * 3.0
+
                                 for i in range(4):
-                                    # Simulate fire flickering with random jitter (wider swings)
+                                    # Simulate fire flickering with random jitter and sine heat wave
+                                    heat_wave = math.sin(t + i * 1.5) * 0.3
                                     jitter = (random.random() - 0.5) * 0.9 * speed_mult
                                     self.fire_state[i] = max(
-                                        0.1, min(1.0, self.fire_state[i] + jitter)
+                                        0.1, min(1.0, self.fire_state[i] + jitter + heat_wave * 0.2)
                                     )
 
                                     intensity = self.fire_state[i]
@@ -5437,6 +5472,10 @@ class RGBControllerApp(QMainWindow):
                                     r = 255 * min(
                                         1.0, intensity * 2.0
                                     )  # Pushed harder for saturated red
+                                    
+                                    # Ensure base heat always keeps red active
+                                    r = max(40, r)
+                                    
                                     g = (
                                         60 * intensity * (0.3 + 0.6 * random.random())
                                     )  # Halved G to suppress bright yellow/orange
