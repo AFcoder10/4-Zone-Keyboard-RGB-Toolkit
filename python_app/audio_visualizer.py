@@ -362,6 +362,9 @@ class AudioVisualizer:
 
                 except Exception as loop_e:
                     print(f"Loop error: {loop_e}")
+                    if isinstance(loop_e, OSError):
+                        print("OS Error (device lost), terminating...")
+                        break
                     time.sleep(0.05)
 
         except KeyboardInterrupt:

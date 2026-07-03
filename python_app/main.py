@@ -85,8 +85,10 @@ from PySide6.QtCore import (
     QEasingCurve,
     QVariantAnimation,
     QUrl,
+    Slot,
 )
 from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap
+from mobile_server import MobileServer
 import winreg
 from python_controller import L5PKeyboard
 import threading
@@ -97,7 +99,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.7"
+CURRENT_VERSION = "v2.8"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -858,6 +860,8 @@ class GlobalHotkeyListener(QThread):
 
     def __init__(self, hotkeys_dict, parent=None):
         super().__init__(parent)
+        import threading
+        self.lock = threading.Lock()
         self.hotkeys_dict = hotkeys_dict
         self.modifiers = set()
         self.running = True
@@ -878,26 +882,33 @@ class GlobalHotkeyListener(QThread):
                 return
 
             # Map modifier keys
-            if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
-                self.modifiers.add("ctrl")
-            elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr):
-                self.modifiers.add("alt")
-            elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r):
-                self.modifiers.add("shift")
-            elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r):
-                self.modifiers.add("win")
-            else:
-                # Regular key pressed, build combination
-                parts = []
-                # Ensure the same order as the recorder: ctrl, alt, shift, win
-                if "ctrl" in self.modifiers:
-                    parts.append("ctrl")
-                if "alt" in self.modifiers:
-                    parts.append("alt")
-                if "shift" in self.modifiers:
-                    parts.append("shift")
-                if "win" in self.modifiers:
-                    parts.append("win")
+            with self.lock:
+                if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+                    self.modifiers.add("ctrl")
+                elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr):
+                    self.modifiers.add("alt")
+                elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r):
+                    self.modifiers.add("shift")
+                elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r):
+                    self.modifiers.add("win")
+                else:
+                    # Regular key pressed, build combination
+                    parts = []
+                    # Ensure the same order as the recorder: ctrl, alt, shift, win
+                    if "ctrl" in self.modifiers:
+                        parts.append("ctrl")
+                    if "alt" in self.modifiers:
+                        parts.append("alt")
+                    if "shift" in self.modifiers:
+                        parts.append("shift")
+                    if "win" in self.modifiers:
+                        parts.append("win")
+
+                # Whether or not it was a modifier, we want to know if shift is active
+                # for the normalization later
+                shift_active = "shift" in self.modifiers
+
+            if key not in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r, keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr, keyboard.Key.shift_l, keyboard.Key.shift_r, keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r):
 
                 char = None
                 try:
@@ -929,7 +940,7 @@ class GlobalHotkeyListener(QThread):
                         pass
 
                 if char:
-                    char = _normalize_hotkey_key_name(char, "shift" in self.modifiers)
+                    char = _normalize_hotkey_key_name(char, shift_active)
 
                     parts.append(char)
                     combo = "+".join(parts)
@@ -941,14 +952,15 @@ class GlobalHotkeyListener(QThread):
                             self.hotkey_triggered.emit(combo)
 
         def on_release(key):
-            if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
-                self.modifiers.discard("ctrl")
-            elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr):
-                self.modifiers.discard("alt")
-            elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r):
-                self.modifiers.discard("shift")
-            elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r):
-                self.modifiers.discard("win")
+            with self.lock:
+                if key in (keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+                    self.modifiers.discard("ctrl")
+                elif key in (keyboard.Key.alt_l, keyboard.Key.alt_r, keyboard.Key.alt_gr):
+                    self.modifiers.discard("alt")
+                elif key in (keyboard.Key.shift_l, keyboard.Key.shift_r):
+                    self.modifiers.discard("shift")
+                elif key in (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r):
+                    self.modifiers.discard("win")
 
         self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
         with self.listener:
@@ -963,7 +975,8 @@ class GlobalHotkeyListener(QThread):
     def set_paused(self, paused):
         self.paused = bool(paused)
         if self.paused:
-            self.modifiers.clear()
+            with self.lock:
+                self.modifiers.clear()
 
     def stop(self):
         self.running = False
@@ -1083,6 +1096,10 @@ class RGBControllerApp(QMainWindow):
         
         self.telemetry = TelemetryClient(self)
         self.telemetry.start()
+        
+        self.mobile_server = MobileServer(self, port=6767)
+        self.mobile_server.start()
+        
         self.original_exe_path = _resolve_original_exe_path()
         self.setMinimumSize(500, 480)
         self.icon_path = os.path.join(
@@ -2176,7 +2193,7 @@ class RGBControllerApp(QMainWindow):
             btn.setCursor(Qt.PointingHandCursor)
             btn.setFixedSize(100, 40)
             self.update_button_color(btn, self.zone_colors[i])
-            btn.clicked.connect(lambda checked, idx=i: self.pick_color(idx))
+            btn.clicked.connect(lambda *args, idx=i: self.pick_color(idx))
             self.color_buttons.append(btn)
             colors_layout.addWidget(btn, 0, i)
         self.global_color = [255, 252, 247]
@@ -2371,7 +2388,12 @@ class RGBControllerApp(QMainWindow):
         # Valorant Spike Timer states
         self.spike_active = False
         self.spike_start_time = 0
+        self.spike_cooldown_until = 0
+        self.last_spike_scan = 0
         self.spike_target_red = (224, 60, 49)
+        
+        # Thread safety lock for custom_colors
+        self.color_lock = threading.Lock()
 
         self.current_timer_base_ms = self.timer_interval_active_ms
         self.is_window_active = True
@@ -3244,6 +3266,12 @@ class RGBControllerApp(QMainWindow):
                             loaded_mode_settings[mode_name].update(mode_data)
             except Exception as e:
                 print(f"Failed to load mode settings: {e}")
+                settings.setValue("mode_settings_backup_corrupted", mode_settings_json)
+                try:
+                    from PySide6.QtWidgets import QMessageBox
+                    QMessageBox.warning(self, "Settings Error", "Your mode settings were corrupted. They have been backed up and defaults restored.")
+                except Exception:
+                    pass
         self.mode_settings = loaded_mode_settings
         preview_val = settings.value("preview_user_enabled", True)
         self.preview_user_enabled = (
@@ -3471,7 +3499,8 @@ class RGBControllerApp(QMainWindow):
         if not self.kb:
             return
         
-        start_colors = list(self.custom_colors)
+        with self.color_lock:
+            start_colors = list(self.custom_colors)
         if sum(start_colors) == 0:
             # If current custom color buffer is black, we just use a dim white as a starting point to fade from
             # if we were previously in a hardware effect.
@@ -3485,7 +3514,7 @@ class RGBControllerApp(QMainWindow):
             faded = [int(c * factor) for c in start_colors]
             try:
                 self.kb.set_custom_colors(faded)
-            except:
+            except Exception:
                 pass
             time.sleep(delay)
             # Process events so the UI doesn't completely freeze during the 0.4s fade
@@ -3494,7 +3523,7 @@ class RGBControllerApp(QMainWindow):
         try:
             self.kb.set_effect("static")
             self.kb.set_solid_color(0, 0, 0)
-        except:
+        except Exception:
             pass
 
     def apply_preset_from_ui(self, index):
@@ -3776,6 +3805,7 @@ class RGBControllerApp(QMainWindow):
         self.mode_settings[mode_name][key] = value
         self.save_runtime_state_settings()
 
+    @Slot(str)
     def set_wave_direction(self, direction, apply_now=True):
         self.wave_direction = direction
         self.wave_dir_left_btn.setChecked(direction == "left")
@@ -3790,6 +3820,7 @@ class RGBControllerApp(QMainWindow):
         ):
             self.apply_effect()
 
+    @Slot(str)
     def set_smooth_wave_direction(self, direction, apply_now=True):
         self.smooth_wave_direction = direction
         self.smooth_wave_dir_left_btn.setChecked(direction == "left")
@@ -3818,14 +3849,15 @@ class RGBControllerApp(QMainWindow):
         r, g, b = self.zone_colors[zone_idx]
         current_color = QColor(r, g, b)
         color = QColorDialog.getColor(
-            current_color, self, f"Select Color for Zone {zone_idx + 1}"
+            current_color, self, f"Select Color for Zone {zone_idx + 1}",
+            options=QColorDialog.DontUseNativeDialog
         )
         if color.isValid():
             self.zone_colors[zone_idx] = [color.red(), color.green(), color.blue()]
-            # Sync manual pick to custom_colors for smooth transition
-            self.custom_colors[zone_idx * 3] = color.red()
-            self.custom_colors[zone_idx * 3 + 1] = color.green()
-            self.custom_colors[zone_idx * 3 + 2] = color.blue()
+            with self.color_lock:
+                self.custom_colors[zone_idx * 3] = color.red()
+                self.custom_colors[zone_idx * 3 + 1] = color.green()
+                self.custom_colors[zone_idx * 3 + 2] = color.blue()
             self.update_button_color(
                 self.color_buttons[zone_idx], self.zone_colors[zone_idx]
             )
@@ -3835,7 +3867,8 @@ class RGBControllerApp(QMainWindow):
         r, g, b = self.global_color
         current_color = QColor(r, g, b)
         color = QColorDialog.getColor(
-            current_color, self, "Select Master Keyboard Color"
+            current_color, self, "Select Master Keyboard Color",
+            options=QColorDialog.DontUseNativeDialog
         )
         if color.isValid():
             r, g, b = (color.red(), color.green(), color.blue())
@@ -3843,17 +3876,19 @@ class RGBControllerApp(QMainWindow):
             self.update_button_color(self.global_color_btn, self.global_color)
             for i in range(4):
                 self.zone_colors[i] = [r, g, b]
-                # Sync manual pick to custom_colors for smooth transition
-                self.custom_colors[i * 3] = r
-                self.custom_colors[i * 3 + 1] = g
-                self.custom_colors[i * 3 + 2] = b
+                with self.color_lock:
+                    self.custom_colors[i * 3] = r
+                    self.custom_colors[i * 3 + 1] = g
+                    self.custom_colors[i * 3 + 2] = b
                 self.update_button_color(self.color_buttons[i], [r, g, b])
             self.apply_effect()
 
+    @Slot(bool)
     def on_scanner_rainbow_toggled(self, checked):
         self.update_mode_setting("scanner_rainbow", bool(checked))
         self.apply_effect()
 
+    @Slot(bool)
     def on_wave_fill_toggled(self, checked):
         self.update_mode_setting("wave_fill", bool(checked))
         if checked:
@@ -4067,7 +4102,25 @@ class RGBControllerApp(QMainWindow):
         items = self.mode_list.findItems(mode_name, Qt.MatchExactly)
         if items:
             self.mode_list.setCurrentItem(items[0])
+            self.reset_mode_state()
 
+    @Slot(str)
+    def set_mode_from_mobile(self, mode_name):
+        items = self.mode_list.findItems(mode_name, Qt.MatchExactly)
+        if items:
+            self.mode_list.setCurrentItem(items[0])
+
+    @Slot(int, QColor)
+    def set_custom_color_from_mobile(self, zone_idx, color):
+        if 0 <= zone_idx < 4:
+            with self.color_lock:
+                self.custom_colors[zone_idx * 3] = color.red()
+                self.custom_colors[zone_idx * 3 + 1] = color.green()
+                self.custom_colors[zone_idx * 3 + 2] = color.blue()
+            # Update the button color
+            btn = self.color_buttons[zone_idx]
+            btn.setStyleSheet(f"background-color: {color.name()}; border: none;")
+            self.kb.set_colors(self.custom_colors)
 
     def show_help_dialog(self):
         dialog = FadeDialog(self)
@@ -4173,6 +4226,7 @@ class RGBControllerApp(QMainWindow):
                 return (True, 0)
         return super().nativeEvent(eventType, message)
 
+    @Slot()
     def start_pomodoro(self):
         h = self.pomo_hours.value()
         m = self.pomo_minutes.value()
@@ -4211,6 +4265,7 @@ class RGBControllerApp(QMainWindow):
         # Update label immediately
         self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
 
+    @Slot()
     def stop_pomodoro(self):
         self.pomo_running = False
         self.pomo_is_finished = False
@@ -4825,24 +4880,13 @@ class RGBControllerApp(QMainWindow):
                 self.visualizer_process = subprocess.Popen(
                     cmd,
                     env=env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                     text=True,
                     creationflags=flags,
-                    bufsize=1,
                 )
                 self.visualizer_launch_signature = launch_signature
 
-                def read_proc(proc):
-                    for line in iter(proc.stdout.readline, ""):
-                        if line:
-                            # Use sys.stdout.write instead of print to avoid recursion or extra newlines
-                            sys.stdout.write(line)
-                            sys.stdout.flush()
-
-                threading.Thread(
-                    target=read_proc, args=(self.visualizer_process,), daemon=True
-                ).start()
                 return
             else:
                 if mode_name in self.SOFTWARE_MODES:
@@ -4861,6 +4905,8 @@ class RGBControllerApp(QMainWindow):
                             self.fade_out_lights()
                         return
                     effect = "static"
+                    with self.color_lock:
+                        self.custom_colors = [0] * 12
                     wave_dir = self.wave_direction
                     if "Breath" in mode_name:
                         effect = "breath"
@@ -4880,6 +4926,7 @@ class RGBControllerApp(QMainWindow):
                         self.kb.set_speed(hw_speed)
                         if effect == "wave":
                             self.kb.wave_direction = wave_dir
+                            self.kb.refresh()
                         flat_colors = []
                         b_mult = self.bright_slider.value() / 100.0
                         for c in self.zone_colors:
@@ -4896,6 +4943,10 @@ class RGBControllerApp(QMainWindow):
         if "Ambient Screen Color" in mode_name:
             fps = max(1, self.ambient_fps_slider.value())
             return max(5, 1000 // fps)
+        elif "Pomodoro Timer" in mode_name or "Battery Visualizer" in mode_name:
+            return 1000
+        elif "Temperature Mode" in mode_name:
+            return 2000
         return self.timer_interval_active_ms
 
     def get_effective_timer_interval(self, base=None):
@@ -4926,14 +4977,39 @@ class RGBControllerApp(QMainWindow):
                 c = wmi.WMI()
                 tz = c.Win32_PerfFormattedData_Counters_ThermalZoneInformation()[0]
                 t = float(tz.Temperature) - 273.15
-                if t == 27.85 or t == 27.8:
+                
+                import ctypes
+                try:
+                    is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+                except Exception:
+                    is_admin = False
+                    
+                if (t == 27.85 or t == 27.8) and not is_admin:
                     return "REQUIRES_ADMIN"
                 return t
             except Exception:
                 pass
         return temp
 
+    def _fast_hsv_to_rgb(self, h, s, v):
+        if not hasattr(self, "_hsv_cache"):
+            self._hsv_cache = {}
+        k = (round(h, 3), round(s, 2), round(v, 2))
+        if k not in self._hsv_cache:
+            self._hsv_cache[k] = colorsys.hsv_to_rgb(h, s, v)
+        return self._hsv_cache[k]
+
     def update_custom_effects(self):
+        # MED-007: Frame Skipping
+        now = time.time()
+        if hasattr(self, "_last_frame_time"):
+            delta = now - self._last_frame_time
+            expected = self.current_timer_base_ms / 1000.0 if hasattr(self, "current_timer_base_ms") and self.current_timer_base_ms else 0.05
+            if delta > expected * 2.5: # Lagging behind significantly
+                self._last_frame_time = now
+                return
+        self._last_frame_time = now
+        
         # ***<module>.RGBControllerApp.update_custom_effects: Failure: Compilation Error
         if not self.kb:
             return
@@ -4950,7 +5026,8 @@ class RGBControllerApp(QMainWindow):
 
                 speed_mult = self.speed_slider.value() / 50.0
                 t = time.monotonic()
-                target_colors = list(self.custom_colors)
+                with self.color_lock:
+                    target_colors = list(self.custom_colors)
                 smooth_amount = 0.5
                 try:
                     if "Smooth Wave" in mode_name:
@@ -4997,7 +5074,7 @@ class RGBControllerApp(QMainWindow):
                         else:
                             for i in range(4):
                                 hue = (t + i * dir_mult) % 1.0
-                                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                                r, g, b = self._fast_hsv_to_rgb(hue, 1.0, 1.0)
                                 target_colors[i * 3] = r * 255
                                 target_colors[i * 3 + 1] = g * 255
                                 target_colors[i * 3 + 2] = b * 255
@@ -5517,11 +5594,7 @@ class RGBControllerApp(QMainWindow):
                                     # Exponential falloff for a glowing laser tail
                                     intensity = math.exp(-(dist ** 2) * 1.5)
 
-                                    # Apply brightness slider
-                                    brightness_factor = (
-                                        self.bright_slider.value() / 100.0
-                                    )
-                                    intensity *= brightness_factor
+                                    # Global brightness is applied at the end of the loop
 
                                     if self.scanner_rainbow_cb.isChecked():
                                         # Use a sweeping rainbow hue independent of scanner position
@@ -5542,7 +5615,6 @@ class RGBControllerApp(QMainWindow):
                                         )
                             elif "Aurora Borealis" in mode_name:
                                 smooth_amount = 0.05
-                                brightness = self.bright_slider.value() / 100.0
                                 speed = (self.speed_slider.value() / 100.0) * 0.5 + 0.1
 
                                 # Aurora colors: Deep Purples, Teals, and Greens
@@ -5569,7 +5641,7 @@ class RGBControllerApp(QMainWindow):
                                     # Interpolate hue
                                     final_hue = h1 * (1 - blend) + h2 * blend
                                     r, g, b = colorsys.hsv_to_rgb(
-                                        final_hue, 1.0, wave * brightness
+                                        final_hue, 1.0, wave
                                     )
 
                                     target_colors[i * 3] = int(r * 255)
@@ -5577,7 +5649,6 @@ class RGBControllerApp(QMainWindow):
                                     target_colors[i * 3 + 2] = int(b * 255)
                             elif "Meteor Shower" in mode_name:
                                 smooth_amount = 0.8  # Very fast transition
-                                brightness = self.bright_slider.value() / 100.0
 
                                 if not hasattr(self, "meteor_last_tick"):
                                     self.meteor_last_tick = time.monotonic()
@@ -5650,9 +5721,9 @@ class RGBControllerApp(QMainWindow):
                                         # The glowing head leading the meteor (Bright White/Cyan core)
                                         r, g, b = 255, 255, 200
 
-                                    target_colors[i * 3] = int(r * brightness)
-                                    target_colors[i * 3 + 1] = int(g * brightness)
-                                    target_colors[i * 3 + 2] = int(b * brightness)
+                                    target_colors[i * 3] = int(r)
+                                    target_colors[i * 3 + 1] = int(g)
+                                    target_colors[i * 3 + 2] = int(b)
                             else:
                                 if "Battery Visualizer" in mode_name:
                                     smooth_amount = 0.5
@@ -5863,7 +5934,13 @@ class RGBControllerApp(QMainWindow):
                                         vib_mult = self.vibrance_slider.value() / 10.0
                                         if self.sct:
                                             monitor = self.sct.monitors[1]
-                                            sct_img = self.sct.grab(monitor)
+                                            bbox = {
+                                                "top": monitor["top"] + monitor["height"] - 100,
+                                                "left": monitor["left"],
+                                                "width": monitor["width"],
+                                                "height": 100
+                                            }
+                                            sct_img = self.sct.grab(bbox)
                                             img = Image.frombytes(
                                                 "RGB",
                                                 sct_img.size,
@@ -5894,14 +5971,20 @@ class RGBControllerApp(QMainWindow):
                         self.transition_ticks -= 1
 
                     bright_mult = self.bright_slider.value() / 100.0
-                    for i in range(12):
-                        new_val = self.custom_colors[i] * smooth_amount + target_colors[
-                            i
-                        ] * (1.0 - smooth_amount)
-                        self.custom_colors[i] = new_val
-                        final_val = new_val * bright_mult
-                        final_colors.append(int(max(0, min(255, final_val))))
+                    with self.color_lock:
+                        for i in range(12):
+                            new_val = self.custom_colors[i] * smooth_amount + target_colors[
+                                i
+                            ] * (1.0 - smooth_amount)
+                            self.custom_colors[i] = new_val
+                            final_val = new_val * bright_mult
+                            final_colors.append(int(max(0, min(255, final_val))))
                     self.kb.set_colors(final_colors)
+                    
+                    # Broadcast to mobile app
+                    if hasattr(self, 'mobile_server') and self.mobile_server:
+                        hex_colors = ["#%02x%02x%02x" % (final_colors[i*3], final_colors[i*3+1], final_colors[i*3+2]) for i in range(4)]
+                        self.mobile_server.broadcast_colors(hex_colors)
                 except Exception as e:
                     print(f"Effect calculation error: {e}")
 

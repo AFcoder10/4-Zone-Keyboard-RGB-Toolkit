@@ -141,6 +141,10 @@ def main():
             pass
     finally:
         monitor.close()
+        try:
+            pid_file.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

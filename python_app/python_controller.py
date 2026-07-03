@@ -1,4 +1,5 @@
 import hid
+import atexit
 import time
 
 
@@ -41,6 +42,15 @@ class L5PKeyboard:
         self.wave_direction = "left"  # 'left' or 'right'
         self._payload_buffer = bytearray(33)
         self._payload_buffer[0] = 0xCC
+        
+        # Register atexit handler
+        atexit.register(self.close)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def _find_device(self):
         # We search through the connected HID devices
