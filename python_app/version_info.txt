@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2, 7, 0, 0),
-    prodvers=(2, 7, 0, 0),
+    filevers=(2, 8, 0, 0),
+    prodvers=(2, 8, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -16,12 +16,12 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'AFcoder10'),
         StringStruct('FileDescription', '4 Zone RGB Toolkit'),
-        StringStruct('FileVersion', '2.7'),
+        StringStruct('FileVersion', '2.8'),
         StringStruct('InternalName', '4_Zone_Rgb_Toolkit'),
         StringStruct('LegalCopyright', 'Copyright (c) AFcoder10'),
         StringStruct('OriginalFilename', '4_Zone_Rgb_Toolkit.exe'),
         StringStruct('ProductName', '4 Zone RGB Toolkit'),
-        StringStruct('ProductVersion', '2.7')])
+        StringStruct('ProductVersion', '2.8')])
       ]), 
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
