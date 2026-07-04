@@ -87,7 +87,7 @@ from PySide6.QtCore import (
     QUrl,
     Slot,
 )
-from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap, QMovie
 from mobile_server import MobileServer
 import winreg
 from python_controller import L5PKeyboard
@@ -1260,6 +1260,16 @@ class RGBControllerApp(QMainWindow):
         launch_row.addWidget(AnimatedInfoIcon("Automatically starts the RGB toolkit silently\nwhen you log into Windows."))
         launch_row.addStretch()
         behavior_layout.addLayout(launch_row)
+
+        boot_gif_row = QHBoxLayout()
+        boot_gif_row.setContentsMargins(0, 0, 0, 0)
+        self.boot_gif_cb = QCheckBox("Show Splash Screen on Boot")
+        self.boot_gif_cb.setStyleSheet(toggle_css)
+        self.boot_gif_cb.toggled.connect(self.save_settings)
+        boot_gif_row.addWidget(self.boot_gif_cb)
+        boot_gif_row.addWidget(AnimatedInfoIcon("Plays the boot GIF animation when launching the app."))
+        boot_gif_row.addStretch()
+        behavior_layout.addLayout(boot_gif_row)
 
         auto_update_row = QHBoxLayout()
         auto_update_row.setContentsMargins(0, 0, 0, 0)
@@ -3224,6 +3234,9 @@ class RGBControllerApp(QMainWindow):
             else bool(launch_val)
         )
         self.launch_on_start_cb.setChecked(launch_start)
+        self.boot_gif_cb.setChecked(
+            settings.value("show_boot_gif", True, type=bool)
+        )
         self.telemetry_cb.setChecked(
             settings.value("telemetry_enabled", True, type=bool)
         )
@@ -3288,6 +3301,7 @@ class RGBControllerApp(QMainWindow):
             self.startup_preset_combo.blockSignals(False)
         self.minimize_to_tray_cb.blockSignals(False)
         self.launch_on_start_cb.blockSignals(False)
+        self.boot_gif_cb.blockSignals(False)
         self.telemetry_cb.blockSignals(False)
         self.auto_update_cb.blockSignals(False)
         self.turn_off_unplugged_cb.blockSignals(False)
@@ -3318,6 +3332,7 @@ class RGBControllerApp(QMainWindow):
         settings = QSettings("4ZoneRgbToolkit", "Preferences")
         settings.setValue("hotkeys", json.dumps(self.hotkeys))
         settings.setValue("minimize_to_tray", self.minimize_to_tray_cb.isChecked())
+        settings.setValue("show_boot_gif", self.boot_gif_cb.isChecked())
         settings.setValue("startup_preset", self.startup_preset_combo.currentText())
         settings.setValue("saved_presets", json.dumps(self.presets))
         settings.setValue("mode_settings", json.dumps(self.mode_settings))
@@ -3439,11 +3454,13 @@ class RGBControllerApp(QMainWindow):
             self.manage_startup_registry(False)
             self.minimize_to_tray_cb.blockSignals(True)
             self.launch_on_start_cb.blockSignals(True)
+            self.boot_gif_cb.blockSignals(True)
             self.turn_off_unplugged_cb.blockSignals(True)
             self.turn_off_battery_saver_cb.blockSignals(True)
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(False)
+            self.boot_gif_cb.setChecked(True)
             self.turn_off_unplugged_cb.setChecked(False)
             self.turn_off_battery_saver_cb.setChecked(False)
             self.turn_off_when_unplugged = False
@@ -5987,6 +6004,50 @@ class RGBControllerApp(QMainWindow):
                         self.mobile_server.broadcast_colors(hex_colors)
                 except Exception as e:
                     print(f"Effect calculation error: {e}")
+class GifSplashScreen(QWidget):
+    def __init__(self, gif_path, main_window):
+        super().__init__()
+        self.main_window = main_window
+        
+        # Transparent, frameless window
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.SplashScreen)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.label = QLabel()
+        self.label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.label)
+        
+        # Load GIF
+        self.movie = QMovie(gif_path)
+        # Lock splash screen to the exact fixed ratio of the main app window
+        self.setFixedSize(700, 400)
+        self.movie.setScaledSize(QSize(700, 400))
+        self.label.setMovie(self.movie)
+        
+        # Connect frame change to detect when it ends
+        self.movie.frameChanged.connect(self.check_frame)
+        self.movie.start()
+
+    def check_frame(self, frameNumber):
+        # Stop at the very last frame
+        if frameNumber == self.movie.frameCount() - 1:
+            self.movie.stop()
+            self.fade_out()
+            
+    def fade_out(self):
+        self.animation = QPropertyAnimation(self, b"windowOpacity")
+        self.animation.setDuration(800)  # 800ms fade out
+        self.animation.setStartValue(1.0)
+        self.animation.setEndValue(0.0)
+        self.animation.finished.connect(self.on_fade_finished)
+        self.animation.start()
+
+    def on_fade_finished(self):
+        self.close()
+        self.main_window.show()
 
 
 if __name__ == "__main__":
@@ -6054,5 +6115,12 @@ if __name__ == "__main__":
     app.setStyle("Fusion")
     window = RGBControllerApp()
     if "--hidden" not in sys.argv:
-        window.show()
+        gif_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "boot.gif")
+        from PySide6.QtCore import QSettings
+        settings = QSettings("4ZoneRgbToolkit", "Preferences")
+        if os.path.exists(gif_path) and settings.value("show_boot_gif", True, type=bool):
+            splash = GifSplashScreen(gif_path, window)
+            splash.show()
+        else:
+            window.show()
     sys.exit(app.exec())
