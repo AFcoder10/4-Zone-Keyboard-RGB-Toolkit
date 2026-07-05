@@ -16,12 +16,12 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'AFcoder10'),
         StringStruct('FileDescription', '4 Zone RGB Toolkit'),
-        StringStruct('FileVersion', '2.8'),
-        StringStruct('InternalName', '4_Zone_Rgb_Toolkit'),
-        StringStruct('LegalCopyright', 'Copyright (c) AFcoder10'),
+        StringStruct('FileVersion', '2.81'),
+        StringStruct('InternalName', '4 Zone RGB Toolkit'),
+        StringStruct('LegalCopyright', 'Copyright (c) 2024'),
         StringStruct('OriginalFilename', '4_Zone_Rgb_Toolkit.exe'),
         StringStruct('ProductName', '4 Zone RGB Toolkit'),
-        StringStruct('ProductVersion', '2.8')])
+        StringStruct('ProductVersion', '2.81')])
       ]), 
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]

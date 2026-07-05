@@ -57,6 +57,7 @@ def build_standalone_exe():
         "--add-data=assets/toggle_off.svg;assets",
         "--add-data=assets/toggle_on.svg;assets",
         "--add-data=assets/rgb_wheel.ico;assets",
+        "--add-data=assets/boot.gif;assets",
         "--add-data=assets/thermal_sensor_access_v3.exe;assets",
         "--add-data=python_controller.py;.",
         "--add-data=audio_visualizer.py;.",

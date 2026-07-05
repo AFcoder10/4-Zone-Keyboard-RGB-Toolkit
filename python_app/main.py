@@ -99,7 +99,7 @@ import urllib.error
 import tempfile
 import traceback
 
-CURRENT_VERSION = "v2.8"
+CURRENT_VERSION = "v2.81"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -1142,6 +1142,7 @@ class RGBControllerApp(QMainWindow):
         app_layout.addLayout(self.stack)
         main_view = QWidget()
         main_layout = QVBoxLayout(main_view)
+        QApplication.processEvents()
         main_layout.setContentsMargins(20, 10, 20, 20)
         main_layout.setSpacing(15)
         self.stack.addWidget(main_view)
@@ -1541,6 +1542,7 @@ class RGBControllerApp(QMainWindow):
         self.stack.addWidget(self.settings_view)
 
         # --- Pomodoro Fullscreen View ---
+        QApplication.processEvents()
         self.pomo_fullscreen_view = QWidget()
         self.pomo_fullscreen_view.setStyleSheet("background-color: black;")
         pomo_fs_layout = QVBoxLayout(self.pomo_fullscreen_view)
@@ -2430,6 +2432,7 @@ class RGBControllerApp(QMainWindow):
         self.pomo_is_finished = False
         self.pomo_last_tick = 0
         self.pomo_flash_on = False
+        QApplication.processEvents()
         try:
             self.kb = L5PKeyboard()
         except ValueError as e:
@@ -3214,6 +3217,7 @@ class RGBControllerApp(QMainWindow):
 
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
+        self.boot_gif_cb.blockSignals(True)
         self.telemetry_cb.blockSignals(True)
         self.auto_update_cb.blockSignals(True)
         self.turn_off_unplugged_cb.blockSignals(True)
@@ -3227,7 +3231,7 @@ class RGBControllerApp(QMainWindow):
             else bool(min_val)
         )
         self.minimize_to_tray_cb.setChecked(min_to_tray)
-        launch_val = settings.value("launch_on_start", False)
+        launch_val = settings.value("launch_on_start", True)
         launch_start = (
             str(launch_val).lower() == "true"
             if isinstance(launch_val, str)
@@ -3451,7 +3455,7 @@ class RGBControllerApp(QMainWindow):
         if reply == QMessageBox.Yes:
             settings = QSettings("4ZoneRgbToolkit", "Preferences")
             settings.clear()
-            self.manage_startup_registry(False)
+            self.manage_startup_registry(True)
             self.minimize_to_tray_cb.blockSignals(True)
             self.launch_on_start_cb.blockSignals(True)
             self.boot_gif_cb.blockSignals(True)
@@ -3459,7 +3463,7 @@ class RGBControllerApp(QMainWindow):
             self.turn_off_battery_saver_cb.blockSignals(True)
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
-            self.launch_on_start_cb.setChecked(False)
+            self.launch_on_start_cb.setChecked(True)
             self.boot_gif_cb.setChecked(True)
             self.turn_off_unplugged_cb.setChecked(False)
             self.turn_off_battery_saver_cb.setChecked(False)
@@ -6024,14 +6028,17 @@ class GifSplashScreen(QWidget):
         self.movie = QMovie(gif_path)
         # Lock splash screen to the exact fixed ratio of the main app window
         self.setFixedSize(700, 400)
-        self.movie.setScaledSize(QSize(700, 400))
-        self.label.setMovie(self.movie)
         
-        # Connect frame change to detect when it ends
+        # Connect frame change to detect when it ends and render smoothly
         self.movie.frameChanged.connect(self.check_frame)
         self.movie.start()
 
     def check_frame(self, frameNumber):
+        # Smoothly scale the current frame to fix pixelation
+        img = self.movie.currentImage()
+        scaled_img = img.scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        self.label.setPixmap(QPixmap.fromImage(scaled_img))
+        
         # Stop at the very last frame
         if frameNumber == self.movie.frameCount() - 1:
             self.movie.stop()
@@ -6113,14 +6120,26 @@ if __name__ == "__main__":
         sys.exit(0)
 
     app.setStyle("Fusion")
-    window = RGBControllerApp()
+    
+    splash = None
     if "--hidden" not in sys.argv:
-        gif_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "boot.gif")
+        if getattr(sys, "frozen", False):
+            base_dir = sys._MEIPASS
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+        gif_path = os.path.join(base_dir, "assets", "boot.gif")
         from PySide6.QtCore import QSettings
         settings = QSettings("4ZoneRgbToolkit", "Preferences")
         if os.path.exists(gif_path) and settings.value("show_boot_gif", True, type=bool):
-            splash = GifSplashScreen(gif_path, window)
+            splash = GifSplashScreen(gif_path, None)
             splash.show()
-        else:
-            window.show()
+            app.processEvents()  # Paint the splash screen instantly
+
+    # Initialize the heavy main application
+    window = RGBControllerApp()
+    
+    if splash:
+        splash.main_window = window
+    elif "--hidden" not in sys.argv:
+        window.show()
     sys.exit(app.exec())
