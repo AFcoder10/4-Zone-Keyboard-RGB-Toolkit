@@ -3239,7 +3239,7 @@ class RGBControllerApp(QMainWindow):
         )
         self.launch_on_start_cb.setChecked(launch_start)
         self.boot_gif_cb.setChecked(
-            settings.value("show_boot_gif", True, type=bool)
+            settings.value("show_boot_gif", False, type=bool)
         )
         self.telemetry_cb.setChecked(
             settings.value("telemetry_enabled", True, type=bool)
@@ -3464,7 +3464,7 @@ class RGBControllerApp(QMainWindow):
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(True)
-            self.boot_gif_cb.setChecked(True)
+            self.boot_gif_cb.setChecked(False)
             self.turn_off_unplugged_cb.setChecked(False)
             self.turn_off_battery_saver_cb.setChecked(False)
             self.turn_off_when_unplugged = False
@@ -6130,7 +6130,7 @@ if __name__ == "__main__":
         gif_path = os.path.join(base_dir, "assets", "boot.gif")
         from PySide6.QtCore import QSettings
         settings = QSettings("4ZoneRgbToolkit", "Preferences")
-        if os.path.exists(gif_path) and settings.value("show_boot_gif", True, type=bool):
+        if os.path.exists(gif_path) and settings.value("show_boot_gif", False, type=bool):
             splash = GifSplashScreen(gif_path, None)
             splash.show()
             app.processEvents()  # Paint the splash screen instantly
