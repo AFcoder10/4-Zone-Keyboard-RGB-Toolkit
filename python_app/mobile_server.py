@@ -7,6 +7,8 @@ from PySide6.QtCore import QMetaObject, Qt, Q_ARG
 
 logger = logging.getLogger("MobileServer")
 
+# Suppress noisy handshake errors from random network scans or browsers
+logging.getLogger("websockets").setLevel(logging.CRITICAL)
 class MobileServer:
     def __init__(self, app_ref, port=6767):
         self.app = app_ref

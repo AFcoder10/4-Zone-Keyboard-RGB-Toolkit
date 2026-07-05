@@ -81,7 +81,7 @@ class L5PKeyboard:
         # RGB applies to Static and Breath effects
         if self.effect in ["static", "breath"]:
             for i in range(12):
-                self._payload_buffer[5 + i] = self.colors[i]
+                self._payload_buffer[5 + i] = int(max(0, min(255, self.colors[i])))
 
         # Wave direction handling
         elif self.effect == "wave":
