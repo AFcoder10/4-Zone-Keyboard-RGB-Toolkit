@@ -1,6 +1,8 @@
 <div align="center">
-  <img src="assets/rgb_wheel.ico" alt="Icon" width="128" height="128">
-  <h1>4 Zone RGB Toolkit</h1>
+  <h1>
+    <img src="assets/rgb_wheel.ico" alt="Icon" width="96" height="96" align="center">
+    4 Zone RGB Toolkit
+  </h1>
 </div>
 
 ![Preview](assets/preview.png)
