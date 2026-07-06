@@ -167,77 +167,75 @@ nav {
   box-shadow: 0 30px 60px -15px rgba(0,0,0,0.5);
 }
 
-/* ── Features ────────────────────────────────────── */
+/* ── Feature Glossary ────────────────────────────── */
 .features {
-  max-width: 980px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 20px 24px 100px;
+  padding: 40px 24px 100px;
 }
 
 .features h2 {
   font-size: 1.8rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .features-lead {
   text-align: center;
   color: var(--muted);
-  font-size: 0.92rem;
-  margin-bottom: 44px;
+  font-size: 0.95rem;
+  margin-bottom: 56px;
 }
 
-.cards {
+.glossary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 60px;
 }
 
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 26px;
-  transition: border-color 0.3s ease;
-}
-.card:hover { border-color: rgba(255,255,255,0.1); }
-
-.card-wide { grid-column: span 2; }
-
-.card h3 {
-  font-size: 0.95rem;
+.glossary-col h3 {
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.card p {
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin-bottom: 16px;
-}
-
-.pills { display: flex; flex-wrap: wrap; gap: 6px; }
-
-.pills span {
-  padding: 3px 10px;
-  font-size: 0.72rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
-  color: var(--muted);
-  transition: color 0.15s, border-color 0.15s;
-}
-.pills span:hover {
   color: var(--text);
-  border-color: rgba(255,255,255,0.12);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
-.pill-hl {
-  background: var(--accentA) !important;
-  border-color: rgba(0,200,255,0.15) !important;
-  color: var(--accent) !important;
+.col-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feature-list li {
+  font-size: 0.9rem;
+  color: #bbb;
+  line-height: 1.5;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+
+.feature-list li:hover {
+  border-color: rgba(255,255,255,0.2);
+}
+
+.feature-list strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.mt-xl {
+  margin-top: 48px;
 }
 
 /* ── Star CTA ────────────────────────────────────── */
@@ -304,9 +302,8 @@ footer {
 }
 
 /* ── Responsive ──────────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .nav-links a:not(.nav-cta) { display: none; }
-  .cards { grid-template-columns: 1fr; }
-  .card-wide { grid-column: span 1; }
+  .glossary-grid { grid-template-columns: 1fr; gap: 48px; }
   .hero { padding-top: 120px; }
 }

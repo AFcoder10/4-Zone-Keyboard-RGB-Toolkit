@@ -98,6 +98,7 @@ import urllib.request
 import urllib.error
 import tempfile
 import traceback
+from reactive_typing import ReactiveTypingEngine
 
 CURRENT_VERSION = "v2.81"
 
@@ -2103,6 +2104,17 @@ class RGBControllerApp(QMainWindow):
         self.scanner_rainbow_cb.clicked.connect(self.on_scanner_rainbow_toggled)
         self.scanner_rainbow_cb.hide()
 
+        self.reactive_rainbow_cb = QPushButton("Rainbow Reactive")
+        self.reactive_rainbow_cb.setCheckable(True)
+        self.reactive_rainbow_cb.setCursor(Qt.PointingHandCursor)
+        self.reactive_rainbow_cb.setStyleSheet(
+            "QPushButton { padding: 6px 12px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; font-weight: 700; }"
+            "QPushButton:hover { background-color: rgba(0,229,255,0.12); }"
+            "QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; }"
+        )
+        self.reactive_rainbow_cb.clicked.connect(self.on_reactive_rainbow_toggled)
+        self.reactive_rainbow_cb.hide()
+
         # Fill mode toggle (bottom-right for Smooth Wave)
         self.wave_fill_cb = QPushButton("Fill Mode")
         self.wave_fill_cb.setCheckable(True)
@@ -2130,16 +2142,33 @@ class RGBControllerApp(QMainWindow):
         )
         self.smooth_wave_palette_combo.hide()
 
+        self.reactive_style_combo = QComboBox()
+        self.reactive_style_combo.addItems(["Fade", "Ripple"])
+        self.reactive_style_combo.setCurrentText("Fade")
+        self.reactive_style_combo.setFixedWidth(150)
+        self.reactive_style_combo.setCursor(Qt.PointingHandCursor)
+        self.reactive_style_combo.setStyleSheet(
+            "QComboBox { background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 8px; font-weight: 600; }"
+            "QComboBox::drop-down { border: none; width: 20px; }"
+            "QComboBox QAbstractItemView { background-color: #1A1A1E; color: #E2E2E2; selection-background-color: #00E5FF; selection-color: #0E0E12; }"
+        )
+        self.reactive_style_combo.currentTextChanged.connect(
+            self.on_reactive_style_changed
+        )
+        self.reactive_style_combo.hide()
+
         # Bottom controls row: wave dirs left, fill toggle right
         bottom_row = QWidget()
         bottom_layout = QHBoxLayout(bottom_row)
         bottom_layout.setContentsMargins(0, 0, 0, 0)
         bottom_layout.setSpacing(10)
         bottom_layout.addWidget(self.scanner_rainbow_cb)
+        bottom_layout.addWidget(self.reactive_rainbow_cb)
         bottom_layout.addWidget(self.wave_dir_widget)
         bottom_layout.addWidget(self.smooth_wave_dir_widget)
         bottom_layout.addStretch()
         bottom_layout.addWidget(self.smooth_wave_palette_combo)
+        bottom_layout.addWidget(self.reactive_style_combo)
         bottom_layout.addWidget(self.wave_fill_cb)
         controls_layout.addWidget(bottom_row, 7, 0, 1, 4, Qt.AlignVCenter)
 
@@ -2287,7 +2316,8 @@ class RGBControllerApp(QMainWindow):
             "Mouse-Reactive Aura",
             "Pomodoro Timer",
             "Live Audio Visualizer",
-            "Temperature Mode (Beta)",
+            "Temperature Mode",
+            "Reactive Typing",
         ]
         self.HARDWARE_MODES = ["Off", "Static", "Breath", "Smooth", "Wave"]
         self.default_control_settings = {
@@ -2299,9 +2329,11 @@ class RGBControllerApp(QMainWindow):
             "flicker": 0,
             "wave_fill": False,
             "scanner_rainbow": False,
+            "reactive_rainbow": False,
             "smooth_wave_palette": "RGBW",
             "wave_direction": "left",
             "smooth_wave_direction": "left",
+            "reactive_style": "Fade",
         }
         self.mode_settings = self.build_default_mode_settings()
         self.wave_direction = "left"
@@ -2442,6 +2474,9 @@ class RGBControllerApp(QMainWindow):
         self.hotkey_listener = GlobalHotkeyListener(self.hotkeys)
         self.hotkey_listener.hotkey_triggered.connect(self.on_global_hotkey_triggered)
         self.hotkey_listener.start()
+        
+        self.reactive_engine = ReactiveTypingEngine(getattr(self, 'kb', None), parent_app=self)
+        
         self.load_settings()
         self.apply_effect()
 
@@ -2791,6 +2826,8 @@ class RGBControllerApp(QMainWindow):
         }
         if "Live Audio Visualizer" in defaults:
             defaults["Live Audio Visualizer"]["brightness"] = 0
+        if "Reactive Typing" in defaults:
+            defaults["Reactive Typing"]["speed"] = 60
         if "Valorant Spike Timer" in defaults:
             defaults["Valorant Spike Timer"]["spike_target_red"] = (224, 60, 49) # Default rough guess
         return defaults
@@ -2827,7 +2864,7 @@ class RGBControllerApp(QMainWindow):
             "Mouse-Reactive Aura": "Shifts lighting in response to mouse movement.",
             "Pomodoro Timer": "Turns the keyboard into a full-session progress indicator.",
             "Live Audio Visualizer": "A 4-band audio-reactive equalizer using your selected zone colors.",
-            "Temperature Mode (Beta)": "Displays CPU average core temp on Zones 1 & 2, and GPU core temp on Zones 3 & 4. Colors range from Blue (<40°C) to Flashing Red (>100°C).",
+            "Temperature Mode": "Displays CPU average core temp on Zones 1 & 2, and GPU core temp on Zones 3 & 4. Colors range from Blue (<40°C) to Flashing Red (>100°C).",
             "Valorant Spike Timer": "Scans the top-center of the screen for the Spike Planted icon and automatically runs a perfectly timed 45s visual detonation countdown.",
         }
         self.mode_description_label.setText(
@@ -2916,7 +2953,7 @@ class RGBControllerApp(QMainWindow):
             and self.smooth_wave_palette_combo.currentText() == "Custom 4-Color"
         )
         is_zones_enabled = (
-            mode_name in ("Static", "Breath", "Mouse-Reactive Aura", "Scanner (Cylon)")
+            mode_name in ("Static", "Breath", "Mouse-Reactive Aura", "Scanner (Cylon)", "Reactive Typing")
             or smooth_wave_custom
         )
         self.colors_group.setEnabled(is_zones_enabled)
@@ -3311,14 +3348,14 @@ class RGBControllerApp(QMainWindow):
         self.turn_off_unplugged_cb.blockSignals(False)
         self.turn_off_battery_saver_cb.blockSignals(False)
         if startup_p in self.presets:
-            if self.presets[startup_p].get("mode") == "Temperature Mode (Beta)":
+            if self.presets[startup_p].get("mode") == "Temperature Mode":
                 startup_p = "None (Use Last State)"
                 last_mode = "Off"
 
         if startup_p in self.presets:
             self.apply_preset_logic(startup_p)
         else:
-            if last_mode == "Temperature Mode (Beta)":
+            if last_mode == "Temperature Mode":
                 last_mode = "Off"
             items = self.mode_list.findItems(last_mode, Qt.MatchExactly)
             if items:
@@ -3792,6 +3829,9 @@ class RGBControllerApp(QMainWindow):
         self.scanner_rainbow_cb.blockSignals(True)
         self.scanner_rainbow_cb.setChecked(bool(settings.get("scanner_rainbow", False)))
         self.scanner_rainbow_cb.blockSignals(False)
+        self.reactive_rainbow_cb.blockSignals(True)
+        self.reactive_rainbow_cb.setChecked(bool(settings.get("reactive_rainbow", False)))
+        self.reactive_rainbow_cb.blockSignals(False)
         self.smooth_wave_palette_combo.blockSignals(True)
         palette_name = settings.get(
             "smooth_wave_palette", self.default_control_settings["smooth_wave_palette"]
@@ -3800,6 +3840,14 @@ class RGBControllerApp(QMainWindow):
             palette_name = self.default_control_settings["smooth_wave_palette"]
         self.smooth_wave_palette_combo.setCurrentText(palette_name)
         self.smooth_wave_palette_combo.blockSignals(False)
+        self.reactive_style_combo.blockSignals(True)
+        style_name = settings.get(
+            "reactive_style", self.default_control_settings["reactive_style"]
+        )
+        if self.reactive_style_combo.findText(style_name) == -1:
+            style_name = self.default_control_settings["reactive_style"]
+        self.reactive_style_combo.setCurrentText(style_name)
+        self.reactive_style_combo.blockSignals(False)
         self.wave_direction = settings.get(
             "wave_direction", self.default_control_settings["wave_direction"]
         )
@@ -3909,6 +3957,13 @@ class RGBControllerApp(QMainWindow):
         self.update_mode_setting("scanner_rainbow", bool(checked))
         self.apply_effect()
 
+    def on_reactive_rainbow_toggled(self, checked):
+        self.update_mode_setting("reactive_rainbow", bool(checked))
+        if self.reactive_engine:
+            self.reactive_engine.rainbow_mode = bool(checked)
+            if not checked:
+                self.update_reactive_typing_settings()
+
     @Slot(bool)
     def on_wave_fill_toggled(self, checked):
         self.update_mode_setting("wave_fill", bool(checked))
@@ -3926,6 +3981,12 @@ class RGBControllerApp(QMainWindow):
 
     def on_smooth_wave_palette_changed(self, palette_name):
         self.update_mode_setting("smooth_wave_palette", palette_name)
+        self.apply_effect()
+
+    def on_reactive_style_changed(self, style_name):
+        self.update_mode_setting("reactive_style", style_name)
+        if self.reactive_engine:
+            self.reactive_engine.style = style_name.lower()
         self.update_zone_color_controls_state(
             "Smooth Wave"
             if self.mode_list.currentItem()
@@ -4370,10 +4431,16 @@ class RGBControllerApp(QMainWindow):
                 self.reset_mode_state()
             self.current_mode_name = mode_name
 
-            if mode_name == "Temperature Mode (Beta)":
+            if mode_name == "Temperature Mode":
                 self.start_temperature_worker()
             else:
                 self.stop_temperature_worker()
+
+            if mode_name == "Reactive Typing":
+                self.update_reactive_typing_settings()
+                self.reactive_engine.start()
+            else:
+                self.reactive_engine.stop()
 
             self.load_mode_controls(mode_name)
             self.update_mode_description(mode_name)
@@ -4522,6 +4589,13 @@ class RGBControllerApp(QMainWindow):
             else:
                 self.wave_fill_cb.hide()
                 self.smooth_wave_palette_combo.hide()
+                
+            if "Reactive Typing" in mode_name:
+                self.reactive_style_combo.show()
+                self.reactive_rainbow_cb.show()
+            else:
+                self.reactive_style_combo.hide()
+                self.reactive_rainbow_cb.hide()
 
             if "Scanner (Cylon)" in mode_name:
                 self.scanner_rainbow_cb.show()
@@ -4817,6 +4891,13 @@ class RGBControllerApp(QMainWindow):
         self.visualizer_process = None
         self.visualizer_launch_signature = None
 
+    def update_reactive_typing_settings(self):
+        self.reactive_engine.zone_highlight_colors = [list(c) for c in self.zone_colors]
+        val = self.speed_slider.value()
+        self.reactive_engine.decay_speed = max(0.005, (val / 100.0) * 0.05)
+        self.reactive_engine.style = self.reactive_style_combo.currentText().lower()
+        self.reactive_engine.rainbow_mode = self.reactive_rainbow_cb.isChecked()
+
     def apply_effect(self):
         # Stop the custom timer before applying a new effect
         self.custom_timer.stop()
@@ -4911,6 +4992,9 @@ class RGBControllerApp(QMainWindow):
                 return
             else:
                 if mode_name in self.SOFTWARE_MODES:
+                    if mode_name == "Reactive Typing":
+                        self.update_reactive_typing_settings()
+                        return
                     if self.kb:
                         self.kb.set_effect("static")
                         self.kb.set_brightness(2)
@@ -5099,7 +5183,7 @@ class RGBControllerApp(QMainWindow):
                                 target_colors[i * 3] = r * 255
                                 target_colors[i * 3 + 1] = g * 255
                                 target_colors[i * 3 + 2] = b * 255
-                    elif "Temperature Mode (Beta)" in mode_name:
+                    elif "Temperature Mode" in mode_name:
                         if getattr(self, "temp_last_read_time", 0) + 1.0 < t:
                             self.temp_last_read_time = t
                             out_file = os.path.join(
