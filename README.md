@@ -38,7 +38,7 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 - Mouse-Reactive Aura
 - Pomodoro Timer
 - Live Audio Visualizer
-- Temperature Mode (Beta)
+- Temperature Mode
 
 ## Hardware Compatibility
 
