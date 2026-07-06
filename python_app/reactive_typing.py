@@ -2,6 +2,7 @@ import json
 import os
 import time
 import threading
+import sys
 from pynput import keyboard
 
 MAPPING_FILE = "keyboard_zones.json"
@@ -41,10 +42,14 @@ class ReactiveTypingEngine:
         self.render_thread = None
 
     def load_mapping(self):
-        # We need the absolute path relative to this script just in case
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(os.path.dirname(script_dir), MAPPING_FILE)
+        json_path = os.path.join(script_dir, MAPPING_FILE)
         
+        # In a bundled PyInstaller exe, __file__ might be inside a temp _MEIPASS folder.
+        # But if we used --add-data, it will extract there perfectly.
+        if getattr(sys, "frozen", False):
+            json_path = os.path.join(sys._MEIPASS, MAPPING_FILE)
+
         if os.path.exists(json_path):
             try:
                 with open(json_path, 'r') as f:

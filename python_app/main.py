@@ -100,7 +100,7 @@ import tempfile
 import traceback
 from reactive_typing import ReactiveTypingEngine
 
-CURRENT_VERSION = "v2.81"
+CURRENT_VERSION = "v2.9"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):

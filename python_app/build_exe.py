@@ -59,6 +59,7 @@ def build_standalone_exe():
         "--add-data=assets/rgb_wheel.ico;assets",
         "--add-data=assets/boot.gif;assets",
         "--add-data=assets/thermal_sensor_access_v3.exe;assets",
+        "--add-data=keyboard_zones.json;.",
         "--add-data=python_controller.py;.",
         "--add-data=audio_visualizer.py;.",
         "--add-data=temperature_worker.py;.",
