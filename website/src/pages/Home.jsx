@@ -55,7 +55,7 @@ function Home() {
             <span>4 Zone RGB Toolkit</span>
           </Link>
           <div className="nav-links">
-            <a href="#features">Features</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('features').scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
             <Link to="/changelog">Changelog</Link>
             <a href="https://rgb-toolkit-telemetry.vercel.app" target="_blank" rel="noreferrer">Telemetry</a>
             <a href="https://discord.gg/ecKwmsDBXg" target="_blank" rel="noreferrer">Discord</a>
