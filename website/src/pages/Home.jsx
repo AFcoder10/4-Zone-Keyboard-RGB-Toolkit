@@ -104,6 +104,7 @@ function Home() {
               <li><strong>Auto-Off Battery</strong> — Disables RGB when unplugged to save power.</li>
               <li><strong>Live Telemetry</strong> — View real-time statistics of active users currently using the app globally.</li>
               <li><strong>System Tray</strong> — Runs quietly in the background.</li>
+              <li><strong>Hotkeys</strong> — Quickly cycle modes, toggle effects, or adjust brightness using keyboard shortcuts.</li>
             </ul>
           </div>
 
