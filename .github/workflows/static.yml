@@ -34,7 +34,7 @@ jobs:
           cache-dependency-path: './website/package-lock.json'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
         working-directory: ./website
 
       - name: Build React App
