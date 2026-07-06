@@ -35,12 +35,13 @@ class MobileServer:
                 "wave_fill": self.app.wave_fill_cb.isChecked() if hasattr(self.app, "wave_fill_cb") else False,
                 "smooth_wave_palette": self.app.smooth_wave_palette_combo.currentText() if hasattr(self.app, "smooth_wave_palette_combo") else "RGBW",
                 "scanner_rainbow": self.app.scanner_rainbow_cb.isChecked() if hasattr(self.app, "scanner_rainbow_cb") else False,
+                "reactive_rainbow": self.app.reactive_rainbow_cb.isChecked() if hasattr(self.app, "reactive_rainbow_cb") else False,
                 "pomo_running": getattr(self.app, "pomo_running", False),
                 "pomo_remaining": getattr(self.app, "pomo_remaining_seconds", 0),
                 "pomo_minutes": self.app.pomo_minutes.value() if hasattr(self.app, "pomo_minutes") else 25,
             }
             try:
-                state["zone_colors"] = ["#%02x%02x%02x" % (c.red(), c.green(), c.blue()) for c in self.app.custom_colors]
+                state["zone_colors"] = ["#%02x%02x%02x" % (c[0], c[1], c[2]) for c in self.app.zone_colors]
             except Exception:
                 state["zone_colors"] = ["#ff0000", "#00ff00", "#0000ff", "#ffff00"]
                 
@@ -105,6 +106,11 @@ class MobileServer:
                         Qt.QueuedConnection, Q_ARG(bool, data.get("scanner_rainbow")))
                     QMetaObject.invokeMethod(self.app, "on_scanner_rainbow_toggled", 
                         Qt.QueuedConnection, Q_ARG(bool, data.get("scanner_rainbow")))
+                elif data.get("command") == "set_reactive_rainbow":
+                    QMetaObject.invokeMethod(self.app.reactive_rainbow_cb, "setChecked", 
+                        Qt.QueuedConnection, Q_ARG(bool, data.get("reactive_rainbow")))
+                    QMetaObject.invokeMethod(self.app, "on_reactive_rainbow_toggled", 
+                        Qt.QueuedConnection, Q_ARG(bool, data.get("reactive_rainbow")))
                 elif data.get("command") == "start_pomo":
                     QMetaObject.invokeMethod(self.app, "start_pomodoro", Qt.QueuedConnection)
                 elif data.get("command") == "stop_pomo":
