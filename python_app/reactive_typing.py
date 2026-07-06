@@ -181,31 +181,40 @@ class ReactiveTypingEngine:
             ripple_colors = [None] * 4
             
             if self.style == "ripple":
-                # Map decay_speed (0.005 -> 0.05) to prop time (0.15s -> 0.05s)
-                prop_time_per_zone = max(0.02, 0.16 - (self.decay_speed * 2.0))
+                # Map decay to wave speed (zones per second). Slower ripple for smoother effect.
+                speed = 3.0 + (self.decay_speed * 40.0) 
+                # Max distance across keyboard is 3 zones. Trailing tail is 2.0 zones wide.
+                # So the crest must travel 5.0 zones to completely clear the board in pitch black.
+                max_age = 5.5 / speed
                 
+                import math
                 for r in self.ripples:
                     r["age"] += dt
-                    
-                    # Ripple must live long enough to reach distance 3 and fully decay
-                    max_age = (3 * prop_time_per_zone) + (1.0 / (self.decay_speed * 100))
                     
                     if r["age"] < max_age:
                         active_ripples.append(r)
                         
                         for i in range(4):
                             dist = abs(i - r["origin"])
+                            crest = r["age"] * speed
                             
-                            hit_time = dist * prop_time_per_zone
-                            if r["age"] >= hit_time:
-                                local_age = r["age"] - hit_time
-                                # Decay factor proportional to global decay
-                                local_decay = local_age * (self.decay_speed * 100)
-                                if local_decay < 1.0:
-                                    boost = 1.0 - local_decay
-                                    if boost > ripple_zone_boosts[i]:
-                                        ripple_zone_boosts[i] = boost
-                                        ripple_colors[i] = r["color"]
+                            # Asymmetrical "comet" wave
+                            if dist >= crest:
+                                # Leading edge: Sharp dropoff so adjacent zones don't light up instantly
+                                diff = dist - crest
+                                width = 0.8 
+                            else:
+                                # Trailing tail: Wide fadeout so zones blend smoothly together as it passes
+                                diff = crest - dist
+                                width = 2.0
+                                
+                            if diff < width:
+                                # Perfect Cosine ease-in-out curve to seamlessly fade into pure black (base color)
+                                normalized_diff = diff / width
+                                boost = (math.cos(normalized_diff * math.pi) + 1.0) / 2.0
+                                if boost > ripple_zone_boosts[i]:
+                                    ripple_zone_boosts[i] = boost
+                                    ripple_colors[i] = r["color"]
             
             self.ripples = active_ripples
 
