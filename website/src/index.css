@@ -2,6 +2,26 @@
    4 Zone RGB Toolkit — Minimalist Landing Page
    ═══════════════════════════════════════════════════ */
 
+/* ── Fonts ───────────────────────────────────────── */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/assets/regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/assets/bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/assets/heavy.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
 /* ── Reset ───────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -15,15 +35,46 @@
   --accentA: rgba(0,200,255,0.08);
 }
 
-html { scroll-behavior: smooth; }
+html { 
+  scroll-behavior: smooth;
+  background-color: var(--bg);
+}
 
 body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--bg);
+  font-family: 'SF Pro Display', -apple-system, sans-serif;
+  background: transparent;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   line-height: 1.55;
   overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -3;
+  background-image: 
+    linear-gradient(rgba(0, 200, 255, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.15) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridScroll 10s linear infinite;
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  /* Cinematic vignette to fade the edges of the grid into darkness */
+  background: radial-gradient(circle at center, transparent 20%, var(--bg) 80%);
+  pointer-events: none;
+}
+
+@keyframes gridScroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(50px); }
 }
 
 a { color: inherit; text-decoration: none; }
@@ -97,7 +148,7 @@ nav {
 
 .hero h1 {
   font-size: clamp(2rem, 5vw, 3.2rem);
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.04em;
   margin-bottom: 16px;
@@ -176,7 +227,7 @@ nav {
 
 .features h2 {
   font-size: 1.8rem;
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: -0.02em;
   text-align: center;
   margin-bottom: 12px;
@@ -310,7 +361,7 @@ footer {
 
 .changelog-section h2 {
   font-size: 1.8rem;
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: -0.02em;
   text-align: center;
   margin-bottom: 12px;
@@ -324,7 +375,9 @@ footer {
 }
 
 .release-card {
-  background: rgba(255,255,255,0.02);
+  background: rgba(18, 18, 21, 0.6);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
