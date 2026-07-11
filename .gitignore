@@ -89,3 +89,5 @@ release_notes_v2.4.md
 python_app/usage.py
 telemetry_dashboard
 rgb_mobile_remote
+bugs.md
+separation.md

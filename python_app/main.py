@@ -4892,11 +4892,14 @@ class RGBControllerApp(QMainWindow):
         self.visualizer_launch_signature = None
 
     def update_reactive_typing_settings(self):
-        self.reactive_engine.zone_highlight_colors = [list(c) for c in self.zone_colors]
+        if not hasattr(self, 'reactive_engine'): return
+        zone_colors = self.zone_colors
         val = self.speed_slider.value()
-        self.reactive_engine.decay_speed = max(0.005, (val / 100.0) * 0.05)
-        self.reactive_engine.style = self.reactive_style_combo.currentText().lower()
-        self.reactive_engine.rainbow_mode = self.reactive_rainbow_cb.isChecked()
+        decay = max(0.005, (val / 100.0) * 0.05)
+        style = self.reactive_style_combo.currentText().lower()
+        rainbow = self.reactive_rainbow_cb.isChecked()
+        
+        self.reactive_engine.update_settings(zone_colors, decay, style, rainbow)
 
     def apply_effect(self):
         # Stop the custom timer before applying a new effect
@@ -4917,6 +4920,8 @@ class RGBControllerApp(QMainWindow):
             if self.kb is None and "Live Audio Visualizer" not in mode_name:
                 try:
                     self.kb = L5PKeyboard()
+                    if hasattr(self, 'reactive_engine'):
+                        self.reactive_engine.set_keyboard_controller(self.kb)
                 except ValueError:
                     return None
             if self.refresh_power_policy_state():
@@ -4972,6 +4977,8 @@ class RGBControllerApp(QMainWindow):
                 if self.kb:
                     self.kb.close()
                     self.kb = None
+                    if hasattr(self, 'reactive_engine'):
+                        self.reactive_engine.set_keyboard_controller(self.kb)
 
                 import threading
 
@@ -4994,6 +5001,8 @@ class RGBControllerApp(QMainWindow):
                 if mode_name in self.SOFTWARE_MODES:
                     if mode_name == "Reactive Typing":
                         self.update_reactive_typing_settings()
+                        if hasattr(self, 'reactive_engine'):
+                            self.reactive_engine.start()
                         return
                     if self.kb:
                         self.kb.set_effect("static")
