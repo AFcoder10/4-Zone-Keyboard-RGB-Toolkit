@@ -155,22 +155,9 @@ class AudioVisualizerEffect(BaseEffect):
 
     def stop(self) -> None:
         self._running = False
-        if self.audio_thread:
-            self.audio_thread.join(timeout=1.0)
-            self.audio_thread = None
-        if self.stream:
-            try:
-                self.stream.stop_stream()
-                self.stream.close()
-            except Exception:
-                pass
-            self.stream = None
-        if self.p:
-            try:
-                self.p.terminate()
-            except Exception:
-                pass
-            self.p = None
+        # Do NOT join the thread or destroy PyAudio from the UI thread!
+        # The background _audio_loop will safely destroy its own stream when it exits.
+        # This prevents the hard crash (Access Violation) in PortAudio.
 
     def _audio_loop(self):
         # Local state for audio thread
@@ -195,7 +182,8 @@ class AudioVisualizerEffect(BaseEffect):
                 now = time.monotonic()
                 
                 # Fetch sensitivity once per frame to avoid locking per zone
-                sensitivity = max(0, min(100, self.config.get("speed", 50)))
+                with self._lock:
+                    sensitivity = max(0, min(100, self.config.get("speed", 50)))
                 ref_mult = slider_to_ref_mult(sensitivity)
                 ref_levels = [r * ref_mult for r in BASE_REFS]
 
@@ -253,24 +241,40 @@ class AudioVisualizerEffect(BaseEffect):
                     break
                 time.sleep(0.05)
 
+        # --- SAFE CLEANUP IN THE AUDIO THREAD ---
+        if hasattr(self, 'stream') and self.stream:
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except Exception:
+                pass
+            self.stream = None
+            
+        if hasattr(self, 'p') and self.p:
+            try:
+                self.p.terminate()
+            except Exception:
+                pass
+            self.p = None
+
     def update(self, dt: float) -> List[int]:
         # Config params
         # Note: In main.py, "brightness" slider is used for smoothness, "speed" for sensitivity
-        smoothness = max(0, min(100, self.config.get("brightness", 0)))
-        flicker_raw = max(0, min(100, self.config.get("flicker", 0)))
-        zone_colors_raw = self.config.get("zone_colors", [[255, 255, 255]] * 4)
-        zone_colors = [(c[0], c[1], c[2]) for c in zone_colors_raw]
-        
-        attack_factor = slider_to_attack(smoothness)
-        decay_factor = slider_to_decay(smoothness)
-        brightness_mult = slider_to_brightness_mult(30) * 1.5 # Fixed max boost
-        flicker_window_target = max(1, round(1 + (flicker_raw / 100.0) * 29))
-
         with self._lock:
+            smoothness = max(0, min(100, self.config.get("brightness", 0)))
+            flicker_raw = max(0, min(100, self.config.get("flicker", 0)))
+            zone_colors_raw = self.config.get("zone_colors", [[255, 255, 255]] * 4)
+            zone_colors = [(c[0], c[1], c[2]) for c in zone_colors_raw]
+            
             beat_targets = self.beat_targets[:]
             ambient_floors = self.ambient_floors[:]
             beats = self.beats[:]
             self.beats = [False] * 4 # Clear beats after reading
+
+        attack_factor = slider_to_attack(smoothness)
+        decay_factor = slider_to_decay(smoothness)
+        brightness_mult = slider_to_brightness_mult(30) * 1.5 # Fixed max boost
+        flicker_window_target = max(1, round(1 + (flicker_raw / 100.0) * 29))
 
         colors = [0] * 12
 

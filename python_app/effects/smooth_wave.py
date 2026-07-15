@@ -37,7 +37,7 @@ class SmoothWaveEffect(BaseEffect):
         return [
             (255.0, 0.0, 0.0),
             (0.0, 255.0, 0.0),
-            (0.0, 0.0, 255.0),
+            (0.0, 0.0, 255.0),  # Pure Blue
             (255.0, 252.0, 249.0),
         ]
 
@@ -73,12 +73,21 @@ class SmoothWaveEffect(BaseEffect):
                 
                 target_colors[i * 3] = int(r_prev * (1 - blend) + r_next * blend)
                 target_colors[i * 3 + 1] = int(g_prev * (1 - blend) + g_next * blend)
-                target_colors[i * 3 + 2] = int(b_prev * (1 - blend) + b_next * blend)
+                
+                # Apply a slight gamma boost to blue during transitions so it doesn't fade out too quickly
+                raw_b = (b_prev * (1 - blend) + b_next * blend) / 255.0
+                target_colors[i * 3 + 2] = int((raw_b ** 0.7) * 255.0)
         else:
             dir_mult = -0.15 if direction == "left" else 0.15
             for i in range(4):
                 hue = (self.t + i * dir_mult) % 1.0
                 r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                
+                # Apply a slight gamma boost to the blue channel.
+                # This keeps the peak at pure 255 blue, but makes the blue "band" much wider
+                # so the LEDs spend more time emitting blue light, increasing perceived brightness.
+                b = b ** 0.7
+                
                 target_colors[i * 3] = int(r * 255)
                 target_colors[i * 3 + 1] = int(g * 255)
                 target_colors[i * 3 + 2] = int(b * 255)

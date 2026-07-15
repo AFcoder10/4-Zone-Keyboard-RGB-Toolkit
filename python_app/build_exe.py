@@ -62,7 +62,6 @@ def build_standalone_exe():
         "--add-data=assets/thermal_sensor_access_v3.exe;assets",
         # --- Data files ---
         "--add-data=keyboard_zones.json;.",
-        "--add-data=audio_visualizer.py;.",
         "--add-data=temperature_worker.py;.",
         "--add-data=wintemp.py;.",
         "--add-data=LibreHardwareMonitor;LibreHardwareMonitor",

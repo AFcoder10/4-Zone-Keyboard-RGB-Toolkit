@@ -96,7 +96,7 @@ import tempfile
 import traceback
 
 
-CURRENT_VERSION = "v2.9"
+CURRENT_VERSION = "v2.91"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -4428,6 +4428,7 @@ class RGBControllerApp(QMainWindow):
             self.current_mode_name = mode_name
 
             if mode_name == "Temperature Mode":
+                self.start_temperature_worker()
                 # Use the new TemperatureMode effect instead of the legacy subprocess worker
                 if hasattr(self, "effect_manager"):
                     self.effect_manager.set_effect("Temperature Mode")
