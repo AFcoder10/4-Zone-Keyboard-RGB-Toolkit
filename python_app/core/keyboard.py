@@ -3,7 +3,7 @@ import atexit
 import time
 
 
-class L5PKeyboard:
+class RGBKeyboard:
     VENDOR_ID = 0x048D
     PRODUCT_IDS = [
         0xC995,
@@ -37,7 +37,7 @@ class L5PKeyboard:
 
         self.effect = "static"
         self.speed = 1
-        self.brightness = 1
+        self.brightness = 2 # Fixed max brightness, software handles scaling
         self.colors = [0] * 12  # 4 zones * 3 (R, G, B)
         self.wave_direction = "left"  # 'left' or 'right'
         self._payload_buffer = bytearray(33)
@@ -97,12 +97,18 @@ class L5PKeyboard:
         payload = self._build_payload()
         self.device.send_feature_report(payload)
 
-    def set_effect(self, effect):
+    def set_effect(self, effect, speed=None, brightness=None, direction=None):
         if effect not in self.EFFECTS:
             raise ValueError(
                 f"Invalid effect. Choose from: {list(self.EFFECTS.keys())}"
             )
         self.effect = effect
+        if speed is not None:
+            self.speed = max(1, min(4, int(speed)))
+        if brightness is not None:
+            self.brightness = max(0, min(4, int(brightness)))
+        if direction is not None:
+            self.wave_direction = direction
         self.refresh()
 
     def set_speed(self, speed):
@@ -111,8 +117,8 @@ class L5PKeyboard:
         self.refresh()
 
     def set_brightness(self, brightness):
-        """Brightness is typically 1 (Low) or 2 (High)"""
-        self.brightness = max(1, min(2, brightness))
+        """Brightness from 0 (off) to 4 (max)"""
+        self.brightness = max(0, min(4, brightness))
         self.refresh()
 
     def set_colors(self, colors):
@@ -137,7 +143,7 @@ class L5PKeyboard:
 if __name__ == "__main__":
     try:
         # Initialize the keyboard
-        kb = L5PKeyboard()
+        kb = RGBKeyboard()
         print("Keyboard disconnected and initialized!")
 
         # 1. Solid Red Example

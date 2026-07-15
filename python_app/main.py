@@ -19,7 +19,7 @@ try:
 except ImportError:
     HAS_MSS = False
 try:
-    from pynput import mouse, keyboard  # noqa: F401
+    from pynput import keyboard  # noqa: F401
 
     HAS_PYNPUT = True
 except ImportError:
@@ -30,13 +30,6 @@ try:
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
-try:
-    import wmi
-
-    wmi_obj = wmi.WMI(namespace="root\\wmi")
-    HAS_WMI = True
-except Exception:
-    HAS_WMI = False
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QApplication,
@@ -73,6 +66,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QLineEdit,
     QSpinBox,
+    QAbstractItemView,
+    QStyleOptionSlider,
 )
 from PySide6.QtCore import (
     Qt,
@@ -90,7 +85,8 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap, QMovie
 from mobile_server import MobileServer
 import winreg
-from python_controller import L5PKeyboard
+from core.keyboard import RGBKeyboard
+from core.manager import EffectManager
 import threading
 from threading import Lock
 from collections import deque
@@ -98,7 +94,7 @@ import urllib.request
 import urllib.error
 import tempfile
 import traceback
-from reactive_typing import ReactiveTypingEngine
+
 
 CURRENT_VERSION = "v2.9"
 
@@ -143,7 +139,6 @@ def _guid_equals(a, b):
 
 # Battery cache: updated every 500ms to avoid expensive repeated calls in tight loops
 _battery_cache = {"percent": 0, "charging": True, "last_update": 0}
-_mouse_aura_error_throttle = {"last_error": "", "last_time": 0}
 
 
 def _normalize_hotkey_key_name(key_name, shift_active=False):
@@ -289,7 +284,6 @@ _STDOUT_BUFFER = LogBuffer(_ORIG_STDOUT)
 _STDERR_BUFFER = LogBuffer(_ORIG_STDERR)
 sys.stdout = _STDOUT_BUFFER
 sys.stderr = _STDERR_BUFFER
-from PySide6.QtWidgets import QStyleOptionSlider
 
 
 class FadeDialog(QDialog):
@@ -573,9 +567,15 @@ class KeyboardPreviewWidget(QWidget):
 
     def update_colors(self):
         try:
-            colors = self.parent_app.custom_colors
+            colors = None
+            if hasattr(self.parent_app, "effect_manager"):
+                with self.parent_app.effect_manager._lock:
+                    colors = list(self.parent_app.effect_manager.current_colors)
+            else:
+                colors = getattr(self.parent_app, "custom_colors", [0] * 12)
+                
             # Only update if colors changed to avoid expensive CSS recalculation
-            if colors != self.last_colors and len(colors) >= 12:
+            if colors and colors != self.last_colors and len(colors) >= 12:
                 self.last_colors = colors[:]  # Store copy
                 for i in range(4):
                     r = max(0, min(255, int(colors[i * 3])))
@@ -588,18 +588,6 @@ class KeyboardPreviewWidget(QWidget):
             pass
 
 
-class KeyboardPreviewWindow(FadeDialog):
-    def __init__(self, parent_app):
-        super().__init__(parent_app)
-        self.parent_app = parent_app
-        self.setWindowTitle("Keyboard Real-Time Preview")
-        self.setFixedSize(400, 100)
-        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.WindowStaysOnTopHint)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(0)
-        self.preview_widget = KeyboardPreviewWidget(parent_app, self)
-        layout.addWidget(self.preview_widget)
 
 
 class HotkeyDialog(FadeDialog):
@@ -1091,11 +1079,11 @@ class RGBControllerApp(QMainWindow):
     update_available = Signal(str, str, str)
 
     def __init__(self):
-        # ***<module>.RGBControllerApp.__init__: Failure: Compilation Error
         super().__init__()
         self.setWindowTitle("4 Zone Rgb Toolkit")
         
         self.telemetry = TelemetryClient(self)
+        self.custom_colors = [0] * 12
         self.telemetry.start()
         
         self.mobile_server = MobileServer(self, port=6767)
@@ -1665,12 +1653,6 @@ class RGBControllerApp(QMainWindow):
             controls_layout.addWidget(slider, row, 2, Qt.AlignVCenter)
             controls_layout.addWidget(plus_btn, row, 3, Qt.AlignVCenter)
 
-        plus_icon_path = os.path.join(
-            os.path.dirname(__file__), "assets", "plus.svg"
-        ).replace("\\", "/")
-        minus_icon_path = os.path.join(
-            os.path.dirname(__file__), "assets", "minus.svg"
-        ).replace("\\", "/")
         icon_css = "QPushButton { background: transparent; border: none; border-radius: 4px; } QPushButton:hover { background: rgba(255, 255, 255, 0.1); }"
 
         # Row 0: Brightness
@@ -1792,6 +1774,7 @@ class RGBControllerApp(QMainWindow):
 
         self.pomo_minutes = QSpinBox()
         self.pomo_minutes.setRange(0, 59)
+        self.pomo_minutes.setValue(25)
         self.pomo_minutes.setSuffix("m")
         self.pomo_minutes.setStyleSheet(spin_style)
 
@@ -1936,7 +1919,6 @@ class RGBControllerApp(QMainWindow):
         for w in self.storm_widgets:
             w.hide()
 
-        # Random mode removed — related controls were deleted
 
         self.ambient_fps_layout = QHBoxLayout()
         self.ambient_fps_label = QLabel("Ambient FPS: 30")
@@ -2303,23 +2285,9 @@ class RGBControllerApp(QMainWindow):
 
         left_layout.addWidget(self.spike_timer_widget)
         left_layout.addWidget(self.preview_panel)
-        self.SOFTWARE_MODES = [
-            "Smooth Wave",
-            "Lightning",
-            "Party",
-            "Realistic Fire",
-            "Scanner (Cylon)",
-            "Aurora Borealis",
-            "Meteor Shower",
-            "Ambient Screen Color",
-            "Battery Visualizer",
-            "Mouse-Reactive Aura",
-            "Pomodoro Timer",
-            "Live Audio Visualizer",
-            "Temperature Mode",
-            "Reactive Typing",
-        ]
-        self.HARDWARE_MODES = ["Off", "Static", "Breath", "Smooth", "Wave"]
+        from core.config import SOFTWARE_MODES, HARDWARE_MODES
+        self.SOFTWARE_MODES = SOFTWARE_MODES
+        self.HARDWARE_MODES = HARDWARE_MODES
         self.default_control_settings = {
             "brightness": 100,
             "speed": 20,
@@ -2339,6 +2307,8 @@ class RGBControllerApp(QMainWindow):
         self.wave_direction = "left"
         self.smooth_wave_direction = "left"
         self.mode_list = QListWidget()
+        self.mode_list.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.mode_list.verticalScrollBar().setSingleStep(15)
         self.mode_list.addItems(self.HARDWARE_MODES + self.SOFTWARE_MODES)
         self.mode_list.setCurrentRow(0)
         self.mode_list.currentTextChanged.connect(self.on_mode_changed)
@@ -2420,12 +2390,6 @@ class RGBControllerApp(QMainWindow):
                 os.path.join(os.path.dirname(__file__), "temperature_worker.py")
             )
         )
-        self.custom_timer = QTimer(self)
-        self.custom_timer.timeout.connect(self.update_custom_effects)
-        self.visualizer_restart_timer = QTimer(self)
-        self.visualizer_restart_timer.setSingleShot(True)
-        self.visualizer_restart_timer.setInterval(180)
-        self.visualizer_restart_timer.timeout.connect(self._run_live_visualizer_restart)
         self.timer_interval_active_ms = 33
         self.timer_interval_idle_ms = 150
         
@@ -2452,8 +2416,6 @@ class RGBControllerApp(QMainWindow):
         self.battery_cache_timer.setInterval(500)
         self.battery_cache_timer.timeout.connect(self.update_battery_cache)
         self.battery_cache_timer.start()
-        self.custom_colors = [0] * 12
-        self.transition_ticks = 0
         self.last_activity = time.monotonic()
         self.sct = None
         self.preview_window = None
@@ -2462,11 +2424,17 @@ class RGBControllerApp(QMainWindow):
         self.pomo_total_seconds = 0
         self.pomo_remaining_seconds = 0
         self.pomo_is_finished = False
-        self.pomo_last_tick = 0
         self.pomo_flash_on = False
+        
+        self.pomo_ui_timer = QTimer(self)
+        self.pomo_ui_timer.setInterval(1000)
+        self.pomo_ui_timer.timeout.connect(self._tick_pomo_ui)
+        self.pomo_ui_timer.start()
         QApplication.processEvents()
         try:
-            self.kb = L5PKeyboard()
+            self.effect_manager = EffectManager()
+            self.effect_manager.start()
+            self.kb = self.effect_manager.kb
         except ValueError as e:
             print(f"Error initializing keyboard: {e}")
         self.force_quit = False
@@ -2475,7 +2443,7 @@ class RGBControllerApp(QMainWindow):
         self.hotkey_listener.hotkey_triggered.connect(self.on_global_hotkey_triggered)
         self.hotkey_listener.start()
         
-        self.reactive_engine = ReactiveTypingEngine(getattr(self, 'kb', None), parent_app=self)
+
         
         self.load_settings()
         self.apply_effect()
@@ -2953,7 +2921,7 @@ class RGBControllerApp(QMainWindow):
             and self.smooth_wave_palette_combo.currentText() == "Custom 4-Color"
         )
         is_zones_enabled = (
-            mode_name in ("Static", "Breath", "Mouse-Reactive Aura", "Scanner (Cylon)", "Reactive Typing")
+            mode_name in ("Static", "Breath", "Mouse-Reactive Aura", "Scanner (Cylon)", "Reactive Typing", "Live Audio Visualizer")
             or smooth_wave_custom
         )
         self.colors_group.setEnabled(is_zones_enabled)
@@ -3478,6 +3446,9 @@ class RGBControllerApp(QMainWindow):
                     _battery_cache["percent"] = battery.percent
                     _battery_cache["charging"] = battery.power_plugged
                     _battery_cache["last_update"] = time.monotonic()
+                    if hasattr(self, "effect_manager"):
+                        self.effect_manager.update_config("battery_percent", battery.percent)
+                        self.effect_manager.update_config("battery_charging", battery.power_plugged)
         except Exception:
             pass
 
@@ -3571,7 +3542,7 @@ class RGBControllerApp(QMainWindow):
             factor = 1.0 - (step / float(steps - 1))
             faded = [int(c * factor) for c in start_colors]
             try:
-                self.kb.set_custom_colors(faded)
+                self.kb.set_colors(faded)
             except Exception:
                 pass
             time.sleep(delay)
@@ -3959,10 +3930,8 @@ class RGBControllerApp(QMainWindow):
 
     def on_reactive_rainbow_toggled(self, checked):
         self.update_mode_setting("reactive_rainbow", bool(checked))
-        if self.reactive_engine:
-            self.reactive_engine.rainbow_mode = bool(checked)
-            if not checked:
-                self.update_reactive_typing_settings()
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config("reactive_rainbow", bool(checked))
 
     @Slot(bool)
     def on_wave_fill_toggled(self, checked):
@@ -3982,11 +3951,12 @@ class RGBControllerApp(QMainWindow):
     def on_smooth_wave_palette_changed(self, palette_name):
         self.update_mode_setting("smooth_wave_palette", palette_name)
         self.apply_effect()
+        self.update_zone_color_controls_state()
 
     def on_reactive_style_changed(self, style_name):
         self.update_mode_setting("reactive_style", style_name)
-        if self.reactive_engine:
-            self.reactive_engine.style = style_name.lower()
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config("reactive_style", style_name.lower())
         self.update_zone_color_controls_state(
             "Smooth Wave"
             if self.mode_list.currentItem()
@@ -4120,22 +4090,14 @@ class RGBControllerApp(QMainWindow):
         super().focusOutEvent(event)
 
     def reset_mode_state(self):
-        self.lightning_strikes = []
-        self.next_lightning_time = 0.0
-        self.party_state = None
-        for attr in [
-            "meteor_last_tick",
-            "meteor_pos",
-            "meteor_dir",
-            "fire_state",
-            "scanner_pos",
-            "scanner_dir",
-        ]:
-            if hasattr(self, attr):
-                delattr(self, attr)
+        """Effect state is now managed inside each effect class — nothing to reset here."""
+        pass
 
     def tray_quit(self):
         self.force_quit = True
+        # Stop EffectManager first — turns off LEDs and releases HID
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.stop()
         try:
             if self.kb:
                 self.kb.set_effect("static")
@@ -4143,7 +4105,6 @@ class RGBControllerApp(QMainWindow):
         except Exception as e:
             print(f"Failed to turn off keyboard LEDs from tray quit: {e}")
         self.save_settings()
-        self.stop_visualizer()
         self.stop_temperature_worker()
         if hasattr(self, "hotkey_listener"):
             self.hotkey_listener.stop()
@@ -4309,6 +4270,28 @@ class RGBControllerApp(QMainWindow):
         return super().nativeEvent(eventType, message)
 
     @Slot()
+    def _tick_pomo_ui(self):
+        if not hasattr(self, 'pomo_running') or not self.pomo_running:
+            return
+        
+        if self.pomo_remaining_seconds > 0:
+            self.pomo_remaining_seconds -= 1
+            h = self.pomo_remaining_seconds // 3600
+            m = (self.pomo_remaining_seconds % 3600) // 60
+            s = self.pomo_remaining_seconds % 60
+            
+            self.pomo_hours.setValue(h)
+            self.pomo_minutes.setValue(m)
+            self.pomo_seconds.setValue(s)
+            self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
+            
+            if hasattr(self, 'effect_manager'):
+                self.effect_manager.update_config("pomo_remaining_seconds", self.pomo_remaining_seconds)
+        else:
+            self.pomo_is_finished = True
+            if hasattr(self, 'effect_manager'):
+                self.effect_manager.update_config("pomo_is_finished", True)
+
     def start_pomodoro(self):
         h = self.pomo_hours.value()
         m = self.pomo_minutes.value()
@@ -4346,6 +4329,12 @@ class RGBControllerApp(QMainWindow):
 
         # Update label immediately
         self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
+        
+        # Switch the actual keyboard effect
+        items = self.mode_list.findItems("Pomodoro Timer", Qt.MatchExactly)
+        if items:
+            self.mode_list.setCurrentItem(items[0])
+            self.apply_effect()
 
     @Slot()
     def stop_pomodoro(self):
@@ -4422,6 +4411,13 @@ class RGBControllerApp(QMainWindow):
                 f.write("stop")
         except Exception:
             pass
+            
+        if self.temperature_worker_process:
+            try:
+                self.temperature_worker_process.terminate()
+            except Exception:
+                pass
+            self.temperature_worker_process = None
 
     def on_mode_changed(self, mode_name):
         if mode_name is None:
@@ -4432,16 +4428,15 @@ class RGBControllerApp(QMainWindow):
             self.current_mode_name = mode_name
 
             if mode_name == "Temperature Mode":
-                self.start_temperature_worker()
+                # Use the new TemperatureMode effect instead of the legacy subprocess worker
+                if hasattr(self, "effect_manager"):
+                    self.effect_manager.set_effect("Temperature Mode")
             else:
                 self.stop_temperature_worker()
 
             if mode_name == "Reactive Typing":
                 self.update_reactive_typing_settings()
-                self.reactive_engine.start()
-            else:
-                self.reactive_engine.stop()
-
+            
             self.load_mode_controls(mode_name)
             self.update_mode_description(mode_name)
             self.update_zone_color_controls_state(mode_name)
@@ -4510,7 +4505,6 @@ class RGBControllerApp(QMainWindow):
                     w.hide()
                 for w in self.flicker_widgets:
                     w.show()
-                # (random mode removed)
                 # Enable zone color pickers so user can choose their static colors
                 self.colors_group.setEnabled(True)
                 self.colors_group.setStyleSheet(
@@ -4612,7 +4606,6 @@ class RGBControllerApp(QMainWindow):
             self.apply_preview_mode_policy(mode_name)
             self.sync_control_label_widths()
             self.save_runtime_state_settings()
-            self.transition_ticks = 15
             self.apply_effect()
 
     def resizeEvent(self, event):
@@ -4633,13 +4626,14 @@ class RGBControllerApp(QMainWindow):
         else:
             if hasattr(self, "telemetry"):
                 self.telemetry.stop()
-            self.stop_visualizer()
             self.stop_temperature_worker()
             if hasattr(self, "hotkey_listener"):
                 self.hotkey_listener.stop()
-            self.custom_timer.stop()
             if self.sct:
                 self.sct.close()
+            # Stop the EffectManager — this turns off LEDs and releases HID
+            if hasattr(self, 'effect_manager'):
+                self.effect_manager.stop()
             try:
                 if self.kb:
                     self.fade_out_lights()
@@ -4651,12 +4645,12 @@ class RGBControllerApp(QMainWindow):
             super().closeEvent(event)
 
     def on_bright_changed(self, value):
+        if hasattr(self, 'effect_manager'): self.effect_manager.update_config('brightness', value)
         mode_name = (
             self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
         )
         if "Live Audio Visualizer" in mode_name:
             self.bright_label.setText(f"Smoothness: {value}%")
-            self.schedule_live_visualizer_restart()
         else:
             self.bright_label.setText(f"Brightness: {value}%")
             self.apply_effect()
@@ -4664,6 +4658,7 @@ class RGBControllerApp(QMainWindow):
         self.update_mode_setting("brightness", value)
 
     def on_speed_changed(self, value):
+        if hasattr(self, 'effect_manager'): self.effect_manager.update_config('speed', value)
         mode_name = (
             self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
         )
@@ -4685,7 +4680,7 @@ class RGBControllerApp(QMainWindow):
             self.speed_label.setText(f"Animation Speed: {value}%")
         self.sync_control_label_widths()
         if "Live Audio Visualizer" in mode_name:
-            self.schedule_live_visualizer_restart()
+            pass
         else:
             self.apply_effect()
         self.update_mode_setting("speed", value)
@@ -4695,9 +4690,8 @@ class RGBControllerApp(QMainWindow):
         self.sync_control_label_widths()
         self.apply_effect()
         self.update_mode_setting("storm_intensity", value)
-
-    # Random mode removed; handler deleted
     def on_vibrance_changed(self, value):
+        if hasattr(self, 'effect_manager'): self.effect_manager.update_config('vibrance', value)
         self.vibrance_label.setText(f"Vibrance: {value / 10.0}x")
         self.sync_control_label_widths()
         self.update_mode_setting("vibrance", value)
@@ -4705,23 +4699,15 @@ class RGBControllerApp(QMainWindow):
     def on_ambient_fps_changed(self, value):
         self.ambient_fps_label.setText(f"Ambient FPS: {value}")
         self.sync_control_label_widths()
-        mode_name = (
-            self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
-        )
-        if "Ambient Screen Color" in mode_name:
-            # Update timer to reflect the exact new target framerate
-            self.current_timer_base_ms = self.compute_base_timer_interval(mode_name)
-            self.update_timer_interval()
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config('ambient_fps', value)
         self.update_mode_setting("ambient_fps", value)
 
     def on_flicker_changed(self, value):
         self.flicker_label.setText(f"Flicker Reduction: {value}")
         self.sync_control_label_widths()
-        mode_name = (
-            self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
-        )
-        if "Live Audio Visualizer" in mode_name:
-            self.schedule_live_visualizer_restart()
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config('flicker', value)
         self.update_mode_setting("flicker", value)
 
     def _get_spike_bbox(self, monitor):
@@ -4783,1324 +4769,84 @@ class RGBControllerApp(QMainWindow):
         self.spike_active = True
         self.spike_start_time = time.monotonic()
         # Force timer to run fast during test
-        self.custom_timer.start(15)
 
-    def schedule_live_visualizer_restart(self):
-        mode_name = (
-            self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
-        )
-        if mode_name != "Live Audio Visualizer":
-            return
-        if hasattr(self, "visualizer_restart_timer"):
-            self.visualizer_restart_timer.start()
-
-    def _run_live_visualizer_restart(self):
-        mode_name = (
-            self.mode_list.currentItem().text() if self.mode_list.currentItem() else ""
-        )
-        if mode_name != "Live Audio Visualizer":
-            return
-        self.apply_effect()
-
-    def _matches_visualizer_cmdline(self, cmdline):
-        if not cmdline:
-            return False
-        for arg in cmdline:
-            if str(arg).strip() == "--run-visualizer":
-                return True
-        for arg in cmdline:
-            try:
-                normalized_arg = os.path.normcase(os.path.abspath(str(arg)))
-            except Exception:
-                continue
-            if normalized_arg == self.visualizer_script_path:
-                return True
-        return False
-
-    def _collect_visualizer_pids(self):
-        pids = set()
-        if getattr(self, "visualizer_process", None) is not None:
-            proc = self.visualizer_process
-            if proc.poll() is None:
-                pids.add(proc.pid)
-        if not HAS_PSUTIL:
-            return pids
-        try:
-            for proc in psutil.process_iter(["pid", "ppid", "cmdline"]):
-                pid = proc.info.get("pid")
-                if not pid or pid == os.getpid():
-                    continue
-                cmdline = proc.info.get("cmdline") or []
-                if not self._matches_visualizer_cmdline(cmdline):
-                    continue
-                parent_pid = proc.info.get("ppid")
-                if parent_pid == os.getpid() or "--run-visualizer" in cmdline:
-                    pids.add(pid)
-        except Exception as e:
-            print(f"Failed to scan for visualizer processes: {e}")
-        return pids
-
-    def _force_kill_pid(self, pid):
-        try:
-            if sys.platform == "win32":
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/PID", str(pid)],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
-            else:
-                os.kill(pid, 9)
-        except Exception as e:
-            print(f"Failed to force-kill visualizer PID {pid}: {e}")
-
-    def _terminate_visualizer_pid(self, pid):
-        tracked_proc = getattr(self, "visualizer_process", None)
-        if tracked_proc is not None and tracked_proc.pid == pid:
-            try:
-                tracked_proc.terminate()
-                tracked_proc.wait(timeout=1.2)
-                return
-            except Exception:
-                self._force_kill_pid(pid)
-                try:
-                    tracked_proc.wait(timeout=1.2)
-                except Exception:
-                    pass
-                return
-
-        if HAS_PSUTIL:
-            try:
-                proc = psutil.Process(pid)
-                proc.terminate()
-                try:
-                    proc.wait(timeout=1.2)
-                except psutil.TimeoutExpired:
-                    self._force_kill_pid(pid)
-            except Exception:
-                self._force_kill_pid(pid)
-        else:
-            self._force_kill_pid(pid)
-
-    def stop_visualizer(self):
-        if hasattr(self, "visualizer_restart_timer"):
-            self.visualizer_restart_timer.stop()
-        visualizer_pids = self._collect_visualizer_pids()
-        for pid in visualizer_pids:
-            self._terminate_visualizer_pid(pid)
-        self.visualizer_process = None
-        self.visualizer_launch_signature = None
 
     def update_reactive_typing_settings(self):
-        if not hasattr(self, 'reactive_engine'): return
-        zone_colors = self.zone_colors
+        if not hasattr(self, 'effect_manager'): return
         val = self.speed_slider.value()
-        decay = max(0.005, (val / 100.0) * 0.05)
-        style = self.reactive_style_combo.currentText().lower()
-        rainbow = self.reactive_rainbow_cb.isChecked()
-        
-        self.reactive_engine.update_settings(zone_colors, decay, style, rainbow)
+        decay = max(0.01, 1.0 - (val / 100.0))
+        self.effect_manager.update_config("speed", val)
 
     def apply_effect(self):
-        # Stop the custom timer before applying a new effect
-        self.custom_timer.stop()
         if not self.mode_list.currentItem():
             return
-        else:
-            mode_name = self.mode_list.currentItem().text()
-            if mode_name != "Live Audio Visualizer" and hasattr(
-                self, "visualizer_restart_timer"
-            ):
-                self.visualizer_restart_timer.stop()
-            if self.sct:
-                self.sct.close()
-                self.sct = None
-            if "Live Audio Visualizer" not in mode_name:
-                self.stop_visualizer()
-            if self.kb is None and "Live Audio Visualizer" not in mode_name:
-                try:
-                    self.kb = L5PKeyboard()
-                    if hasattr(self, 'reactive_engine'):
-                        self.reactive_engine.set_keyboard_controller(self.kb)
-                except ValueError:
-                    return None
-            if self.refresh_power_policy_state():
-                if self.kb:
-                    self.kb.set_effect("static")
-                    self.kb.set_solid_color(0, 0, 0)
-                return
-            if "Live Audio Visualizer" in mode_name:
-                env = sanitized_child_env(
-                    os.environ, include_pythonpath=(not getattr(sys, "frozen", False)), force_re_extract=False
-                )
-                sensitivity_val = str(self.speed_slider.value())
-                smoothness_val = str(self.bright_slider.value())
-                flicker_val = str(self.flicker_slider.value())
-                # Pass zone colors as individual R G B args for all 4 zones
-                color_args = []
-                for c in self.zone_colors:
-                    color_args.extend([str(c[0]), str(c[1]), str(c[2])])
-
-                # When running from a bundled EXE (PyInstaller), there is no separate
-                # audio_visualizer.py file on disk. Use a special flag to tell the
-                # frozen executable to run the visualizer code path instead of
-                # attempting to execute a script file.
-                if getattr(sys, "frozen", False):
-                    cmd = [
-                        sys.executable,
-                        "--run-visualizer",
-                        sensitivity_val,
-                        smoothness_val,
-                        flicker_val,
-                    ] + color_args
-                else:
-                    script_cmd = os.path.join(
-                        os.path.dirname(__file__), "audio_visualizer.py"
-                    )
-                    cmd = [
-                        sys.executable,
-                        script_cmd,
-                        sensitivity_val,
-                        smoothness_val,
-                        flicker_val,
-                    ] + color_args
-
-                launch_signature = tuple(cmd)
-                if (
-                    self.visualizer_process
-                    and self.visualizer_process.poll() is None
-                    and self.visualizer_launch_signature == launch_signature
-                ):
-                    return
-
-                self.stop_visualizer()
-                if self.kb:
-                    self.kb.close()
-                    self.kb = None
-                    if hasattr(self, 'reactive_engine'):
-                        self.reactive_engine.set_keyboard_controller(self.kb)
-
-                import threading
-
-                flags = 0
-                if sys.platform == "win32":
-                    flags = subprocess.CREATE_NO_WINDOW
-
-                self.visualizer_process = subprocess.Popen(
-                    cmd,
-                    env=env,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    text=True,
-                    creationflags=flags,
-                )
-                self.visualizer_launch_signature = launch_signature
-
-                return
-            else:
-                if mode_name in self.SOFTWARE_MODES:
-                    if mode_name == "Reactive Typing":
-                        self.update_reactive_typing_settings()
-                        if hasattr(self, 'reactive_engine'):
-                            self.reactive_engine.start()
-                        return
-                    if self.kb:
-                        self.kb.set_effect("static")
-                        self.kb.set_brightness(2)
-                    if "Ambient Screen Color" in mode_name and HAS_MSS:
-                        self.sct = mss.mss()
-                    base_interval = self.compute_base_timer_interval(mode_name)
-                    self.current_timer_base_ms = base_interval
-                    self.custom_timer.start(self.get_effective_timer_interval())
-                    return
-                else:
-                    if mode_name == "Off":
-                        if self.kb:
-                            self.fade_out_lights()
-                        return
-                    effect = "static"
-                    with self.color_lock:
-                        self.custom_colors = [0] * 12
-                    wave_dir = self.wave_direction
-                    if "Breath" in mode_name:
-                        effect = "breath"
-                    else:
-                        if "Smooth" in mode_name:
-                            effect = "smooth"
-                        else:
-                            if "Wave" in mode_name:
-                                effect = "wave"
-                    if self.kb:
-                        self.kb.set_effect(effect)
-                        hw_bright = 1 if self.bright_slider.value() <= 50 else 2
-                        hw_speed = max(
-                            1, min(4, math.ceil(self.speed_slider.value() / 25.0))
-                        )
-                        self.kb.set_brightness(hw_bright)
-                        self.kb.set_speed(hw_speed)
-                        if effect == "wave":
-                            self.kb.wave_direction = wave_dir
-                            self.kb.refresh()
-                        flat_colors = []
-                        b_mult = self.bright_slider.value() / 100.0
-                        for c in self.zone_colors:
-                            flat_colors.extend(
-                                [
-                                    int(c[0] * b_mult),
-                                    int(c[1] * b_mult),
-                                    int(c[2] * b_mult),
-                                ]
-                            )
-                        self.kb.set_colors(flat_colors)
-
-    def compute_base_timer_interval(self, mode_name):
-        if "Ambient Screen Color" in mode_name:
-            fps = max(1, self.ambient_fps_slider.value())
-            return max(5, 1000 // fps)
-        elif "Pomodoro Timer" in mode_name or "Battery Visualizer" in mode_name:
-            return 1000
-        elif "Temperature Mode" in mode_name:
-            return 2000
-        return self.timer_interval_active_ms
-
-    def get_effective_timer_interval(self, base=None):
-        base_interval = (
-            base
-            if base is not None
-            else (self.current_timer_base_ms or self.timer_interval_active_ms)
-        )
-        if self.is_window_active:
-            return int(base_interval)
-        return int(
-            max(base_interval * 2.5, base_interval + 50, self.timer_interval_idle_ms)
-        )
-
-    def update_timer_interval(self):
-        if self.custom_timer.isActive():
-            self.custom_timer.setInterval(self.get_effective_timer_interval())
-
-    def get_cpu_temp(self):
-        temp = 40.0
-        if not HAS_WMI:
-            return temp
-        try:
-            temp_info = wmi_obj.MSAcpi_ThermalZoneTemperature()[0]
-            return temp_info.CurrentTemperature / 10.0 - 273.15
-        except Exception:
-            try:
-                c = wmi.WMI()
-                tz = c.Win32_PerfFormattedData_Counters_ThermalZoneInformation()[0]
-                t = float(tz.Temperature) - 273.15
-                
-                import ctypes
-                try:
-                    is_admin = ctypes.windll.shell32.IsUserAnAdmin()
-                except Exception:
-                    is_admin = False
-                    
-                if (t == 27.85 or t == 27.8) and not is_admin:
-                    return "REQUIRES_ADMIN"
-                return t
-            except Exception:
-                pass
-        return temp
-
-    def _fast_hsv_to_rgb(self, h, s, v):
-        if not hasattr(self, "_hsv_cache"):
-            self._hsv_cache = {}
-        k = (round(h, 3), round(s, 2), round(v, 2))
-        if k not in self._hsv_cache:
-            self._hsv_cache[k] = colorsys.hsv_to_rgb(h, s, v)
-        return self._hsv_cache[k]
-
-    def update_custom_effects(self):
-        # MED-007: Frame Skipping
-        now = time.time()
-        if hasattr(self, "_last_frame_time"):
-            delta = now - self._last_frame_time
-            expected = self.current_timer_base_ms / 1000.0 if hasattr(self, "current_timer_base_ms") and self.current_timer_base_ms else 0.05
-            if delta > expected * 2.5: # Lagging behind significantly
-                self._last_frame_time = now
-                return
-        self._last_frame_time = now
         
-        # ***<module>.RGBControllerApp.update_custom_effects: Failure: Compilation Error
-        if not self.kb:
+        mode_name = self.mode_list.currentItem().text()
+        
+        if self.refresh_power_policy_state():
+            self.stop_temperature_worker()
+            if hasattr(self, "effect_manager"):
+                self.effect_manager.turn_off()
             return
-        else:
-            if not self.mode_list.currentItem():
-                return
+
+        if self.kb is None:
+            if hasattr(self, "effect_manager"):
+                self.kb = self.effect_manager.reacquire_keyboard()
             else:
-                mode_name = self.mode_list.currentItem().text()
-                if self._is_power_policy_forcing_off:
+                self.kb = RGBKeyboard()
+
+        if hasattr(self, "effect_manager"):
+            if mode_name in self.HARDWARE_MODES:
+                self.effect_manager.set_effect(None)
+                if not self.kb:
+                    return
+                hw_speed = max(1, min(4, int(self.speed_slider.value() / 25) + 1))
+                hw_brightness = max(1, min(4, int(self.bright_slider.value() / 25) + 1))
+                bright_mult = self.bright_slider.value() / 100.0
+                colors = [int(c * bright_mult) for rgb in self.zone_colors for c in rgb]
+                if mode_name == "Static":
+                    self.kb.set_effect("static")
+                    self.kb.set_colors(colors)
+                elif mode_name == "Breath":
+                    self.kb.set_effect("breath", speed=hw_speed, brightness=hw_brightness)
+                    self.kb.set_colors(colors)
+                elif mode_name == "Wave":
+                    self.kb.set_effect("wave", speed=hw_speed, brightness=hw_brightness, direction=self.wave_direction)
+                elif mode_name == "Smooth":
+                    self.kb.set_effect("smooth", speed=hw_speed, brightness=hw_brightness)
+                elif mode_name == "Off":
                     self.kb.set_effect("static")
                     self.kb.set_solid_color(0, 0, 0)
-                    return
-                # (random mode removed) — continue with normal effect updates
-
-                speed_mult = self.speed_slider.value() / 50.0
-                t = time.monotonic()
-                with self.color_lock:
-                    target_colors = list(self.custom_colors)
-                smooth_amount = 0.5
-                try:
-                    if "Smooth Wave" in mode_name:
-                        smooth_amount = 0.1
-                        t *= speed_mult
-                        dir_mult = (
-                            (-0.15) if self.smooth_wave_direction == "left" else 0.15
-                        )
-                        if self.wave_fill_cb.isChecked():
-                            total_cycles = int(t)
-                            phase = t % 1.0
-                            fill_palette = self.get_smooth_wave_fill_palette()
-                            prev_idx = total_cycles % len(fill_palette)
-                            next_idx = (total_cycles + 1) % len(fill_palette)
-                            r_prev, g_prev, b_prev = fill_palette[prev_idx]
-                            r_next, g_next, b_next = fill_palette[next_idx]
-                            for i in range(4):
-                                x = (
-                                    i * 0.25
-                                    if self.smooth_wave_direction == "left"
-                                    else (3 - i) * 0.25
-                                )
-                                
-                                # W is the width of the blending gradient. 
-                                # A wider width means a much smoother, sweeping gradient across multiple zones.
-                                W = 0.6 
-                                
-                                # B sweeps from -W to max_x + W to ensure the gradient perfectly clears the keyboard
-                                B = -W + phase * (0.75 + 2.0 * W)
-                                
-                                # Calculate linear blend for this zone
-                                blend = (B - x) / W
-                                blend = max(0.0, min(1.0, blend))
-                                
-                                # Apply sine easing for a silky ease-in-out transition
-                                blend = (1.0 - math.cos(blend * math.pi)) / 2.0
-                                
-                                R = r_prev * (1 - blend) + r_next * blend
-                                G = g_prev * (1 - blend) + g_next * blend
-                                B = b_prev * (1 - blend) + b_next * blend
-                                target_colors[i * 3] = R
-                                target_colors[i * 3 + 1] = G
-                                target_colors[i * 3 + 2] = B
-                        else:
-                            for i in range(4):
-                                hue = (t + i * dir_mult) % 1.0
-                                r, g, b = self._fast_hsv_to_rgb(hue, 1.0, 1.0)
-                                target_colors[i * 3] = r * 255
-                                target_colors[i * 3 + 1] = g * 255
-                                target_colors[i * 3 + 2] = b * 255
-                    elif "Temperature Mode" in mode_name:
-                        if getattr(self, "temp_last_read_time", 0) + 1.0 < t:
-                            self.temp_last_read_time = t
-                            out_file = os.path.join(
-                                tempfile.gettempdir(), "4zone_temperatures.json"
-                            )
-                            self.last_temps = {"cpu": 0.0, "gpu": 0.0}
-                            if os.path.exists(out_file):
-                                try:
-                                    with open(out_file, "r") as f:
-                                        self.last_temps = json.load(f)
-                                        print(
-                                            f"[Temperature Mode] CPU: {self.last_temps.get('cpu', 0.0):.1f}°C | GPU: {self.last_temps.get('gpu', 0.0):.1f}°C | ERR: {self.last_temps.get('error')}"
-                                        )
-                                except Exception:
-                                    pass
-
-                        temps = getattr(self, "last_temps", {"cpu": 0.0, "gpu": 0.0})
-
-                        if temps.get("cpu", 0.0) > 100 or temps.get("gpu", 0.0) > 100:
-                            smooth_amount = 1.0
-                        else:
-                            smooth_amount = 0.015
-
-                        def _temp_color(temp):
-                            if temp < 40:
-                                return (0, 0, 255)
-                            elif temp < 60:
-                                b = (temp - 40) / 20.0
-                                return (int(b * 255), 255, int((1 - b) * 255))
-                            elif temp < 80:
-                                b = (temp - 60) / 20.0
-                                return (255, int(255 - b * 90), 0)
-                            elif temp < 90:
-                                b = (temp - 80) / 10.0
-                                return (255, int(165 - b * 115), 0)
-                            elif temp <= 100:
-                                return (255, 0, 0)
-                            else:
-                                return (
-                                    (255, 0, 0) if (int(t * 4) % 2) == 0 else (0, 0, 0)
-                                )
-
-                        cpu_col = _temp_color(temps.get("cpu", 0.0))
-                        gpu_col = _temp_color(temps.get("gpu", 0.0))
-
-                        target_colors[0], target_colors[1], target_colors[2] = cpu_col
-                        target_colors[3], target_colors[4], target_colors[5] = cpu_col
-                        target_colors[6], target_colors[7], target_colors[8] = gpu_col
-                        target_colors[9], target_colors[10], target_colors[11] = gpu_col
+            else:
+                if self.kb:
+                    self.kb.set_effect("static")
+                self.effect_manager.update_config("speed", self.speed_slider.value())
+                self.effect_manager.update_config("brightness", self.bright_slider.value())
+                self.effect_manager.update_config("zone_colors", self.zone_colors)
+                self.effect_manager.update_config("vibrance", self.vibrance_slider.value())
+                self.effect_manager.update_config("flicker", self.flicker_slider.value())
+                
+                self.effect_manager.update_config("storm_intensity", getattr(self, "storm_intensity", 50))
+                self.effect_manager.update_config("ambient_fps", getattr(self, "ambient_fps", 30))
+                
+                self.effect_manager.update_config("wave_fill", self.wave_fill_cb.isChecked())
+                self.effect_manager.update_config("wave_direction", self.wave_direction)
+                self.effect_manager.update_config("smooth_wave_direction", self.smooth_wave_direction)
+                self.effect_manager.update_config("smooth_wave_palette", self.smooth_wave_palette_combo.currentText())
+                self.effect_manager.update_config("reactive_style", self.reactive_style_combo.currentText().lower())
+                self.effect_manager.update_config("reactive_rainbow", self.reactive_rainbow_cb.isChecked())
+                self.effect_manager.update_config("scanner_rainbow", self.scanner_rainbow_cb.isChecked())
+                
+                if _battery_cache.get("last_update", 0) > 0:
+                    self.effect_manager.update_config("battery_percent", _battery_cache.get("percent", 100))
+                    self.effect_manager.update_config("battery_charging", _battery_cache.get("charging", False))
+                
+                if hasattr(self, "pomo_remaining_seconds"):
+                    self.effect_manager.update_config("pomo_remaining_seconds", self.pomo_remaining_seconds)
+                    self.effect_manager.update_config("pomo_total_seconds", self.pomo_total_seconds)
+                    self.effect_manager.update_config("pomo_is_finished", self.pomo_is_finished)
                     
-                    elif "Valorant Spike Timer" in mode_name:
-                        smooth_amount = 0.5
-                        if getattr(self, "spike_active", False):
-                            elapsed = t - self.spike_start_time
-                            if elapsed >= 48.0:
-                                self.spike_active = False
-                                self.spike_cooldown_until = t + 15.0
-                                self.custom_timer.start(self.get_effective_timer_interval())
-                                for i in range(12): target_colors[i] = 0
-                            elif elapsed >= 45.0:
-                                fade = max(0.0, 1.0 - ((elapsed - 45.0) / 3.0))
-                                val = int(255 * fade)
-                                for i in range(12): target_colors[i] = val
-                            elif elapsed >= 42.5:
-                                if int(elapsed * 20) % 2 == 0:
-                                    for i in range(12): target_colors[i] = 255
-                                else:
-                                    for i in range(4):
-                                        target_colors[i*3], target_colors[i*3+1], target_colors[i*3+2] = (255, 0, 0)
-                            else:
-                                bps = 1.0
-                                if elapsed >= 35.0: bps = 4.0
-                                elif elapsed >= 25.0: bps = 2.0
-                                
-                                beat_phase = (elapsed * bps) % 1.0
-                                if beat_phase < 0.15: intensity = 1.0
-                                else: intensity = max(0.0, 1.0 - ((beat_phase - 0.15) * 2.0))
-                                
-                                val = int(255 * intensity)
-                                dim_red = 20
-                                for i in range(4):
-                                    target_colors[i*3] = max(dim_red, val)
-                                    target_colors[i*3+1] = 0
-                                    target_colors[i*3+2] = 0
-                        else:
-                            for i in range(12): target_colors[i] = 0
-                            if HAS_MSS and (not hasattr(self, "spike_cooldown_until") or t > self.spike_cooldown_until):
-                                if not hasattr(self, "last_spike_scan") or (t - self.last_spike_scan) > 0.1:
-                                    self.last_spike_scan = t
-                                    try:
-                                        with mss.mss() as sct:
-                                            monitor = sct.monitors[1]
-                                            bbox = self._get_spike_bbox(monitor)
-                                            sct_img = sct.grab(bbox)
-                                            raw = sct_img.bgra
-                                            total_pixels = bbox["width"] * bbox["height"]
-                                            red_match = 0
-                                            white_match = 0
-                                            tr, tg, tb = self.spike_target_red
-                                            th, ts, tv = colorsys.rgb_to_hsv(tr/255.0, tg/255.0, tb/255.0)
-                                            
-                                            for i in range(0, len(raw), 4):
-                                                b, g, r = raw[i], raw[i+1], raw[i+2]
-                                                h, s, v = colorsys.rgb_to_hsv(r/255.0, g/255.0, b/255.0)
-                                                
-                                                # Check Bright Core (The spike icon is a very bright cyan/white)
-                                                if v > 0.8 and s < 0.35:
-                                                    white_match += 1
-                                                else:
-                                                    # Check Red Hexagon
-                                                    hd = abs(h - th)
-                                                    if hd > 0.5: hd = 1.0 - hd
-                                                    
-                                                    if hd < 0.1 and s > 0.4 and v > 0.4: 
-                                                        red_match += 1
-                                            
-                                            # We need a solid presence of Red, and the bright Spike core.
-                                            # Red text will fail this because it has no bright core.
-                                            if red_match > (total_pixels * 0.4) and white_match > 2:
-                                                self.spike_active = True
-                                                self.spike_start_time = t
-                                                self.custom_timer.start(15)
-                                    except Exception:
-                                        pass
-
-                    else:
-                        if "Lightning" in mode_name:
-                            if not hasattr(self, "lightning_strikes"):
-                                self.lightning_strikes = []
-                            if not hasattr(self, "next_lightning_time"):
-                                self.next_lightning_time = 0.0
-
-                            speed_factor = max(0.2, self.speed_slider.value() / 100.0)
-                            storm_factor = (
-                                max(0.05, self.storm_slider.value() / 100.0)
-                                if hasattr(self, "storm_slider")
-                                else 0.5
-                            )
-
-                            storm_wave = 0.35 + 0.15 * math.sin(t * 0.6)
-                            base_r = 4 + int(6 * storm_wave)
-                            base_g = 9 + int(14 * storm_wave)
-                            base_b = 24 + int(32 * storm_wave)
-                            for i in range(4):
-                                target_colors[i * 3] = base_r
-                                target_colors[i * 3 + 1] = base_g
-                                target_colors[i * 3 + 2] = base_b
-
-                            if t >= self.next_lightning_time:
-                                spawn_chance = (0.35 + 0.55 * speed_factor) * (
-                                    0.5 + 1.5 * storm_factor
-                                )
-                                spawn_chance = min(0.98, spawn_chance)
-                                if random.random() < spawn_chance:
-                                    primary_zone = random.randrange(4)
-
-                                    strike_type = "small"
-                                    r = random.random()
-                                    if r > 0.85:
-                                        strike_type = "huge"
-                                    elif r > 0.45:
-                                        strike_type = "medium"
-
-                                    if strike_type == "small":
-                                        branch_count = random.choice([1, 1, 2])
-                                        pre_ticks = random.randint(1, 2)
-                                        flash_ticks = random.randint(1, 2)
-                                        flicker_ticks = random.randint(1, 3)
-                                        after_ticks = random.randint(4, 10)
-                                        bleed_mult = 0.14
-                                        colors = {
-                                            "main": [235, 245, 255],
-                                            "pre": [80, 130, 200],
-                                            "after": [45, 130, 245],
-                                        }
-                                    elif strike_type == "medium":
-                                        branch_count = random.choice([1, 2, 2, 3])
-                                        pre_ticks = random.randint(2, 3)
-                                        flash_ticks = random.randint(2, 4)
-                                        flicker_ticks = random.randint(3, 6)
-                                        after_ticks = random.randint(8, 18)
-                                        bleed_mult = 0.2
-                                        colors = {
-                                            "main": [255, 255, 255],
-                                            "pre": [95, 150, 215],
-                                            "after": [55, 150, 255],
-                                        }
-                                    else:
-                                        branch_count = random.choice([2, 3, 3, 4])
-                                        pre_ticks = random.randint(3, 5)
-                                        flash_ticks = random.randint(3, 8)
-                                        flicker_ticks = random.randint(6, 14)
-                                        after_ticks = random.randint(15, 40)
-                                        linger_boost = 1.0 + 1.8 * storm_factor
-                                        flash_ticks = max(
-                                            1, int(round(flash_ticks * linger_boost))
-                                        )
-                                        flicker_ticks = max(
-                                            1, int(round(flicker_ticks * linger_boost))
-                                        )
-                                        after_ticks = max(
-                                            1, int(round(after_ticks * linger_boost))
-                                        )
-                                        if random.random() < (
-                                            0.35 + 0.45 * storm_factor
-                                        ):
-                                            flash_ticks += random.randint(8, 50)
-                                            flicker_ticks += random.randint(10, 60)
-                                            after_ticks += random.randint(10, 50)
-                                        bleed_mult = 0.28
-                                        colors = {
-                                            "main": [255, 255, 255],
-                                            "pre": [110, 175, 235],
-                                            "after": [70, 165, 255],
-                                        }
-
-                                    zones = {primary_zone}
-                                    while len(zones) < branch_count:
-                                        zones.add(
-                                            (
-                                                primary_zone
-                                                + random.choice([-1, 1, 2, -2])
-                                            )
-                                            % 4
-                                        )
-
-                                    strike = {
-                                        "zones": list(zones),
-                                        "type": strike_type,
-                                        "stage": "pre",
-                                        "ticks_left": pre_ticks,
-                                        "flash_ticks": flash_ticks,
-                                        "flicker_ticks": flicker_ticks,
-                                        "after_ticks": after_ticks,
-                                        "after_total": None,
-                                        "main_color": colors["main"],
-                                        "pre_color": colors["pre"],
-                                        "after_color": colors["after"],
-                                        "bleed": bleed_mult,
-                                    }
-                                    strike["after_total"] = strike["after_ticks"]
-                                    self.lightning_strikes.append(strike)
-
-                                    base_gap = max(
-                                        0.35,
-                                        (2.1 - 1.5 * speed_factor)
-                                        * (1.2 - 0.7 * storm_factor),
-                                    )
-                                    self.next_lightning_time = t + random.uniform(
-                                        base_gap * 0.6, base_gap * 1.3
-                                    )
-
-                            smooth_amount = 0.9
-                            active_strikes = []
-
-                            for strike in self.lightning_strikes:
-                                # Staged strike: pre-flash -> flash -> flicker -> blue afterglow
-                                stage = strike["stage"]
-                                color = strike["pre_color"]
-                                intensity = 0.3
-
-                                if stage == "pre":
-                                    intensity = 0.35 + random.random() * 0.25
-                                    strike["ticks_left"] -= 1
-                                    if strike["ticks_left"] <= 0:
-                                        strike["stage"] = "flash"
-                                        strike["ticks_left"] = strike["flash_ticks"]
-                                elif stage == "flash":
-                                    color = strike["main_color"]
-                                    intensity = 1.0
-                                    strike["ticks_left"] -= 1
-                                    if strike["ticks_left"] <= 0:
-                                        strike["stage"] = "flicker"
-                                        strike["ticks_left"] = strike["flicker_ticks"]
-                                elif stage == "flicker":
-                                    color = [200, 220, 255]
-                                    # Smoothly fade intensity in and out instead of random jumps
-                                    intensity = 0.775 + 0.225 * math.sin(t * 25.0)
-                                    strike["ticks_left"] -= 1
-                                    if strike["ticks_left"] <= 0:
-                                        strike["stage"] = "after"
-                                        strike["ticks_left"] = strike["after_ticks"]
-                                else:
-                                    color = strike["after_color"]
-                                    decay = strike["ticks_left"] / float(
-                                        strike["after_total"]
-                                    )
-                                    intensity = 0.25 + 0.5 * decay
-                                    strike["ticks_left"] -= 1
-
-                                if stage in ("flash", "flicker"):
-                                    stage_smooth = (
-                                        0.05 if strike["type"] != "huge" else 0.03
-                                    )
-                                else:
-                                    stage_smooth = (
-                                        0.35 if strike["type"] != "huge" else 0.3
-                                    )
-                                smooth_amount = min(smooth_amount, stage_smooth)
-
-                                for z in strike["zones"]:
-                                    idx = z * 3
-                                    target_colors[idx] = max(
-                                        target_colors[idx], color[0] * intensity
-                                    )
-                                    target_colors[idx + 1] = max(
-                                        target_colors[idx + 1], color[1] * intensity
-                                    )
-                                    target_colors[idx + 2] = max(
-                                        target_colors[idx + 2], color[2] * intensity
-                                    )
-
-                                if stage in ("flash", "flicker"):
-                                    bleed = (
-                                        strike["bleed"]
-                                        if stage == "flash"
-                                        else strike["bleed"] * 0.55
-                                    )
-                                    for i in range(4):
-                                        idx = i * 3
-                                        target_colors[idx] = max(
-                                            target_colors[idx], 160 * bleed
-                                        )
-                                        target_colors[idx + 1] = max(
-                                            target_colors[idx + 1], 190 * bleed
-                                        )
-                                        target_colors[idx + 2] = max(
-                                            target_colors[idx + 2], 255 * bleed
-                                        )
-
-                                if strike["ticks_left"] > 0:
-                                    active_strikes.append(strike)
-
-                            self.lightning_strikes = active_strikes
-                        else:
-                            if "Party" in mode_name:
-                                speed_factor = max(
-                                    0.2, self.speed_slider.value() / 100.0
-                                )
-                                bpm = (
-                                    90 + 120 * speed_factor
-                                )  # 90–210 BPM mapped to speed
-                                beat_len = 60.0 / bpm
-                                smooth_amount = 0.12
-
-                                if (
-                                    not hasattr(self, "party_state")
-                                    or not self.party_state
-                                ):
-                                    self.party_state = {
-                                        "last_t": t,
-                                        "acc": 0.0,
-                                        "palette": [255, 0, 0] * 4,
-                                        "strobe": 0,
-                                        "zone_pops": [1.0] * 4,
-                                    }
-
-                                # Time bookkeeping
-                                dt = max(0.0, t - self.party_state["last_t"])
-                                self.party_state["last_t"] = t
-                                self.party_state["acc"] += dt
-
-                                # Spawn a new beat palette when we cross the beat boundary
-                                while self.party_state["acc"] >= beat_len:
-                                    self.party_state["acc"] -= beat_len
-                                    palette = []
-                                    for i in range(4):
-                                        # Pure random neon hues to break the "wave" look
-                                        hue = random.random()
-                                        sat = 0.8 + 0.2 * random.random()
-                                        val = 0.9 + 0.1 * random.random()
-                                        r, g, b = colorsys.hsv_to_rgb(hue, sat, val)
-                                        palette.extend([r * 255, g * 255, b * 255])
-                                    self.party_state["palette"] = palette
-
-                                    # Chance to trigger a short strobe burst on beat
-                                    if random.random() < 0.18 * speed_factor:
-                                        self.party_state["strobe"] = random.randint(
-                                            2, 4
-                                        )
-
-                                # EDM Saw-wave sidechain pump
-                                beat_phase = self.party_state["acc"] / max(
-                                    beat_len, 1e-6
-                                )
-                                pulse = 0.4 + 0.6 * (1.0 - beat_phase)
-
-                                # Snap color changes immediately on the downbeat
-                                if beat_phase < 0.15:
-                                    smooth_amount = 0.05
-
-                                # Strobe override when active
-                                is_strobing = False
-                                if self.party_state["strobe"] > 0:
-                                    smooth_amount = 0.02
-                                    pulse = 1.0
-                                    is_strobing = True
-                                    self.party_state["strobe"] -= 1
-
-                                # Apply palette with pulse and per-zone confetti pops that decay
-                                if "zone_pops" not in self.party_state:
-                                    self.party_state["zone_pops"] = [1.0] * 4
-                                zone_pops = self.party_state["zone_pops"]
-                                decay = 0.82 + 0.12 * speed_factor
-                                max_pop = 1.32
-
-                                for i in range(4):
-                                    if is_strobing:
-                                        # Blinding white strobe override
-                                        base_r, base_g, base_b = 255, 255, 255
-                                    else:
-                                        base_r = self.party_state["palette"][i * 3]
-                                        base_g = self.party_state["palette"][i * 3 + 1]
-                                        base_b = self.party_state["palette"][i * 3 + 2]
-
-                                    # Decay any prior pop
-                                    zone_pops[i] = 1.0 + (zone_pops[i] - 1.0) * decay
-
-                                    if random.random() < 0.06 * speed_factor:
-                                        zone_pops[i] = max(
-                                            zone_pops[i], 1.18 + 0.18 * random.random()
-                                        )
-                                        smooth_amount = min(smooth_amount, 0.08)
-
-                                    pop = min(zone_pops[i], max_pop)
-
-                                    target_colors[i * 3] = min(
-                                        255, base_r * pulse * pop
-                                    )
-                                    target_colors[i * 3 + 1] = min(
-                                        255, base_g * pulse * pop
-                                    )
-                                    target_colors[i * 3 + 2] = min(
-                                        255, base_b * pulse * pop
-                                    )
-
-                                self.party_state["zone_pops"] = zone_pops
-                            elif "Realistic Fire" in mode_name:
-                                # Fire flickers intensely and independently per zone
-                                smooth_amount = max(
-                                    0.01,
-                                    0.25 - (self.speed_slider.value() / 100.0) * 0.2,
-                                )
-
-                                if not hasattr(self, "fire_state"):
-                                    self.fire_state = [
-                                        random.random() for _ in range(4)
-                                    ]
-
-                                t = time.time() * speed_mult * 3.0
-
-                                for i in range(4):
-                                    # Simulate fire flickering with random jitter and sine heat wave
-                                    heat_wave = math.sin(t + i * 1.5) * 0.3
-                                    jitter = (random.random() - 0.5) * 0.9 * speed_mult
-                                    self.fire_state[i] = max(
-                                        0.1, min(1.0, self.fire_state[i] + jitter + heat_wave * 0.2)
-                                    )
-
-                                    intensity = self.fire_state[i]
-
-                                    if random.random() < 0.12 * speed_mult:
-                                        # Frequent, powerful bright pops (embers)
-                                        intensity = min(1.0, intensity + 0.6)
-                                        self.fire_state[i] = intensity
-
-                                    # Deep Red/Orange Fire: Maximize R, sharply limit G (to keep orange sparse), near zero B
-                                    r = 255 * min(
-                                        1.0, intensity * 2.0
-                                    )  # Pushed harder for saturated red
-                                    
-                                    # Ensure base heat always keeps red active
-                                    r = max(40, r)
-                                    
-                                    g = (
-                                        60 * intensity * (0.3 + 0.6 * random.random())
-                                    )  # Halved G to suppress bright yellow/orange
-                                    b = (
-                                        5 * intensity * random.random()
-                                    )  # Almost completely kill B
-
-                                    target_colors[i * 3] = r
-                                    target_colors[i * 3 + 1] = g
-                                    target_colors[i * 3 + 2] = b
-                            elif "Scanner (Cylon)" in mode_name:
-                                # Speed slider controls sweep speed
-                                smooth_amount = (
-                                    0.85 - (self.speed_slider.value() / 100.0) * 0.4
-                                )
-
-                                if not hasattr(self, "scanner_pos"):
-                                    self.scanner_pos = 0.0
-                                    self.scanner_dir = 1.0  # 1 for right, -1 for left
-
-                                # Move scanner position
-                                sweep_speed = (
-                                    0.05 + (self.speed_slider.value() / 100.0) * 0.15
-                                )
-                                self.scanner_pos += self.scanner_dir * sweep_speed
-
-                                # Bounce logic considering there are 4 zones (index 0 to 3)
-                                if self.scanner_pos > 3.0:
-                                    self.scanner_pos = 3.0
-                                    self.scanner_dir = -1.0
-                                elif self.scanner_pos < 0.0:
-                                    self.scanner_pos = 0.0
-                                    self.scanner_dir = 1.0
-
-                                for i in range(4):
-                                    # Calculate distance from current scanner position
-                                    dist = abs(self.scanner_pos - i)
-
-                                    # Exponential falloff for a glowing laser tail
-                                    intensity = math.exp(-(dist ** 2) * 1.5)
-
-                                    # Global brightness is applied at the end of the loop
-
-                                    if self.scanner_rainbow_cb.isChecked():
-                                        # Use a sweeping rainbow hue independent of scanner position
-                                        hue = (t * 0.5) % 1.0
-                                        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-                                        target_colors[i * 3] = r * 255 * intensity
-                                        target_colors[i * 3 + 1] = g * 255 * intensity
-                                        target_colors[i * 3 + 2] = b * 255 * intensity
-                                    else:
-                                        target_colors[i * 3] = (
-                                            self.zone_colors[i][0] * intensity
-                                        )
-                                        target_colors[i * 3 + 1] = (
-                                            self.zone_colors[i][1] * intensity
-                                        )
-                                        target_colors[i * 3 + 2] = (
-                                            self.zone_colors[i][2] * intensity
-                                        )
-                            elif "Aurora Borealis" in mode_name:
-                                smooth_amount = 0.05
-                                speed = (self.speed_slider.value() / 100.0) * 0.5 + 0.1
-
-                                # Aurora colors: Deep Purples, Teals, and Greens
-                                aurora_hues = [
-                                    0.45,
-                                    0.55,
-                                    0.70,
-                                    0.85,
-                                ]  # Green to Purple
-
-                                for i in range(4):
-                                    # Slowly shifting sine wave across time and space
-                                    wave = math.sin(t * speed + (i * 1.5)) * 0.5 + 0.5
-                                    # Slowly shifting hue index
-                                    hue_idx = (t * speed * 0.3 + (i * 0.2)) % len(
-                                        aurora_hues
-                                    )
-                                    h1 = aurora_hues[int(hue_idx)]
-                                    h2 = aurora_hues[
-                                        (int(hue_idx) + 1) % len(aurora_hues)
-                                    ]
-                                    blend = hue_idx - int(hue_idx)
-
-                                    # Interpolate hue
-                                    final_hue = h1 * (1 - blend) + h2 * blend
-                                    r, g, b = colorsys.hsv_to_rgb(
-                                        final_hue, 1.0, wave
-                                    )
-
-                                    target_colors[i * 3] = int(r * 255)
-                                    target_colors[i * 3 + 1] = int(g * 255)
-                                    target_colors[i * 3 + 2] = int(b * 255)
-                            elif "Meteor Shower" in mode_name:
-                                smooth_amount = 0.8  # Very fast transition
-
-                                if not hasattr(self, "meteor_last_tick"):
-                                    self.meteor_last_tick = time.monotonic()
-                                    self.meteor_pos = -1.0
-                                    self.meteor_dir = 1.0
-
-                                # Meteor moves fast, with long periods of darkness
-                                # Speed determines how often a meteor strikes
-                                strike_freq = (
-                                    self.speed_slider.value() / 100.0
-                                ) * 2.0 + 0.5
-
-                                now = time.monotonic()
-                                dt = now - self.meteor_last_tick
-                                self.meteor_last_tick = now
-
-                                # Meteor movement
-                                if self.meteor_pos < -2.0 or self.meteor_pos > 5.0:
-                                    # Random chance to spawn a meteor if one isn't active
-                                    if random.random() < strike_freq * dt:
-                                        self.meteor_dir = random.choice([-1.0, 1.0])
-                                        self.meteor_pos = (
-                                            -1.0 if self.meteor_dir == 1.0 else 4.0
-                                        )
-                                else:
-                                    # Move active meteor very fast
-                                    meteor_speed = 15.0  # Units per second
-                                    self.meteor_pos += (
-                                        self.meteor_dir * meteor_speed * dt
-                                    )
-
-                                for i in range(4):
-                                    # Calculate distance to meteor head
-                                    dist = self.meteor_dir * (self.meteor_pos - i)
-
-                                    # Default to off
-                                    r, g, b = 0, 0, 0
-
-                                    # Only light up if meteor has passed this zone (forming a tail behind it)
-                                    if dist > 0 and dist < 3.0:
-                                        # Sharp falloff for the tail
-                                        intensity = max(0.0, 1.0 - (dist / 2.0) ** 2)
-                                        # Tail transitions from Yellow -> Orange -> Deep Red based on distance
-                                        if dist < 1.0:
-                                            # Yellowish-Orange
-                                            r, g, b = (
-                                                255,
-                                                int(200 * (1.0 - dist * 0.5)),
-                                                0,
-                                            )
-                                        else:
-                                            # Orange to Red fading out
-                                            r, g, b = (
-                                                255,
-                                                int(
-                                                    100
-                                                    * max(0.0, 1.0 - (dist - 1.0) / 2.0)
-                                                ),
-                                                0,
-                                            )
-
-                                        # Apply tail fade intensity
-                                        r, g, b = (
-                                            r * intensity,
-                                            g * intensity,
-                                            b * intensity,
-                                        )
-
-                                    elif dist > -0.5 and dist <= 0:
-                                        # The glowing head leading the meteor (Bright White/Cyan core)
-                                        r, g, b = 255, 255, 200
-
-                                    target_colors[i * 3] = int(r)
-                                    target_colors[i * 3 + 1] = int(g)
-                                    target_colors[i * 3 + 2] = int(b)
-                            else:
-                                if "Battery Visualizer" in mode_name:
-                                    smooth_amount = 0.5
-                                    # Use cached battery data to avoid repeated system calls each frame
-                                    percent = _battery_cache.get("percent", 0)
-                                    charging = _battery_cache.get("charging", True)
-
-                                    # Determine the base color and active zones count
-                                    if charging:
-                                        if percent >= 100:
-                                            base_color = [0, 255, 0]  # Green when full
-                                            active_zones_max = 4
-                                        else:
-                                            base_color = [
-                                                0,
-                                                0,
-                                                255,
-                                            ]  # Blue when charging
-                                            active_zones_max = (percent // 25) + 1
-                                    else:
-                                        if percent <= 25:
-                                            base_color = [255, 0, 0]  # Red
-                                            active_zones_max = 1
-                                        elif percent <= 50:
-                                            base_color = [255, 128, 0]  # Orange
-                                            active_zones_max = 2
-                                        else:
-                                            base_color = [255, 255, 255]  # White
-                                            active_zones_max = 3 if percent <= 75 else 4
-
-                                    for i in range(4):
-                                        # Percentage within this specific zone's range (0-25 per zone)
-                                        zone_min = i * 25
-                                        zone_max = (i + 1) * 25
-
-                                        if percent >= zone_max:
-                                            # Fully charged zone
-                                            brightness_mult = 1.0
-                                        elif percent > zone_min:
-                                            # Partial zone filling
-                                            brightness_mult = (
-                                                percent - zone_min
-                                            ) / 25.0
-                                        else:
-                                            # Not reached yet
-                                            brightness_mult = 0.0
-
-                                        # Apply the "tier" color logically
-                                        # Lower zones inherit the color of the current active tier
-                                        if i < active_zones_max:
-                                            target_colors[i * 3] = (
-                                                base_color[0] * brightness_mult
-                                            )
-                                            target_colors[i * 3 + 1] = (
-                                                base_color[1] * brightness_mult
-                                            )
-                                            target_colors[i * 3 + 2] = (
-                                                base_color[2] * brightness_mult
-                                            )
-                                        else:
-                                            target_colors[i * 3] = 0
-                                            target_colors[i * 3 + 1] = 0
-                                            target_colors[i * 3 + 2] = 0
-                                elif "Mouse-Reactive Aura" in mode_name:
-                                    # Lower smoothing from 0.8 to 0.2 so it snaps to the cursor instantly
-                                    # but retains a tiny bit of motion blur.
-                                    smooth_amount = 0.2
-                                    try:
-                                        cursor_pos = QCursor.pos()
-                                        screen = QApplication.primaryScreen()
-                                        if screen:
-                                            screen_width = screen.size().width()
-                                            # Clamp mouse X to screen bounds
-                                            mouse_x = max(
-                                                0, min(screen_width, cursor_pos.x())
-                                            )
-
-                                            # Create a point illumination at the mouse position
-                                            for i in range(4):
-                                                # Coordinate of this zone's center on the screen (0.0 to 1.0 range)
-                                                zone_center_ratio = (i + 0.5) / 4.0
-                                                mouse_ratio = mouse_x / screen_width
-
-                                                # Calculate distance (0.0 to 1.0)
-                                                dist = abs(
-                                                    zone_center_ratio - mouse_ratio
-                                                )
-
-                                                # Gaussian bloom curve for a soft, spherical aura
-                                                intensity = math.exp(-(dist ** 2) * 20.0)
-
-                                                # Use current zone color with intensity
-                                                target_colors[i * 3] = (
-                                                    self.zone_colors[i][0] * intensity
-                                                )
-                                                target_colors[i * 3 + 1] = (
-                                                    self.zone_colors[i][1] * intensity
-                                                )
-                                                target_colors[i * 3 + 2] = (
-                                                    self.zone_colors[i][2] * intensity
-                                                )
-                                    except Exception as e:
-                                        # Throttle error logging to avoid spam
-                                        now = time.monotonic()
-                                        error_msg = str(e)
-                                        if (
-                                            _mouse_aura_error_throttle["last_error"]
-                                            != error_msg
-                                            or now
-                                            - _mouse_aura_error_throttle["last_time"]
-                                            > 5.0
-                                        ):
-                                            print(f"Mouse aura calculation error: {e}")
-                                            _mouse_aura_error_throttle["last_error"] = (
-                                                error_msg
-                                            )
-                                            _mouse_aura_error_throttle["last_time"] = (
-                                                now
-                                            )
-                                elif "Pomodoro Timer" in mode_name:
-                                    if self.pomo_running:
-                                        now = time.monotonic()
-                                        if now - self.pomo_last_tick >= 1.0:
-                                            self.pomo_last_tick = now
-                                            if self.pomo_remaining_seconds > 0:
-                                                self.pomo_remaining_seconds -= 1
-                                                # Update UI live
-                                                h = self.pomo_remaining_seconds // 3600
-                                                m = (
-                                                    self.pomo_remaining_seconds % 3600
-                                                ) // 60
-                                                s = self.pomo_remaining_seconds % 60
-                                                self.pomo_hours.setValue(h)
-                                                self.pomo_minutes.setValue(m)
-                                                self.pomo_seconds.setValue(s)
-                                                self.pomo_fs_label.setText(
-                                                    f"{h:02d}:{m:02d}:{s:02d}"
-                                                )
-                                            else:
-                                                self.pomo_is_finished = True
-
-                                        if self.pomo_is_finished:
-                                            # Sharp blink every half second (not smooth)
-                                            smooth_amount = 0.0
-                                            self.pomo_flash_on = int(now * 2) % 2 == 0
-                                            f = 1 if self.pomo_flash_on else 0
-                                            for i in range(4):
-                                                target_colors[i * 3] = 255 * f
-                                                target_colors[i * 3 + 1] = 252 * f
-                                                target_colors[i * 3 + 2] = 248 * f
-                                        elif self.pomo_remaining_seconds <= 5:
-                                            # Final Countdown (Last 5 Seconds): Smooth pulse every alternate second
-                                            # Sine wave pulse (period 2s)
-                                            pulse = 0.5 + 0.5 * math.sin(now * math.pi)
-                                            for i in range(4):
-                                                target_colors[i * 3] = 255 * pulse
-                                                target_colors[i * 3 + 1] = 252 * pulse
-                                                target_colors[i * 3 + 2] = 248 * pulse
-                                            # Slower smoothing for the "smooth" pulse feel
-                                            smooth_amount = 0.3
-                                        else:
-                                            # Animation completes at 5 seconds remaining
-                                            # progress goes from 0.0 to 1.0 as remaining goes from total to 5
-                                            effective_total = max(
-                                                1, self.pomo_total_seconds - 5
-                                            )
-                                            progress = 1.0 - (
-                                                (self.pomo_remaining_seconds - 5)
-                                                / effective_total
-                                            )
-
-                                            # Zonal Draining (Left to Right)
-                                            for i in range(4):
-                                                zone_start = i * 0.25
-                                                zone_end = (i + 1) * 0.25
-
-                                                if progress <= zone_start:
-                                                    intensity = 1.0
-                                                elif progress >= zone_end:
-                                                    intensity = 0.0
-                                                else:
-                                                    # Partial draining
-                                                    intensity = 1.0 - (
-                                                        (progress - zone_start) / 0.25
-                                                    )
-
-                                                target_colors[i * 3] = 255 * intensity
-                                                target_colors[i * 3 + 1] = (
-                                                    252 * intensity
-                                                )
-                                                target_colors[i * 3 + 2] = (
-                                                    248 * intensity
-                                                )
-                                    else:
-                                        for i in range(12):
-                                            target_colors[i] = 0
-                                else:
-                                    if "Ambient Screen Color" in mode_name:
-                                        # Fast mode lowers the smoothing amount so it transitions immediately
-                                        # Calculate smoothing per frame depending on requested update speed
-                                        smooth_amount = max(
-                                            0.01,
-                                            min(
-                                                1.0,
-                                                15.0 / self.ambient_fps_slider.value(),
-                                            ),
-                                        )
-                                        vib_mult = self.vibrance_slider.value() / 10.0
-                                        if self.sct:
-                                            monitor = self.sct.monitors[1]
-                                            bbox = {
-                                                "top": monitor["top"] + monitor["height"] - 100,
-                                                "left": monitor["left"],
-                                                "width": monitor["width"],
-                                                "height": 100
-                                            }
-                                            sct_img = self.sct.grab(bbox)
-                                            img = Image.frombytes(
-                                                "RGB",
-                                                sct_img.size,
-                                                sct_img.bgra,
-                                                "raw",
-                                                "BGRX",
-                                            )
-                                            img = img.resize(
-                                                (4, 1), Image.Resampling.BOX
-                                            )
-                                            pixels = [img.getpixel((i, 0)) for i in range(4)]
-                                            for i in range(4):
-                                                r, g, b = pixels[i]
-                                                h, s, v = colorsys.rgb_to_hsv(
-                                                    r / 255, g / 255, b / 255
-                                                )
-                                                # Apply user vibrance setting
-                                                r, g, b = colorsys.hsv_to_rgb(
-                                                    h, min(1.0, s * vib_mult), v
-                                                )
-                                                target_colors[i * 3] = r * 255
-                                                target_colors[i * 3 + 1] = g * 255
-                                                target_colors[i * 3 + 2] = b * 255
-                    final_colors = []
-                    # Force slower smoothing during mode transitions
-                    if self.transition_ticks > 0:
-                        smooth_amount = 0.9
-                        self.transition_ticks -= 1
-
-                    bright_mult = self.bright_slider.value() / 100.0
-                    with self.color_lock:
-                        for i in range(12):
-                            new_val = self.custom_colors[i] * smooth_amount + target_colors[
-                                i
-                            ] * (1.0 - smooth_amount)
-                            self.custom_colors[i] = new_val
-                            final_val = new_val * bright_mult
-                            final_colors.append(int(max(0, min(255, final_val))))
-                    self.kb.set_colors(final_colors)
-                    
-                    # Broadcast to mobile app
-                    if hasattr(self, 'mobile_server') and self.mobile_server:
-                        hex_colors = ["#%02x%02x%02x" % (final_colors[i*3], final_colors[i*3+1], final_colors[i*3+2]) for i in range(4)]
-                        self.mobile_server.broadcast_colors(hex_colors)
-                except Exception as e:
-                    print(f"Effect calculation error: {e}")
+                self.effect_manager.set_effect(mode_name)
 class GifSplashScreen(QWidget):
     def __init__(self, gif_path, main_window):
         super().__init__()
@@ -6119,6 +4865,7 @@ class GifSplashScreen(QWidget):
         
         # Load GIF
         self.movie = QMovie(gif_path)
+        self.movie.setSpeed(150)  # Make animation 50% faster
         # Lock splash screen to the exact fixed ratio of the main app window
         self.setFixedSize(700, 400)
         
@@ -6139,7 +4886,7 @@ class GifSplashScreen(QWidget):
             
     def fade_out(self):
         self.animation = QPropertyAnimation(self, b"windowOpacity")
-        self.animation.setDuration(800)  # 800ms fade out
+        self.animation.setDuration(300)  # 300ms fade out (faster)
         self.animation.setStartValue(1.0)
         self.animation.setEndValue(0.0)
         self.animation.finished.connect(self.on_fade_finished)
