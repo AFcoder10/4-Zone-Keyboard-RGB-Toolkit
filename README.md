@@ -39,7 +39,7 @@ A modern, highly optimized hardware and software RGB visualization tool specific
 - Pomodoro Timer
 - Live Audio Visualizer
 - Temperature Mode
-
+- Reactive typing
 ## Hardware Compatibility
 
 **Officially Tested & Supported:**
