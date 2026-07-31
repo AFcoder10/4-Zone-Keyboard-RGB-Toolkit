@@ -276,6 +276,11 @@ class LogBuffer:
             self.lines.clear()
             self.current_chars = 0
 
+    def isatty(self):
+        if hasattr(self.orig, 'isatty'):
+            return self.orig.isatty()
+        return False
+
 
 # Install global buffers so prints and errors are captured
 _ORIG_STDOUT = sys.stdout
@@ -1088,6 +1093,13 @@ class RGBControllerApp(QMainWindow):
         
         self.mobile_server = MobileServer(self, port=6767)
         self.mobile_server.start()
+        
+        try:
+            from fastapi_server import FastAPIThread
+            self.fastapi_server = FastAPIThread(self, port=8000)
+            self.fastapi_server.start()
+        except Exception as e:
+            print(f"Failed to start FastAPI server: {e}")
         
         self.original_exe_path = _resolve_original_exe_path()
         self.setMinimumSize(500, 480)
@@ -2285,24 +2297,11 @@ class RGBControllerApp(QMainWindow):
 
         left_layout.addWidget(self.spike_timer_widget)
         left_layout.addWidget(self.preview_panel)
-        from core.config import SOFTWARE_MODES, HARDWARE_MODES
+        from core.config import SOFTWARE_MODES, HARDWARE_MODES, DEFAULT_CONTROL_SETTINGS, DEFAULT_MODE_SETTINGS
         self.SOFTWARE_MODES = SOFTWARE_MODES
         self.HARDWARE_MODES = HARDWARE_MODES
-        self.default_control_settings = {
-            "brightness": 100,
-            "speed": 20,
-            "storm_intensity": 50,
-            "vibrance": 15,
-            "ambient_fps": 30,
-            "flicker": 0,
-            "wave_fill": False,
-            "scanner_rainbow": False,
-            "reactive_rainbow": False,
-            "smooth_wave_palette": "RGBW",
-            "wave_direction": "left",
-            "smooth_wave_direction": "left",
-            "reactive_style": "Fade",
-        }
+        self.default_control_settings = dict(DEFAULT_CONTROL_SETTINGS)
+        self.DEFAULT_MODE_SETTINGS = DEFAULT_MODE_SETTINGS
         self.mode_settings = self.build_default_mode_settings()
         self.wave_direction = "left"
         self.smooth_wave_direction = "left"
@@ -2324,6 +2323,8 @@ class RGBControllerApp(QMainWindow):
         self.mode_description_label.setMinimumHeight(48)
         self.mode_description_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         right_layout.addWidget(self.mode_description_label)
+
+
 
         self.presets = {}
         preset_group = QGroupBox("Custom Presets")
@@ -2365,6 +2366,11 @@ class RGBControllerApp(QMainWindow):
         self.btn_export_presets.setCursor(Qt.PointingHandCursor)
         self.btn_export_presets.setStyleSheet(tool_btn_css)
         self.btn_export_presets.clicked.connect(self.export_presets)
+        self.btn_cloud_hub = QPushButton("☁️ Cloud Hub")
+        self.btn_cloud_hub.setFixedHeight(30)
+        self.btn_cloud_hub.setCursor(Qt.PointingHandCursor)
+        self.btn_cloud_hub.setStyleSheet("QPushButton { background-color: rgba(0, 229, 255, 0.1); color: #00E5FF; border-radius: 6px; border: 1px solid rgba(0, 229, 255, 0.3); padding: 0 10px; font-weight: 700; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.2); border: 1px solid #00E5FF; }")
+        self.btn_cloud_hub.clicked.connect(self.open_cloud_hub)
         self.update_preset_toolbar_layout(force=True)
 
         self.btn_reset_mode = QPushButton("Reset This Mode")
@@ -2788,16 +2794,12 @@ class RGBControllerApp(QMainWindow):
             )
 
     def build_default_mode_settings(self):
-        defaults = {
-            m: dict(self.default_control_settings)
-            for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES)
-        }
-        if "Live Audio Visualizer" in defaults:
-            defaults["Live Audio Visualizer"]["brightness"] = 0
-        if "Reactive Typing" in defaults:
-            defaults["Reactive Typing"]["speed"] = 60
-        if "Valorant Spike Timer" in defaults:
-            defaults["Valorant Spike Timer"]["spike_target_red"] = (224, 60, 49) # Default rough guess
+        defaults = {}
+        for m in (self.HARDWARE_MODES + self.SOFTWARE_MODES):
+            mode_dict = dict(self.default_control_settings)
+            if hasattr(self, "DEFAULT_MODE_SETTINGS") and m in self.DEFAULT_MODE_SETTINGS:
+                mode_dict.update(self.DEFAULT_MODE_SETTINGS[m])
+            defaults[m] = mode_dict
         return defaults
 
     def save_runtime_state_settings(self):
@@ -2880,6 +2882,7 @@ class RGBControllerApp(QMainWindow):
                 "btn_delete_preset",
                 "btn_import_presets",
                 "btn_export_presets",
+                "btn_cloud_hub",
             )
         ):
             return
@@ -2892,15 +2895,16 @@ class RGBControllerApp(QMainWindow):
         while self.preset_layout.count():
             self.preset_layout.takeAt(0)
 
-        for col in range(5):
+        for col in range(6):
             self.preset_layout.setColumnStretch(col, 0)
 
         if compact:
-            self.preset_layout.addWidget(self.preset_combo, 0, 0, 1, 5)
+            self.preset_layout.addWidget(self.preset_combo, 0, 0, 1, 6)
             self.preset_layout.addWidget(self.btn_save_preset, 1, 0)
             self.preset_layout.addWidget(self.btn_delete_preset, 1, 1)
             self.preset_layout.addWidget(self.btn_import_presets, 1, 3)
             self.preset_layout.addWidget(self.btn_export_presets, 1, 4)
+            self.preset_layout.addWidget(self.btn_cloud_hub, 1, 5)
             self.preset_layout.setColumnStretch(2, 1)
         else:
             self.preset_layout.addWidget(self.preset_combo, 0, 0)
@@ -2908,6 +2912,7 @@ class RGBControllerApp(QMainWindow):
             self.preset_layout.addWidget(self.btn_delete_preset, 0, 2)
             self.preset_layout.addWidget(self.btn_import_presets, 0, 3)
             self.preset_layout.addWidget(self.btn_export_presets, 0, 4)
+            self.preset_layout.addWidget(self.btn_cloud_hub, 0, 5)
             self.preset_layout.setColumnStretch(0, 1)
 
     def update_zone_color_controls_state(self, mode_name=None):
@@ -3989,6 +3994,14 @@ class RGBControllerApp(QMainWindow):
             (255.0, 252.0, 249.0),
         ]
 
+    def open_cloud_hub(self):
+        try:
+            from cloud_hub import CloudHubDialog
+            dialog = CloudHubDialog(self)
+            dialog.exec()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Cloud Hub:\n{str(e)}")
+
     def export_presets(self):
         if not self.presets:
             QMessageBox.information(
@@ -4848,6 +4861,7 @@ class RGBControllerApp(QMainWindow):
                     self.effect_manager.update_config("pomo_is_finished", self.pomo_is_finished)
                     
                 self.effect_manager.set_effect(mode_name)
+
 class GifSplashScreen(QWidget):
     def __init__(self, gif_path, main_window):
         super().__init__()
@@ -4896,7 +4910,6 @@ class GifSplashScreen(QWidget):
     def on_fade_finished(self):
         self.close()
         self.main_window.show()
-
 
 if __name__ == "__main__":
     # Support two ways to launch the audio visualizer:
