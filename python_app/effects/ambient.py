@@ -15,6 +15,12 @@ try:
 except ImportError:
     HAS_MSS = False
 
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 class AmbientEffect(BaseEffect):
     # Ambient should feel responsive — low smoothing so colors track the screen closely
     preferred_smoothing = 0.4
@@ -31,8 +37,8 @@ class AmbientEffect(BaseEffect):
         return "Ambient Screen Color"
 
     def start(self) -> bool:
-        if not HAS_MSS or not HAS_PIL:
-            print("[Ambient] mss and Pillow are required for Ambient Screen Color.")
+        if not HAS_MSS or not HAS_PIL or not HAS_NUMPY:
+            print("[Ambient] mss, Pillow, and numpy are required for Ambient Screen Color.")
             return False
         # Don't create mss here — it uses thread-local GDI handles on Windows.
         # The instance must be created on the same thread that calls grab().
@@ -92,17 +98,57 @@ class AmbientEffect(BaseEffect):
                     }
                 sct_img = self.sct.grab(bbox)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                img = img.resize((4, 1), Image.Resampling.BOX)
-                pixels = [img.getpixel((i, 0)) for i in range(4)]
+                
+                if is_full_screen:
+                    # Fast downscale to a manageable size
+                    img = img.resize((64, 16), Image.Resampling.BILINEAR)
+                    
+                    # Convert to numpy array of float32 for fast math
+                    arr = np.array(img, dtype=np.float32)
+                    
+                    # Split into 4 vertical zones
+                    zones = np.array_split(arr, 4, axis=1)
+                    
+                    for i in range(4):
+                        zone = zones[i]
+                        # Flatten spatial dimensions
+                        pixels = zone.reshape(-1, 3)
+                        r = pixels[:, 0]
+                        g = pixels[:, 1]
+                        b = pixels[:, 2]
+                        
+                        # Calculate chroma and brightness for weighting
+                        mx = np.maximum(np.maximum(r, g), b)
+                        mn = np.minimum(np.minimum(r, g), b)
+                        chroma = mx - mn
+                        
+                        # Weight = chroma * brightness + epsilon to avoid div-by-zero
+                        weights = (chroma * mx) + 0.001
+                        
+                        # Calculate the weighted average
+                        avg_r = np.average(r, weights=weights)
+                        avg_g = np.average(g, weights=weights)
+                        avg_b = np.average(b, weights=weights)
 
-                for i in range(4):
-                    r, g, b = pixels[i]
-                    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
-                    r, g, b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
+                        h, s, v = colorsys.rgb_to_hsv(avg_r / 255.0, avg_g / 255.0, avg_b / 255.0)
+                        final_r, final_g, final_b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
 
-                    target_colors[i * 3] = int(r * 255)
-                    target_colors[i * 3 + 1] = int(g * 255)
-                    target_colors[i * 3 + 2] = int(b * 255)
+                        target_colors[i * 3] = int(final_r * 255)
+                        target_colors[i * 3 + 1] = int(final_g * 255)
+                        target_colors[i * 3 + 2] = int(final_b * 255)
+                else:
+                    # Old BOX method for Bottom Only Ambience
+                    img = img.resize((4, 1), Image.Resampling.BOX)
+                    pixels = [img.getpixel((i, 0)) for i in range(4)]
+
+                    for i in range(4):
+                        r, g, b = pixels[i]
+                        h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+                        final_r, final_g, final_b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
+
+                        target_colors[i * 3] = int(final_r * 255)
+                        target_colors[i * 3 + 1] = int(final_g * 255)
+                        target_colors[i * 3 + 2] = int(final_b * 255)
             except Exception as e:
                 print(f"[Ambient] Screen capture error: {e}")
 
