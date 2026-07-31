@@ -74,12 +74,22 @@ class AmbientEffect(BaseEffect):
             try:
                 self._ensure_sct()
                 monitor = self.sct.monitors[1]
-                bbox = {
-                    "top": monitor["top"] + monitor["height"] - 100,
-                    "left": monitor["left"],
-                    "width": monitor["width"],
-                    "height": 100
-                }
+                
+                is_full_screen = self.config.get("ambient_full_screen", False)
+                if is_full_screen:
+                    bbox = {
+                        "top": monitor["top"],
+                        "left": monitor["left"],
+                        "width": monitor["width"],
+                        "height": monitor["height"]
+                    }
+                else:
+                    bbox = {
+                        "top": monitor["top"] + monitor["height"] - 100,
+                        "left": monitor["left"],
+                        "width": monitor["width"],
+                        "height": 100
+                    }
                 sct_img = self.sct.grab(bbox)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
                 img = img.resize((4, 1), Image.Resampling.BOX)

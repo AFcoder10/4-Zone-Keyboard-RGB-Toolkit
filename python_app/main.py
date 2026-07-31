@@ -1633,7 +1633,7 @@ class RGBControllerApp(QMainWindow):
         controls_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         self.controls_slot = QWidget()
         self.controls_slot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.controls_slot.setMinimumHeight(185)
+        self.controls_slot.setMinimumHeight(225)
         controls_slot_layout = QVBoxLayout(self.controls_slot)
         controls_slot_layout.setContentsMargins(0, 0, 0, 0)
         controls_slot_layout.setSpacing(0)
@@ -2109,6 +2109,17 @@ class RGBControllerApp(QMainWindow):
         self.wave_fill_cb.clicked.connect(self.on_wave_fill_toggled)
         self.wave_fill_cb.hide()
 
+        self.ambient_full_screen_cb = QPushButton("Full Screen Mode")
+        self.ambient_full_screen_cb.setCheckable(True)
+        self.ambient_full_screen_cb.setCursor(Qt.PointingHandCursor)
+        self.ambient_full_screen_cb.setStyleSheet(
+            "QPushButton { padding: 6px 12px; background-color: #1A1A1E; color: #E2E2E2; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-weight: 600; }"
+            "QPushButton:hover { background-color: rgba(0,229,255,0.08); }"
+            "QPushButton:checked { background-color: #00E5FF; color: #0E0E12; border: 1px solid #00E5FF; font-weight: 700; }"
+        )
+        self.ambient_full_screen_cb.clicked.connect(self.on_ambient_full_screen_toggled)
+        self.ambient_full_screen_cb.hide()
+
         self.smooth_wave_palette_combo = QComboBox()
         self.smooth_wave_palette_combo.addItems(["RGBW", "Pastel", "Custom 4-Color"])
         self.smooth_wave_palette_combo.setCurrentText("RGBW")
@@ -2152,6 +2163,7 @@ class RGBControllerApp(QMainWindow):
         bottom_layout.addWidget(self.smooth_wave_palette_combo)
         bottom_layout.addWidget(self.reactive_style_combo)
         bottom_layout.addWidget(self.wave_fill_cb)
+        bottom_layout.addWidget(self.ambient_full_screen_cb)
         controls_layout.addWidget(bottom_row, 7, 0, 1, 4, Qt.AlignVCenter)
 
         # Valorant Spike Timer specific controls
@@ -3490,6 +3502,7 @@ class RGBControllerApp(QMainWindow):
             self.preview_user_enabled = True
             self.preview_forced_by_mode = False
             self.wave_fill_cb.setChecked(False)
+            self.ambient_full_screen_cb.setChecked(False)
             self.scanner_rainbow_cb.setChecked(False)
             self.smooth_wave_palette_combo.setCurrentText("RGBW")
             self.update_preset_combos()
@@ -3573,6 +3586,7 @@ class RGBControllerApp(QMainWindow):
                 self.ambient_fps_slider,
                 self.flicker_slider,
                 self.wave_fill_cb,
+                self.ambient_full_screen_cb,
                 self.scanner_rainbow_cb,
                 self.smooth_wave_palette_combo,
             ]
@@ -3616,6 +3630,7 @@ class RGBControllerApp(QMainWindow):
                     bool(p.get("scanner_rainbow", False))
                 )
                 self.wave_fill_cb.setChecked(bool(p.get("wave_fill", False)))
+                self.ambient_full_screen_cb.setChecked(bool(p.get("ambient_full_screen", False)))
                 palette_name = p.get(
                     "smooth_wave_palette",
                     self.default_control_settings["smooth_wave_palette"],
@@ -3650,6 +3665,7 @@ class RGBControllerApp(QMainWindow):
                         "ambient_fps": self.ambient_fps_slider.value(),
                         "flicker": self.flicker_slider.value(),
                         "wave_fill": self.wave_fill_cb.isChecked(),
+                        "ambient_full_screen": self.ambient_full_screen_cb.isChecked(),
                         "scanner_rainbow": self.scanner_rainbow_cb.isChecked(),
                         "smooth_wave_palette": self.smooth_wave_palette_combo.currentText(),
                         "wave_direction": self.wave_direction,
@@ -3684,6 +3700,7 @@ class RGBControllerApp(QMainWindow):
                 "global_color": list(self.global_color),
                 "scanner_rainbow": self.scanner_rainbow_cb.isChecked(),
                 "wave_fill": self.wave_fill_cb.isChecked(),
+                "ambient_full_screen": self.ambient_full_screen_cb.isChecked(),
                 "smooth_wave_palette": self.smooth_wave_palette_combo.currentText(),
                 "wave_dir": self.wave_direction,
                 "smooth_wave_dir": self.smooth_wave_direction,
@@ -3797,6 +3814,9 @@ class RGBControllerApp(QMainWindow):
         self.wave_fill_cb.blockSignals(True)
         self.wave_fill_cb.setChecked(bool(settings.get("wave_fill", False)))
         self.wave_fill_cb.blockSignals(False)
+        self.ambient_full_screen_cb.blockSignals(True)
+        self.ambient_full_screen_cb.setChecked(bool(settings.get("ambient_full_screen", False)))
+        self.ambient_full_screen_cb.blockSignals(False)
         self.scanner_rainbow_cb.blockSignals(True)
         self.scanner_rainbow_cb.setChecked(bool(settings.get("scanner_rainbow", False)))
         self.scanner_rainbow_cb.blockSignals(False)
@@ -3932,6 +3952,12 @@ class RGBControllerApp(QMainWindow):
         self.update_mode_setting("reactive_rainbow", bool(checked))
         if hasattr(self, 'effect_manager'):
             self.effect_manager.update_config("reactive_rainbow", bool(checked))
+
+    @Slot(bool)
+    def on_ambient_full_screen_toggled(self, checked):
+        self.update_mode_setting("ambient_full_screen", bool(checked))
+        if self.effect_manager:
+            self.effect_manager.update_config("ambient_full_screen", bool(checked))
 
     @Slot(bool)
     def on_wave_fill_toggled(self, checked):
@@ -4489,6 +4515,7 @@ class RGBControllerApp(QMainWindow):
                     w.show()
                 for w in self.flicker_widgets:
                     w.hide()
+                self.ambient_full_screen_cb.show()
             elif "Live Audio Visualizer" in mode_name:
                 # In Live Audio Visualizer mode, hide vibrance (brightness boost) UI
                 for w in self.vibrance_widgets:
@@ -4521,6 +4548,7 @@ class RGBControllerApp(QMainWindow):
                     w.hide()
                 for w in self.flicker_widgets:
                     w.hide()
+                self.ambient_full_screen_cb.hide()
 
             if mode_name == "Pomodoro Timer":
                 # Hide all standard controls to isolate timer
@@ -4831,6 +4859,7 @@ class RGBControllerApp(QMainWindow):
                 self.effect_manager.update_config("ambient_fps", getattr(self, "ambient_fps", 30))
                 
                 self.effect_manager.update_config("wave_fill", self.wave_fill_cb.isChecked())
+                self.effect_manager.update_config("ambient_full_screen", self.ambient_full_screen_cb.isChecked())
                 self.effect_manager.update_config("wave_direction", self.wave_direction)
                 self.effect_manager.update_config("smooth_wave_direction", self.smooth_wave_direction)
                 self.effect_manager.update_config("smooth_wave_palette", self.smooth_wave_palette_combo.currentText())

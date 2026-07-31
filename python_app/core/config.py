@@ -30,6 +30,7 @@ DEFAULT_CONTROL_SETTINGS = {
     "storm_intensity": 50,
     "vibrance": 15,
     "ambient_fps": 30,
+    "ambient_full_screen": False,
     "flicker": 0,
     "wave_fill": False,
     "scanner_rainbow": False,

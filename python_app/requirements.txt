@@ -8,3 +8,5 @@ numpy
 PyAudioWPatch
 hidapi
 pyinstaller
+websockets
+pythonnet
