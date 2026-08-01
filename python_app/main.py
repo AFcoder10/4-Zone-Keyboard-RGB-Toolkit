@@ -110,7 +110,7 @@ import tempfile
 import traceback
 
 
-CURRENT_VERSION = "v2.91"
+CURRENT_VERSION = "v3.0"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -1054,10 +1054,13 @@ class RGBControllerApp(QMainWindow):
         left_layout.setSpacing(5)
         # Lift the Main Controls section up by an additional 25px total.
         left_layout.insertSpacing(0, -25)
-        right_layout = QVBoxLayout()
+        right_panel = QWidget()
+        right_panel.setMaximumWidth(340)
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(15)
-        split_layout.addLayout(left_layout, stretch=2)
-        split_layout.addLayout(right_layout, stretch=1)
+        split_layout.addLayout(left_layout, stretch=3)
+        split_layout.addWidget(right_panel, stretch=1)
         main_layout.addLayout(split_layout)
         controls_title = QLabel("Main Controls")
         controls_title.setStyleSheet(
