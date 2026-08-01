@@ -10,16 +10,34 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QIcon, QColor, QFont
 
+import base64
+
+def generate_obfuscated_url(url: str) -> str:
+    """
+    Utility helper to convert an official plaintext URL into a secure XOR + Base64 obfuscated string.
+    Usage in terminal:
+        python -c "from python_app.cloud_hub import generate_obfuscated_url; print(generate_obfuscated_url('https://your-firebase-url.firebaseio.com/marketplace.json'))"
+    """
+    xored = bytes(ord(c) ^ 0x5A for c in url)
+    return base64.b64encode(xored).decode('utf-8')
+
+def _decode_default_endpoint() -> str:
+    """
+    Reconstructs the default community marketplace database link in transient memory.
+    This prevents plaintext strings from appearing in Git or being extracted from compiled .exe binaries via strings.exe.
+    """
+    # Paste your obfuscated string produced by generate_obfuscated_url() inside the quotes below:
+    obfuscated = "Mi4uKilgdXUgNTQ/KD04LjU1NjEzLnc+Pzw7LzYudyguPjh0OykzO3cpNS8uMj87KS5rdDwzKD84Oyk/PjsuOzg7KT90OyoqdTc7KDE/Lio2Ozk/dDApNTQ="
+    if not obfuscated:
+        return ""
+    try:
+        decoded_bytes = base64.b64decode(obfuscated.encode('utf-8'))
+        return "".join(chr(b ^ 0x5A) for b in decoded_bytes)
+    except Exception:
+        return ""
+
 def get_firebase_url():
-    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
-    if os.path.exists(env_path):
-        with open(env_path, 'r', encoding='utf-8', errors='ignore') as f:
-            for line in f:
-                if '=' in line and not line.startswith('#'):
-                    key, val = line.strip().split('=', 1)
-                    if key.strip() == 'FIREBASE_DB_URL':
-                        return val.strip()
-    return ""
+    return _decode_default_endpoint()
 
 FIREBASE_URL = get_firebase_url()
 
@@ -29,7 +47,7 @@ class FetchCloudWorker(QThread):
 
     def run(self):
         if not FIREBASE_URL:
-            self.error.emit("Firebase URL is missing. Check your .env file.")
+            self.error.emit("Firebase endpoint configuration is missing or invalid.")
             return
             
         try:
@@ -53,7 +71,7 @@ class UploadCloudWorker(QThread):
 
     def run(self):
         if not FIREBASE_URL:
-            self.error.emit("Firebase URL is missing. Check your .env file.")
+            self.error.emit("Firebase endpoint configuration is missing or invalid.")
             return
             
         try:

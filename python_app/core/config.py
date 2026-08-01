@@ -20,7 +20,6 @@ SOFTWARE_MODES = [
     "Live Audio Visualizer",
     "Temperature Mode",
     "Reactive Typing",
-    "Valorant Spike Timer",
 ]
 
 HARDWARE_MODES = ["Off", "Static", "Breath", "Smooth", "Wave"]

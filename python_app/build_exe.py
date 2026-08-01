@@ -65,9 +65,10 @@ def build_standalone_exe():
         "--add-data=temperature_worker.py;.",
         "--add-data=wintemp.py;.",
         "--add-data=LibreHardwareMonitor;LibreHardwareMonitor",
-        # --- New packages (core/ and effects/) ---
+        # --- New packages (core/, effects/, and utils/) ---
         "--add-data=core;core",
         "--add-data=effects;effects",
+        "--add-data=utils;utils",
         # --- Hidden imports (stdlib + third-party) ---
         "--hidden-import=clr",
         "--hidden-import=System",
@@ -77,12 +78,27 @@ def build_standalone_exe():
         "--hidden-import=pynput.keyboard",
         "--hidden-import=pynput.keyboard._win32",
         "--hidden-import=colorsys",
+        "--hidden-import=urllib.request",
+        "--hidden-import=urllib.error",
+        "--hidden-import=json",
+        "--hidden-import=base64",
+        # --- Hidden imports (app top-level modules) ---
+        "--hidden-import=custom_builder_gui",
+        "--hidden-import=cloud_hub",
+        "--hidden-import=mobile_server",
+        "--hidden-import=fastapi_server",
+        "--hidden-import=temperature_worker",
+        "--hidden-import=wintemp",
         # --- Hidden imports (core package) ---
         "--hidden-import=core",
         "--hidden-import=core.base",
         "--hidden-import=core.keyboard",
         "--hidden-import=core.manager",
         "--hidden-import=core.config",
+        "--hidden-import=core.custom_effects_io",
+        # --- Hidden imports (utils package) ---
+        "--hidden-import=utils",
+        "--hidden-import=utils.chroma_utils",
         # --- Hidden imports (effects package) ---
         "--hidden-import=effects",
         "--hidden-import=effects.reactive_typing",
@@ -100,6 +116,7 @@ def build_standalone_exe():
         "--hidden-import=effects.ambient",
         "--hidden-import=effects.pomodoro",
         "--hidden-import=effects.audio_visualizer",
+        "--hidden-import=effects.custom_sequence",
         "main.py",
     ]
 
