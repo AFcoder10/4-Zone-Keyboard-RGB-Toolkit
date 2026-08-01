@@ -429,20 +429,20 @@ class UpdateDownloader(QThread):
         self._is_canceled = True
 
     def run(self):
+        tmp_dir = tempfile.gettempdir()
+        dest_path = os.path.join(tmp_dir, "4_Zone_Rgb_Toolkit_Updated.exe")
         try:
             req = urllib.request.Request(
                 self.url, headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=15) as response:
                 total_size = int(response.headers.get("content-length", 0))
-                tmp_dir = tempfile.gettempdir()
-                dest_path = os.path.join(tmp_dir, "4_Zone_Rgb_Toolkit_Updated.exe")
 
                 with open(dest_path, "wb") as f:
                     downloaded = 0
                     while True:
                         if self._is_canceled:
-                            return
+                            break
                         chunk = response.read(65536)
                         if not chunk:
                             break
@@ -451,9 +451,16 @@ class UpdateDownloader(QThread):
                         if total_size > 0:
                             percent = int((downloaded / total_size) * 100)
                             self.progress.emit(percent)
-                if not self._is_canceled:
-                    self.finished.emit(dest_path)
+            if self._is_canceled:
+                if os.path.exists(dest_path):
+                    try: os.remove(dest_path)
+                    except Exception: pass
+            else:
+                self.finished.emit(dest_path)
         except Exception as e:
+            if os.path.exists(dest_path):
+                try: os.remove(dest_path)
+                except Exception: pass
             if not self._is_canceled:
                 self.error.emit(str(e))
 import platform
@@ -1900,8 +1907,16 @@ class RGBControllerApp(QMainWindow):
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=10) as response:
                 data = json.loads(response.read().decode())
-                latest_version = data.get("tag_name", "")
+                latest_version = data.get("tag_name", "").strip()
                 if latest_version and latest_version != CURRENT_VERSION:
+                    def parse_ver(ver_str):
+                        s = str(ver_str).lower().lstrip("v").split("-")[0]
+                        parts = [int(x) if x.isdigit() else 0 for x in s.split(".") if x]
+                        while len(parts) < 3:
+                            parts.append(0)
+                        return tuple(parts[:3])
+                    if parse_ver(latest_version) <= parse_ver(CURRENT_VERSION):
+                        return
                     exe_url = ""
                     for asset in data.get("assets", []):
                         if asset.get("name", "").endswith(".exe"):
@@ -2016,7 +2031,7 @@ class RGBControllerApp(QMainWindow):
         pid = os.getpid()
         ppid = os.getppid()  # Get parent PID (the PyInstaller bootstrapper)
 
-        with open(ps_path, "w") as f:
+        with open(ps_path, "w", encoding="utf-8") as f:
             f.write(f"$pid = {pid}\n")
             f.write(f"$ppid = {ppid}\n")
             f.write('$src  = "' + _ps_escape(downloaded_exe) + '"\n')
@@ -2032,9 +2047,16 @@ class RGBControllerApp(QMainWindow):
                 "try { Wait-Process -Id $ppid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n"
             )
             f.write("Start-Sleep -Seconds 2\n")
-            f.write("\n# Perform the update\n")
+            f.write("\n# Perform the update with retry loop against file locks\n")
             f.write(
-                "Copy-Item -Path $src -Destination $dest -Force -ErrorAction SilentlyContinue\n"
+                "for ($i = 0; $i -lt 10; $i++) {\n"
+                "    try {\n"
+                "        Copy-Item -Path $src -Destination $dest -Force -ErrorAction Stop\n"
+                "        break\n"
+                "    } catch {\n"
+                "        Start-Sleep -Seconds 1\n"
+                "    }\n"
+                "}\n"
             )
             f.write("\n# Cleanup and restart\n")
             f.write("Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n")
