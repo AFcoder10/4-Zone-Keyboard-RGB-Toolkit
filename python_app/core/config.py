@@ -20,6 +20,7 @@ SOFTWARE_MODES = [
     "Live Audio Visualizer",
     "Temperature Mode",
     "Reactive Typing",
+    "Valorant Spike Timer",
 ]
 
 HARDWARE_MODES = ["Off", "Static", "Breath", "Smooth", "Wave"]
@@ -40,6 +41,101 @@ DEFAULT_CONTROL_SETTINGS = {
     "reactive_style": "Fade",
 }
 
+# Mode-by-mode specific default configuration values
+DEFAULT_MODE_SETTINGS = {
+    # Hardware Modes
+    "Off": {
+        "brightness": 0,
+    },
+    "Static": {
+        "brightness": 100,
+    },
+    "Breath": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Smooth": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Wave": {
+        "brightness": 100,
+        "speed": 20,
+        "wave_direction": "left",
+        "wave_fill": False,
+    },
+    # Software Modes
+    "Smooth Wave": {
+        "brightness": 100,
+        "speed": 20,
+        "smooth_wave_direction": "left",
+        "smooth_wave_palette": "RGBW",
+        "flicker": 0,
+    },
+    "Lightning": {
+        "brightness": 100,
+        "speed": 20,
+        "storm_intensity": 50,
+    },
+    "Party": {
+        "brightness": 100,
+        "speed": 20,
+        "flicker": 0,
+    },
+    "Realistic Fire": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Scanner (Cylon)": {
+        "brightness": 100,
+        "speed": 20,
+        "scanner_rainbow": False,
+    },
+    "Aurora Borealis": {
+        "brightness": 100,
+        "speed": 20,
+        "flicker": 0,
+    },
+    "Meteor Shower": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Ambient Screen Color": {
+        "brightness": 100,
+        "ambient_fps": 30,
+        "vibrance": 15,
+    },
+    "Battery Visualizer": {
+        "brightness": 100,
+    },
+    "Mouse-Reactive Aura": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Pomodoro Timer": {
+        "brightness": 100,
+    },
+    "Live Audio Visualizer": {
+        "brightness": 0,
+        "speed": 20,
+        "flicker": 0,
+    },
+    "Temperature Mode": {
+        "brightness": 100,
+        "speed": 20,
+    },
+    "Reactive Typing": {
+        "brightness": 100,
+        "speed": 60,
+        "reactive_style": "Fade",
+        "reactive_rainbow": False,
+    },
+    "Valorant Spike Timer": {
+        "brightness": 100,
+        "spike_target_red": (224, 60, 49),
+    },
+}
+
 # UI Metadata - Hints for the main UI on which controls to show for which effect
 EFFECT_METADATA = {
     "Smooth Wave": {"type": EFFECT_TYPE_SOFTWARE, "has_direction": True, "has_palette": True, "has_speed": True, "has_flicker": True},
@@ -56,6 +152,7 @@ EFFECT_METADATA = {
     "Pomodoro Timer": {"type": EFFECT_TYPE_SOFTWARE},
     "Live Audio Visualizer": {"type": EFFECT_TYPE_EXTERNAL, "has_speed": True, "has_flicker": True, "has_colors": True},
     "Temperature Mode": {"type": EFFECT_TYPE_EXTERNAL, "has_speed": True},
+    "Valorant Spike Timer": {"type": EFFECT_TYPE_SOFTWARE},
 }
 
 # General Constants

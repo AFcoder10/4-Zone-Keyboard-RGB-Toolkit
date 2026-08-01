@@ -30,7 +30,7 @@ class ScannerEffect(BaseEffect):
         
         speed = self.config.get("speed", 50)
         rainbow_mode = self.config.get("scanner_rainbow", False)
-        zone_colors = self.config.get("zone_colors", [[255, 0, 0]] * 4)
+        zone_colors = self.config.get("zone_colors", [[255, 0, 0] for _ in range(4)])
 
         # Move scanner position
         # Multiplying dt by 30 to match original fixed 30fps step sizes (sweep_speed was added per frame)

@@ -31,7 +31,7 @@ class MouseAuraEffect(BaseEffect):
 
     def update(self, dt: float) -> List[int]:
         target_colors = [0] * 12
-        zone_colors = self.config.get("zone_colors", [[255, 0, 0]] * 4)
+        zone_colors = self.config.get("zone_colors", [[255, 0, 0] for _ in range(4)])
         
         try:
             cursor_pos = QCursor.pos()

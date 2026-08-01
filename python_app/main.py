@@ -87,6 +87,20 @@ from mobile_server import MobileServer
 import winreg
 from core.keyboard import RGBKeyboard
 from core.manager import EffectManager
+from custom_builder_gui import (
+    _normalize_hotkey_key_name,
+    FadeDialog,
+    AnimatedSlider,
+    AnimatedInfoIcon,
+    GlowButton,
+    CustomTitleBar,
+    LogsDialog,
+    KeyboardPreviewWidget,
+    HotkeyDialog,
+    HotkeyRecorderButton,
+    GifSplashScreen,
+    EffectStudioDialog,
+)
 import threading
 from threading import Lock
 from collections import deque
@@ -141,38 +155,7 @@ def _guid_equals(a, b):
 _battery_cache = {"percent": 0, "charging": True, "last_update": 0}
 
 
-def _normalize_hotkey_key_name(key_name, shift_active=False):
-    if not key_name:
-        return ""
-    key_name = str(key_name).lower().strip()
-    if shift_active:
-        # Map shift-modified symbols back to their base number keys for consistency
-        shift_map = {
-            "!": "1",
-            "@": "2",
-            "#": "3",
-            "£": "3",
-            "$": "4",
-            "₹": "4",
-            "€": "4",
-            "%": "5",
-            "^": "6",
-            "&": "7",
-            "*": "8",
-            "(": "9",
-            ")": "0",
-            "_": "-",
-            "+": "=",
-            "{": "[",
-            "}": "]",
-            ":": ";",
-            '"': "'",
-            "<": ",",
-            ">": ".",
-            "?": "/",
-        }
-        key_name = shift_map.get(key_name, key_name)
-    return key_name
+
 
 
 def _resolve_original_exe_path():
@@ -291,562 +274,7 @@ sys.stdout = _STDOUT_BUFFER
 sys.stderr = _STDERR_BUFFER
 
 
-class FadeDialog(QDialog):
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.setWindowOpacity(0.0)
-        self.fade_in = QPropertyAnimation(self, b"windowOpacity")
-        self.fade_in.setDuration(200)
-        self.fade_in.setStartValue(0.0)
-        self.fade_in.setEndValue(1.0)
-        self.fade_in.setEasingCurve(QEasingCurve.OutCubic)
-        self.fade_in.start()
 
-    def closeEvent(self, event):
-        if not hasattr(self, "_closing"):
-            self._closing = True
-            event.ignore()
-            self.fade_out = QPropertyAnimation(self, b"windowOpacity")
-            self.fade_out.setDuration(150)
-            self.fade_out.setStartValue(1.0)
-            self.fade_out.setEndValue(0.0)
-            self.fade_out.finished.connect(self.close)
-            self.fade_out.start()
-        else:
-            event.accept()
-
-
-class AnimatedSlider(QSlider):
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            opt = QStyleOptionSlider()
-            self.initStyleOption(opt)
-            sr = self.style().subControlRect(
-                QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self
-            )
-            if not sr.contains(event.position().toPoint()):
-                # Jump to click position smoothly
-                val = (
-                    self.minimum()
-                    + ((self.maximum() - self.minimum()) * event.position().x())
-                    / self.width()
-                )
-                self.set_animated_value(int(val))
-                event.accept()
-                return
-        super().mousePressEvent(event)
-
-    def set_animated_value(self, val):
-        if not hasattr(self, "anim"):
-            self.anim = QPropertyAnimation(self, b"value")
-            self.anim.setDuration(150)
-            self.anim.setEasingCurve(QEasingCurve.OutCubic)
-        self.anim.stop()
-        self.anim.setStartValue(self.value())
-        self.anim.setEndValue(val)
-        self.anim.start()
-class AnimatedInfoIcon(QLabel):
-    def __init__(self, tooltip_text, parent=None):
-        super().__init__("ⓘ", parent)
-        self.setToolTip(tooltip_text)
-        self.setCursor(Qt.PointingHandCursor)
-        
-        self.anim = QVariantAnimation(self)
-        self.anim.setDuration(150)
-        self.anim.valueChanged.connect(self._on_color_change)
-        self._on_color_change(QColor(122, 131, 143, 128))
-        
-    def _on_color_change(self, color):
-        self.setStyleSheet(f"color: {color.name(QColor.HexArgb)}; font-size: 14px; font-weight: bold;")
-        
-    def enterEvent(self, event):
-        self.anim.stop()
-        self.anim.setStartValue(QColor(122, 131, 143, 128))
-        self.anim.setEndValue(QColor(122, 131, 143, 255))
-        self.anim.start()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.anim.stop()
-        self.anim.setStartValue(QColor(122, 131, 143, 255))
-        self.anim.setEndValue(QColor(122, 131, 143, 128))
-        self.anim.start()
-        super().leaveEvent(event)
-
-
-class GlowButton(QPushButton):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setCursor(Qt.PointingHandCursor)
-        self.fade_effect = QGraphicsOpacityEffect(self)
-        self.fade_effect.setOpacity(0.9)
-        self.setGraphicsEffect(self.fade_effect)
-
-    def enterEvent(self, event):
-        self.fade_effect.setOpacity(1.0)
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.fade_effect.setOpacity(0.9)
-        super().leaveEvent(event)
-
-    def mousePressEvent(self, event):
-        self.fade_effect.setOpacity(0.7)
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        self.fade_effect.setOpacity(1.0)
-        super().mouseReleaseEvent(event)
-
-
-class CustomTitleBar(QWidget):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.parent = parent
-        self.setFixedHeight(35)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(15, 0, 15, 0)
-        layout.setSpacing(8)
-        self.btn_close = QPushButton()
-        self.setup_button(self.btn_close, "#FF605C", "#FF0000")
-        self.btn_close.clicked.connect(self.parent.close)
-        self.btn_settings = QPushButton()
-        self.btn_settings.setIcon(
-            QIcon(os.path.join(os.path.dirname(__file__), "assets", "settings.svg"))
-        )
-        self.btn_settings.setIconSize(QSize(18, 18))
-        self.btn_settings.setFixedSize(24, 24)
-        self.btn_settings.setStyleSheet(
-            "\n            QPushButton {\n                background: transparent;\n                border: none;\n                margin-bottom: 2px;\n            }\n            QPushButton:hover {\n                background-color: rgba(255, 255, 255, 30);\n                border-radius: 4px;\n            }\n        "
-        )
-        self.btn_settings.clicked.connect(self.parent.toggle_settings)
-
-
-        self.btn_help = QPushButton("Help")
-        self.btn_help.setFixedHeight(22)
-        self.btn_help.setCursor(Qt.PointingHandCursor)
-        self.btn_help.setToolTip("Help / Report Issue")
-        self.btn_help.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: 1px solid rgba(255,255,255,0.3);
-                border-radius: 4px;
-                color: #00E5FF;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 0 10px;
-                margin-bottom: 2px;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 229, 255, 0.1);
-            }
-        """)
-
-        self.btn_help.clicked.connect(self.parent.show_help_dialog)
-
-        layout.addWidget(self.btn_settings)
-        layout.addWidget(self.btn_help)
-        spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        layout.addItem(spacer)
-        self.btn_minimize = QPushButton()
-        self.setup_button(self.btn_minimize, "#FFBD44", "#FFA500")
-        self.btn_minimize.clicked.connect(self.parent.minimize_app)
-        self.btn_maximize = QPushButton()
-        self.setup_button(self.btn_maximize, "#00CA4E", "#008000")
-        self.btn_maximize.clicked.connect(self.toggle_maximize)
-        layout.addWidget(self.btn_minimize)
-        layout.addWidget(self.btn_maximize)
-        layout.addWidget(self.btn_close)
-        self.start_pos = None
-
-    def setup_button(self, btn, color, hover_color):
-        # ***<module>.CustomTitleBar.setup_button: Failure: Compilation Error
-        btn.setFixedSize(14, 14)
-        btn.setStyleSheet(
-            f"""\n            QPushButton {{\n                background-color: {color};\n                border-radius: 7px;\n                border: none;\n            }}\n            QPushButton:hover {{\n                background-color: {hover_color};\n            }}\n        """
-        )
-
-    def toggle_maximize(self):
-        if self.parent.isMaximized():
-            self.parent.showNormal()
-        else:
-            self.parent.showMaximized()
-
-    def mousePressEvent(self, event: QMouseEvent):
-        if event.button() == Qt.LeftButton:
-            try:
-                import ctypes
-
-                ctypes.windll.user32.ReleaseCapture()
-                hwnd = int(self.parent.winId())
-                ctypes.windll.user32.SendMessageW(hwnd, 161, 2, 0)
-            except Exception:
-                return None
-
-    def mouseMoveEvent(self, event: QMouseEvent):
-        return
-
-
-class LogsDialog(FadeDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Application Logs")
-        self.setMinimumSize(700, 400)
-        self.setWindowFlags(self.windowFlags() | Qt.Window)
-        layout = QVBoxLayout(self)
-        self.log_view = QPlainTextEdit()
-        self.log_view.setReadOnly(True)
-        layout.addWidget(self.log_view)
-        button_layout = QHBoxLayout()
-        self.btn_clear = QPushButton("Clear")
-        self.btn_copy = QPushButton("Copy All")
-        self.btn_close = QPushButton("Close")
-        self.btn_clear.clicked.connect(self.clear_logs)
-        self.btn_copy.clicked.connect(self.copy_logs)
-        self.btn_close.clicked.connect(self.close)
-        button_layout.addStretch()
-        button_layout.addWidget(self.btn_clear)
-        button_layout.addWidget(self.btn_copy)
-        button_layout.addWidget(self.btn_close)
-        layout.addLayout(button_layout)
-        self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.refresh)
-        self.update_timer.start(500)
-        self.last_text_length = 0  # Track text length to avoid redundant updates
-
-    def refresh(self):
-        try:
-            # Get combined log text
-            text = _STDOUT_BUFFER.get_text() + _STDERR_BUFFER.get_text()
-            # Only update if text actually grew (avoid full replacement on every tick)
-            if len(text) > self.last_text_length:
-                # Instead of full replacement, append new content
-                old_text = self.log_view.toPlainText()
-                if old_text != text:
-                    self.log_view.setPlainText(text)
-                    self.last_text_length = len(text)
-            self.log_view.verticalScrollBar().setValue(
-                self.log_view.verticalScrollBar().maximum()
-            )
-        except Exception:
-            pass
-
-    def clear_logs(self):
-        try:
-            _STDOUT_BUFFER.clear()
-            _STDERR_BUFFER.clear()
-            self.log_view.clear()
-        except Exception:
-            pass
-
-    def copy_logs(self):
-        try:
-            clipboard = QApplication.clipboard()
-            clipboard.setText(self.log_view.toPlainText())
-        except Exception:
-            pass
-
-
-
-class KeyboardPreviewWidget(QWidget):
-    def __init__(self, parent_app, parent=None):
-        super().__init__(parent)
-        self.parent_app = parent_app
-        self.last_colors = None  # Track last color state to avoid unnecessary repaints
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-        self.zone_widgets = []
-        for _ in range(4):
-            w = QFrame()
-            w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            w.setMinimumHeight(64)
-            w.setStyleSheet(
-                "background-color: black; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);"
-            )
-            layout.addWidget(w)
-            self.zone_widgets.append(w)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_colors)
-        self.timer.start(50)
-
-    def update_colors(self):
-        try:
-            colors = None
-            if hasattr(self.parent_app, "effect_manager"):
-                with self.parent_app.effect_manager._lock:
-                    colors = list(self.parent_app.effect_manager.current_colors)
-            else:
-                colors = getattr(self.parent_app, "custom_colors", [0] * 12)
-                
-            # Only update if colors changed to avoid expensive CSS recalculation
-            if colors and colors != self.last_colors and len(colors) >= 12:
-                self.last_colors = colors[:]  # Store copy
-                for i in range(4):
-                    r = max(0, min(255, int(colors[i * 3])))
-                    g = max(0, min(255, int(colors[i * 3 + 1])))
-                    b = max(0, min(255, int(colors[i * 3 + 2])))
-                    self.zone_widgets[i].setStyleSheet(
-                        f"background-color: rgb({r},{g},{b}); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);"
-                    )
-        except Exception:
-            pass
-
-
-
-
-class HotkeyDialog(FadeDialog):
-    def __init__(self, parent_app, existing_key=None, existing_data=None):
-        super().__init__(parent_app)
-        self.parent_app = parent_app
-        self.existing_key = existing_key
-        self.setWindowTitle("Edit Hotkey" if existing_key else "Add Hotkey")
-        self.setFixedWidth(400)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
-
-        # Header
-        title = QLabel("Hotkey Configuration")
-        title.setStyleSheet(
-            "font-size: 18px; font-weight: bold; color: #00E5FF; margin-bottom: 5px;"
-        )
-        layout.addWidget(title)
-
-        # Key Combination
-        layout.addWidget(
-            QLabel(
-                "KEY COMBINATION:",
-                styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;",
-            )
-        )
-        self.recorder = HotkeyRecorderButton(existing_key)
-        self.recorder.setFixedHeight(35)
-        self.recorder.setToolTip("Recommended: Ctrl+Shift+1 to Ctrl+Shift+9")
-        layout.addWidget(self.recorder)
-        layout.addWidget(
-            QLabel(
-                "Tip: Click and press your key combo (e.g., Ctrl+Shift+A)",
-                styleSheet="color: #7A838F; font-size: 10px;",
-            )
-        )
-
-        # Action Type
-        layout.addWidget(
-            QLabel(
-                "TRIGGER ACTION:",
-                styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;",
-            )
-        )
-        self.type_combo = QComboBox()
-        self.type_combo.addItems(["Mode", "Preset"])
-        self.type_combo.setFixedHeight(35)
-        self.type_combo.setStyleSheet(
-            "QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }"
-        )
-        self.type_combo.currentTextChanged.connect(self.populate_targets)
-        layout.addWidget(self.type_combo)
-
-        # Action Target
-        layout.addWidget(
-            QLabel(
-                "ACTION TARGET:",
-                styleSheet="color: #AAAAAA; font-size: 10px; font-weight: bold;",
-            )
-        )
-        self.target_combo = QComboBox()
-        self.target_combo.setFixedHeight(35)
-        self.target_combo.setStyleSheet(
-            "QComboBox { background: #1A1A1E; color: white; border: 1px solid #333333; border-radius: 4px; padding: 2px 8px; }"
-        )
-        layout.addWidget(self.target_combo)
-
-        # Spacer
-        layout.addSpacing(10)
-
-        # Buttons
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(10)
-
-        self.btn_cancel = GlowButton("Cancel")
-        self.btn_cancel.setFixedHeight(35)
-        self.btn_cancel.clicked.connect(self.reject)
-        self.btn_cancel.setStyleSheet(
-            "QPushButton { background-color: rgba(255, 255, 255, 0.05); color: #AAAAAA; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }"
-        )
-
-        self.btn_save = GlowButton("Save Binding")
-        self.btn_save.setFixedHeight(35)
-        self.btn_save.clicked.connect(self.on_save)
-        self.btn_save.setStyleSheet(
-            "QPushButton { background: #00E5FF; color: black; font-weight: bold; border-radius: 6px; } QPushButton:hover { background: #00D5FF; }"
-        )
-
-        btn_row.addWidget(self.btn_cancel, 1)
-        btn_row.addWidget(self.btn_save, 2)
-        layout.addLayout(btn_row)
-
-        self.recorder.recording_state_changed.connect(self._toggle_global_listener)
-
-        # Initialize
-        if existing_data:
-            self.type_combo.setCurrentText(existing_data.get("type", "Mode").title())
-            self.populate_targets(existing_data.get("type", "Mode").title())
-            self.target_combo.setCurrentText(existing_data.get("target", ""))
-        else:
-            self.populate_targets("Mode")
-
-    def _toggle_global_listener(self, is_recording):
-        if hasattr(self.parent_app, "hotkey_listener"):
-            self.parent_app.hotkey_listener.set_paused(is_recording)
-
-    def populate_targets(self, h_type):
-        self.target_combo.clear()
-        if h_type == "Mode":
-            hardware = getattr(self.parent_app, "HARDWARE_MODES", [])
-            software = getattr(self.parent_app, "SOFTWARE_MODES", [])
-            self.target_combo.addItems(hardware + software)
-        else:
-            self.target_combo.addItems(
-                list(getattr(self.parent_app, "presets", {}).keys())
-            )
-
-        has_targets = self.target_combo.count() > 0
-        self.target_combo.setEnabled(has_targets)
-        self.btn_save.setEnabled(has_targets)
-
-    def on_save(self):
-        key = self.recorder.key_combination
-        if not key or key == "Click to record...":
-            QMessageBox.warning(
-                self, "Invalid Key", "Please record a key combination first."
-            )
-            return
-
-        h_type = self.type_combo.currentText().lower()
-        target = self.target_combo.currentText()
-
-        is_valid, err = self.parent_app.validate_hotkey_combo(key)
-        if not is_valid:
-            QMessageBox.warning(self, "Invalid Hotkey", err)
-            return
-
-        # Reserved warnings
-        warnings = self.parent_app.get_reserved_hotkey_warnings(key)
-        if warnings:
-            warn_msg = (
-                "The following potential conflicts were detected:\n\n"
-                + "\n".join(warnings)
-                + "\n\nSave anyway?"
-            )
-            res = QMessageBox.warning(
-                self,
-                "System Shortcut Conflict",
-                warn_msg,
-                QMessageBox.Yes | QMessageBox.No,
-            )
-            if res == QMessageBox.No:
-                return
-
-        # Check for conflict if it's a NEW key or changed from existing
-        if key != self.existing_key and key in self.parent_app.hotkeys:
-            existing = self.parent_app.hotkeys[key]
-            QMessageBox.warning(
-                self,
-                "Conflict",
-                f"'{key}' is already assigned to [{existing['type'].title()}] {existing['target']}.",
-            )
-            return
-
-        # Successful validation
-        self.result_data = (key, h_type, target)
-        self.accept()
-
-    def get_data(self):
-        return getattr(self, "result_data", None)
-
-
-class HotkeyRecorderButton(QPushButton):
-    recording_state_changed = Signal(bool)
-
-    def __init__(self, key_combination="", parent=None):
-        super().__init__(parent)
-        self.key_combination = key_combination or "Click to record..."
-        self.setText(self.key_combination)
-        self.recording = False
-        self.setCursor(Qt.PointingHandCursor)
-        self.setStyleSheet(
-            "QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; } QWidget:focus { border: 1px solid #00E5FF; }"
-        )
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.recording = True
-            self.recording_state_changed.emit(True)
-            self.setText("Recording... (Press keys)")
-            self.setStyleSheet(
-                "QPushButton { background-color: rgba(0, 229, 255, 0.2); color: #00E5FF; border: 1px solid #00E5FF; border-radius: 4px; padding: 5px; }"
-            )
-            self.setFocus()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def keyPressEvent(self, event):
-        if self.recording:
-            if event.key() in (
-                Qt.Key_Shift,
-                Qt.Key_Control,
-                Qt.Key_Meta,
-                Qt.Key_Alt,
-                Qt.Key_AltGr,
-            ):
-                return
-            modifiers = event.modifiers()
-            parts = []
-            if modifiers & Qt.ControlModifier:
-                parts.append("ctrl")
-            if modifiers & Qt.AltModifier:
-                parts.append("alt")
-            if modifiers & Qt.ShiftModifier:
-                parts.append("shift")
-            if modifiers & Qt.MetaModifier:
-                parts.append("win")
-
-            # Get the key name from Qt
-            key_name = QKeySequence(event.key()).toString()
-            key_name = _normalize_hotkey_key_name(
-                key_name, bool(modifiers & Qt.ShiftModifier)
-            )
-
-            if key_name:
-                parts.append(key_name)
-                combo = "+".join(parts)
-            else:
-                combo = ""
-
-            self.key_combination = combo
-            self.setText(combo if combo else "Click to record...")
-            self.recording = False
-            self.recording_state_changed.emit(False)
-            self.setStyleSheet(
-                "QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; }"
-            )
-            self.clearFocus()
-            event.accept()
-        else:
-            super().keyPressEvent(event)
-
-    def focusOutEvent(self, event):
-        if self.recording:
-            self.recording = False
-            self.recording_state_changed.emit(False)
-            self.setText(self.key_combination or "Click to record...")
-            self.setStyleSheet(
-                "QPushButton { background-color: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 5px; }"
-            )
-        super().focusOutEvent(event)
 
 
 class GlobalHotkeyListener(QThread):
@@ -2366,11 +1794,6 @@ class RGBControllerApp(QMainWindow):
         self.btn_export_presets.setCursor(Qt.PointingHandCursor)
         self.btn_export_presets.setStyleSheet(tool_btn_css)
         self.btn_export_presets.clicked.connect(self.export_presets)
-        self.btn_cloud_hub = QPushButton("☁️ Cloud Hub")
-        self.btn_cloud_hub.setFixedHeight(30)
-        self.btn_cloud_hub.setCursor(Qt.PointingHandCursor)
-        self.btn_cloud_hub.setStyleSheet("QPushButton { background-color: rgba(0, 229, 255, 0.1); color: #00E5FF; border-radius: 6px; border: 1px solid rgba(0, 229, 255, 0.3); padding: 0 10px; font-weight: 700; } QPushButton:hover { background-color: rgba(0, 229, 255, 0.2); border: 1px solid #00E5FF; }")
-        self.btn_cloud_hub.clicked.connect(self.open_cloud_hub)
         self.update_preset_toolbar_layout(force=True)
 
         self.btn_reset_mode = QPushButton("Reset This Mode")
@@ -2381,7 +1804,18 @@ class RGBControllerApp(QMainWindow):
         )
         self.btn_reset_mode.clicked.connect(self.reset_current_mode_settings)
         right_layout.addWidget(self.btn_reset_mode)
+
+        self.btn_effect_studio = QPushButton("Effect Builder (Beta)")
+        self.btn_effect_studio.setCursor(Qt.PointingHandCursor)
+        self.btn_effect_studio.setStyleSheet(
+            "QPushButton { background-color: rgba(0, 229, 255, 0.12); color: #00F2FF; border: 1px solid #00F2FF; border-radius: 8px; padding: 8px 12px; font-weight: 700; }"
+            "QPushButton:hover { background-color: #00E5FF; color: #0B0C10; }"
+        )
+        self.btn_effect_studio.clicked.connect(self.open_effect_studio)
+        right_layout.addWidget(self.btn_effect_studio)
+
         right_layout.addWidget(preset_group)
+        self.reload_custom_effects()
         self.kb = None
         self.visualizer_process = None
         self.visualizer_script_path = os.path.normcase(
@@ -2882,7 +2316,6 @@ class RGBControllerApp(QMainWindow):
                 "btn_delete_preset",
                 "btn_import_presets",
                 "btn_export_presets",
-                "btn_cloud_hub",
             )
         ):
             return
@@ -2895,16 +2328,15 @@ class RGBControllerApp(QMainWindow):
         while self.preset_layout.count():
             self.preset_layout.takeAt(0)
 
-        for col in range(6):
+        for col in range(5):
             self.preset_layout.setColumnStretch(col, 0)
 
         if compact:
-            self.preset_layout.addWidget(self.preset_combo, 0, 0, 1, 6)
+            self.preset_layout.addWidget(self.preset_combo, 0, 0, 1, 5)
             self.preset_layout.addWidget(self.btn_save_preset, 1, 0)
             self.preset_layout.addWidget(self.btn_delete_preset, 1, 1)
             self.preset_layout.addWidget(self.btn_import_presets, 1, 3)
             self.preset_layout.addWidget(self.btn_export_presets, 1, 4)
-            self.preset_layout.addWidget(self.btn_cloud_hub, 1, 5)
             self.preset_layout.setColumnStretch(2, 1)
         else:
             self.preset_layout.addWidget(self.preset_combo, 0, 0)
@@ -2912,7 +2344,6 @@ class RGBControllerApp(QMainWindow):
             self.preset_layout.addWidget(self.btn_delete_preset, 0, 2)
             self.preset_layout.addWidget(self.btn_import_presets, 0, 3)
             self.preset_layout.addWidget(self.btn_export_presets, 0, 4)
-            self.preset_layout.addWidget(self.btn_cloud_hub, 0, 5)
             self.preset_layout.setColumnStretch(0, 1)
 
     def update_zone_color_controls_state(self, mode_name=None):
@@ -3611,7 +3042,7 @@ class RGBControllerApp(QMainWindow):
                 self.flicker_slider.setValue(
                     p.get("flicker", self.default_control_settings["flicker"])
                 )
-                self.zone_colors = p.get("colors", [[255, 0, 0]] * 4)
+                self.zone_colors = p.get("colors", [[255, 0, 0] for _ in range(4)])
                 for i in range(4):
                     self.update_button_color(self.color_buttons[i], self.zone_colors[i])
                 if "global_color" in p:
@@ -3994,13 +3425,48 @@ class RGBControllerApp(QMainWindow):
             (255.0, 252.0, 249.0),
         ]
 
-    def open_cloud_hub(self):
+    def open_effect_studio(self):
         try:
-            from cloud_hub import CloudHubDialog
-            dialog = CloudHubDialog(self)
+            dialog = EffectStudioDialog(self)
             dialog.exec()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open Cloud Hub:\n{str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to open Effect Studio:\n{str(e)}")
+
+    def reload_custom_effects(self):
+        try:
+            from core.config import SOFTWARE_MODES as BASE_SOFTWARE_MODES
+            from core.custom_effects_io import list_custom_effects
+            custom_list = list_custom_effects()
+            valid_custom_names = {eff.get("name") for eff in custom_list if eff.get("name")}
+
+            # Remove deleted custom effects from self.SOFTWARE_MODES and self.mode_list
+            for name in list(self.SOFTWARE_MODES):
+                if name not in BASE_SOFTWARE_MODES and name not in valid_custom_names:
+                    self.SOFTWARE_MODES.remove(name)
+                    if hasattr(self, "mode_list") and self.mode_list:
+                        items = self.mode_list.findItems(name, Qt.MatchExactly)
+                        for item in items:
+                            row = self.mode_list.row(item)
+                            self.mode_list.takeItem(row)
+
+            # Add new custom effects to self.SOFTWARE_MODES and self.mode_list
+            for name in valid_custom_names:
+                if name not in self.SOFTWARE_MODES:
+                    self.SOFTWARE_MODES.append(name)
+                    if hasattr(self, "mode_list") and self.mode_list:
+                        items = self.mode_list.findItems(name, Qt.MatchExactly)
+                        if not items:
+                            self.mode_list.addItem(name)
+        except Exception as e:
+            print(f"Failed loading custom effects into software modes: {e}")
+
+    def open_cloud_hub(self):
+        try:
+            from cloud_hub import MarketplaceDialog
+            dialog = MarketplaceDialog(self)
+            dialog.exec()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Marketplace:\n{str(e)}")
 
     def export_presets(self):
         if not self.presets:
@@ -4862,54 +4328,7 @@ class RGBControllerApp(QMainWindow):
                     
                 self.effect_manager.set_effect(mode_name)
 
-class GifSplashScreen(QWidget):
-    def __init__(self, gif_path, main_window):
-        super().__init__()
-        self.main_window = main_window
-        
-        # Transparent, frameless window
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.SplashScreen)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.label = QLabel()
-        self.label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.label)
-        
-        # Load GIF
-        self.movie = QMovie(gif_path)
-        self.movie.setSpeed(150)  # Make animation 50% faster
-        # Lock splash screen to the exact fixed ratio of the main app window
-        self.setFixedSize(700, 400)
-        
-        # Connect frame change to detect when it ends and render smoothly
-        self.movie.frameChanged.connect(self.check_frame)
-        self.movie.start()
 
-    def check_frame(self, frameNumber):
-        # Smoothly scale the current frame to fix pixelation
-        img = self.movie.currentImage()
-        scaled_img = img.scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-        self.label.setPixmap(QPixmap.fromImage(scaled_img))
-        
-        # Stop at the very last frame
-        if frameNumber == self.movie.frameCount() - 1:
-            self.movie.stop()
-            self.fade_out()
-            
-    def fade_out(self):
-        self.animation = QPropertyAnimation(self, b"windowOpacity")
-        self.animation.setDuration(300)  # 300ms fade out (faster)
-        self.animation.setStartValue(1.0)
-        self.animation.setEndValue(0.0)
-        self.animation.finished.connect(self.on_fade_finished)
-        self.animation.start()
-
-    def on_fade_finished(self):
-        self.close()
-        self.main_window.show()
 
 if __name__ == "__main__":
     # Support two ways to launch the audio visualizer:

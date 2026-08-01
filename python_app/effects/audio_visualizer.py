@@ -263,7 +263,7 @@ class AudioVisualizerEffect(BaseEffect):
         with self._lock:
             smoothness = max(0, min(100, self.config.get("brightness", 0)))
             flicker_raw = max(0, min(100, self.config.get("flicker", 0)))
-            zone_colors_raw = self.config.get("zone_colors", [[255, 255, 255]] * 4)
+            zone_colors_raw = self.config.get("zone_colors", [[255, 255, 255] for _ in range(4)])
             zone_colors = [(c[0], c[1], c[2]) for c in zone_colors_raw]
             
             beat_targets = self.beat_targets[:]

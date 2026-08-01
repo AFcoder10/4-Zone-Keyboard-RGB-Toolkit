@@ -36,7 +36,7 @@ class ReactiveTypingEffect(BaseEffect):
         with self._lock:
             # We don't overwrite if rainbow mode is on, to preserve the rainbow
             if not self.config.get("reactive_rainbow", False):
-                zc = config.get("zone_colors", [[255, 252, 248]] * 4)
+                zc = config.get("zone_colors", [[255, 252, 248] for _ in range(4)])
                 self.zone_highlight_colors = [list(c) for c in zc]
                 
             val = config.get("speed", 20)

@@ -123,14 +123,25 @@ class EffectManager:
                 return
 
             effect_class = self.effects_registry.get(effect_name)
+            config_payload = self.global_config.copy()
             if not effect_class:
-                self.active_effect = None
-                return
+                from core.custom_effects_io import load_custom_effect_by_name
+                custom_data = load_custom_effect_by_name(effect_name)
+                if custom_data and "frames" in custom_data:
+                    effect_class = self.effects_registry.get("Custom Sequence")
+                    config_payload["frames"] = custom_data["frames"]
+                    if "default_speed" in custom_data:
+                        config_payload["speed"] = custom_data["default_speed"]
+                    if "default_brightness" in custom_data:
+                        config_payload["brightness"] = custom_data["default_brightness"]
+                else:
+                    self.active_effect = None
+                    return
 
             self.active_effect = effect_class(
                 keyboard_controller=self.kb,
-                parent_app=None,  # We can inject a proxy if needed
-                config=self.global_config.copy()
+                parent_app=None,
+                config=config_payload
             )
             
             # 15 ticks of slow transition (0.5 seconds at 30fps)
@@ -149,6 +160,17 @@ class EffectManager:
             loop_start = time.monotonic()
             
             with self._lock:
+                # Allow active effect to dynamically adjust target FPS (e.g. 60 FPS for Ambient)
+                current_fps = 30
+                if self.active_effect and hasattr(self.active_effect, "preferred_fps"):
+                    try:
+                        pref_fps = getattr(self.active_effect, "preferred_fps", 30)
+                        if pref_fps and isinstance(pref_fps, (int, float)):
+                            current_fps = max(5, min(60, int(pref_fps)))
+                    except Exception:
+                        pass
+                frame_time = 1.0 / current_fps
+                
                 if self.active_effect:
                     try:
                         self.target_colors = self.active_effect.update(frame_time)

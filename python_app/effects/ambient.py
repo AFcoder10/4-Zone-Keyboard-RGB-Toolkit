@@ -2,6 +2,7 @@ import colorsys
 import time
 from typing import List, Dict, Any
 from core.base import BaseEffect
+from utils.chroma_utils import get_chroma_weighted_zone_colors, HAS_NUMPY
 
 try:
     from PIL import Image
@@ -16,8 +17,11 @@ except ImportError:
     HAS_MSS = False
 
 class AmbientEffect(BaseEffect):
-    # Ambient should feel responsive — low smoothing so colors track the screen closely
-    preferred_smoothing = 0.4
+    # Dynamic smoothing: overridden per-frame in update() based on FPS
+    # This matches the original v2.9 formula: smooth_amount = 15.0 / fps
+    # At 30 FPS → 0.5 (smooth, organic transitions between frames)
+    # At 60 FPS → 0.25 (faster response but still buttery)
+    preferred_smoothing = 0.5
 
     def __init__(self, keyboard_controller, parent_app=None, config: Dict = None):
         super().__init__(keyboard_controller, parent_app, config)
@@ -29,6 +33,10 @@ class AmbientEffect(BaseEffect):
     @property
     def effect_name(self) -> str:
         return "Ambient Screen Color"
+
+    @property
+    def preferred_fps(self) -> int:
+        return max(5, min(60, self.config.get("ambient_fps", 30)))
 
     def start(self) -> bool:
         if not HAS_MSS or not HAS_PIL:
@@ -62,11 +70,17 @@ class AmbientEffect(BaseEffect):
 
         now = time.monotonic()
         
-        # Throttle: only capture when enough time has passed since last capture
-        if now - self._last_capture_time < capture_interval:
+        # Jitter tolerance (0.85x) prevents frame-skipping when manager runs at exact requested FPS
+        if now - self._last_capture_time < capture_interval * 0.85:
             return self._cached_colors[:]
 
         self._last_capture_time = now
+
+        # Dynamic smoothing: matches the original v2.9 formula exactly
+        # smooth_amount = 15.0 / fps → at 30fps=0.5, at 60fps=0.25
+        # Higher = more of the OLD color retained = smoother, more organic transitions
+        self.preferred_smoothing = max(0.01, min(1.0, 15.0 / ambient_fps))
+
         target_colors = [0] * 12
         vib_mult = self.config.get("vibrance", 15) / 10.0
 
@@ -74,25 +88,30 @@ class AmbientEffect(BaseEffect):
             try:
                 self._ensure_sct()
                 monitor = self.sct.monitors[1]
+                # Capture full screen
                 bbox = {
-                    "top": monitor["top"] + monitor["height"] - 100,
+                    "top": monitor["top"],
                     "left": monitor["left"],
                     "width": monitor["width"],
-                    "height": 100
+                    "height": monitor["height"]
                 }
                 sct_img = self.sct.grab(bbox)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                img = img.resize((4, 1), Image.Resampling.BOX)
-                pixels = [img.getpixel((i, 0)) for i in range(4)]
 
-                for i in range(4):
-                    r, g, b = pixels[i]
-                    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
-                    r, g, b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
-
-                    target_colors[i * 3] = int(r * 255)
-                    target_colors[i * 3 + 1] = int(g * 255)
-                    target_colors[i * 3 + 2] = int(b * 255)
+                # Use chroma-weighted averaging if numpy is available for richer colors
+                if HAS_NUMPY:
+                    target_colors = get_chroma_weighted_zone_colors(img, vib_mult)
+                else:
+                    # Fallback: simple BOX resize to 4x1 (original v2.9 method)
+                    img = img.resize((4, 1), Image.Resampling.BOX)
+                    pixels = [img.getpixel((i, 0)) for i in range(4)]
+                    for i in range(4):
+                        r, g, b = pixels[i]
+                        h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+                        r, g, b = colorsys.hsv_to_rgb(h, min(1.0, s * vib_mult), v)
+                        target_colors[i * 3] = int(r * 255)
+                        target_colors[i * 3 + 1] = int(g * 255)
+                        target_colors[i * 3 + 2] = int(b * 255)
             except Exception as e:
                 print(f"[Ambient] Screen capture error: {e}")
 

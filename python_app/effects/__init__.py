@@ -26,3 +26,5 @@ from effects.temperature import TemperatureEffect
 from effects.ambient import AmbientEffect
 from effects.pomodoro import PomodoroEffect
 from effects.audio_visualizer import AudioVisualizerEffect
+from effects.custom_sequence import CustomSequenceEffect
+
