@@ -21,8 +21,10 @@ function Home() {
     const animatedElements = document.querySelectorAll('.anim-scroll');
     animatedElements.forEach(el => observer.observe(el));
 
+    const controller = new AbortController();
+
     // Fetch releases
-    fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases')
+    fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -38,11 +40,13 @@ function Home() {
         }
       })
       .catch(err => {
+        if (err.name === 'AbortError') return;
         console.error("Failed to fetch releases:", err);
       });
 
     return () => {
       animatedElements.forEach(el => observer.unobserve(el));
+      controller.abort();
     };
   }, []);
 

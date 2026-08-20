@@ -44,16 +44,17 @@ class EffectManager:
             self.kb = None
 
     def start(self):
-        if self._running:
-            return
-        self._running = True
-        self._thread = threading.Thread(target=self._render_loop, daemon=True)
-        self._thread.start()
+        with self._lock:
+            if self._running:
+                return
+            self._running = True
+            self._thread = threading.Thread(target=self._render_loop, daemon=True)
+            self._thread.start()
 
     def stop(self):
         self._running = False
         if self._thread:
-            self._thread.join(timeout=1.0)
+            self._thread.join(timeout=2.0)
             
         with self._lock:
             if self.active_effect:
@@ -87,7 +88,8 @@ class EffectManager:
 
     def get_keyboard(self):
         """Used if an external process (like audio visualizer) needs to grab the hardware lock temporarily."""
-        return self.kb
+        with self._lock:
+            return self.kb
 
     def update_config(self, key: str, value: Any):
         with self._lock:
@@ -160,51 +162,62 @@ class EffectManager:
             loop_start = time.monotonic()
             
             with self._lock:
-                # Allow active effect to dynamically adjust target FPS (e.g. 60 FPS for Ambient)
-                current_fps = 30
-                if self.active_effect and hasattr(self.active_effect, "preferred_fps"):
-                    try:
-                        pref_fps = getattr(self.active_effect, "preferred_fps", 30)
-                        if pref_fps and isinstance(pref_fps, (int, float)):
-                            current_fps = max(5, min(60, int(pref_fps)))
-                    except Exception:
-                        pass
-                frame_time = 1.0 / current_fps
-                
-                if self.active_effect:
-                    try:
-                        self.target_colors = self.active_effect.update(frame_time)
-                    except Exception as e:
-                        print(f"Effect {self.active_effect.effect_name} crashed: {e}")
-                        self.target_colors = [0] * 12
-                else:
-                    self.target_colors = [0] * 12
-                
-                # Global brightness multiplier
-                if self.active_effect and getattr(self.active_effect, "ignore_global_brightness", False):
-                    bright_mult = 1.0
-                else:
-                    bright_mult = self.global_config.get("brightness", 100) / 100.0
-                
-                # Smoothing logic (Exponential Moving Average)
-                smooth_amount = 0.85
-                
-                if self.transition_ticks > 0:
-                    smooth_amount = 0.9  # Slower transition when switching effects
-                    self.transition_ticks -= 1
+                active_effect = self.active_effect
+                bright_mult = self.global_config.get("brightness", 100) / 100.0
+
+            # Allow active effect to dynamically adjust target FPS (e.g. 60 FPS for Ambient)
+            current_fps = 30
+            if active_effect and hasattr(active_effect, "preferred_fps"):
+                try:
+                    pref_fps = getattr(active_effect, "preferred_fps", 30)
+                    if pref_fps and isinstance(pref_fps, (int, float)):
+                        current_fps = max(5, min(60, int(pref_fps)))
+                except Exception:
+                    pass
+            frame_time = 1.0 / current_fps
+            
+            target_colors = [0] * 12
+            if active_effect:
+                try:
+                    target_colors = active_effect.update(frame_time)
+                except Exception as e:
+                    print(f"Effect {active_effect.effect_name} crashed: {e}")
+            
+            with self._lock:
+                if self.active_effect is active_effect:
+                    self.target_colors = target_colors
+
+                    if getattr(self.active_effect, "ignore_global_brightness", False):
+                        bright_mult = 1.0
                     
-                # Effects can hint at their preferred smoothing by setting `self.active_effect.smooth_amount`
-                # but we'll stick to a standard for now, unless we want to pull it from the effect
-                if self.active_effect and hasattr(self.active_effect, "preferred_smoothing"):
-                    # E.g. Mouse aura wants 0.2
-                    if self.transition_ticks == 0:
-                        pref = getattr(self.active_effect, "preferred_smoothing", None)
-                        if pref is not None:
-                            smooth_amount = pref
+                    # Smoothing logic (Exponential Moving Average)
+                    smooth_amount = 0.85
+                    
+                    if self.transition_ticks > 0:
+                        smooth_amount = 0.9  # Slower transition when switching effects
+                        self.transition_ticks -= 1
+                        
+                    if hasattr(self.active_effect, "preferred_smoothing"):
+                        if self.transition_ticks == 0:
+                            pref = getattr(self.active_effect, "preferred_smoothing", None)
+                            if pref is not None:
+                                smooth_amount = pref
                 
                 final_colors = []
                 for i in range(12):
-                    new_val = self.current_colors[i] * smooth_amount + self.target_colors[i] * (1.0 - smooth_amount)
+                    try:
+                        target = float(self.target_colors[i])
+                        if target != target:  # check for NaN
+                            target = 0.0
+                    except (IndexError, TypeError, ValueError):
+                        target = 0.0
+
+                    new_val = self.current_colors[i] * smooth_amount + target * (1.0 - smooth_amount)
+                    
+                    # Sanity check to prevent NaN propagation
+                    if new_val != new_val:
+                        new_val = 0.0
+                        
                     self.current_colors[i] = new_val
                     
                     final_val = new_val * bright_mult

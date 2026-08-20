@@ -12,10 +12,10 @@ ALL_MODES = HARDWARE_MODES + SOFTWARE_MODES
 
 app = FastAPI()
 
-# Allow CORS for the React dev server
+# Allow CORS for local development environments
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,4 +75,4 @@ class FastAPIThread(threading.Thread):
         self.port = port
         
     def run(self):
-        uvicorn.run(app, host="127.0.0.1", port=self.port, log_level="critical")
+        uvicorn.run(app, host="0.0.0.0", port=self.port, log_level="critical")

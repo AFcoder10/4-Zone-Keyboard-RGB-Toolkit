@@ -90,7 +90,7 @@ def compile_inno_setup(script_path):
 
 if __name__ == "__main__":
     APP_NAME = "4 Zone Rgb Toolkit"
-    APP_VERSION = "1.0.0"
+    APP_VERSION = "v3.1"
     APP_PUBLISHER = "Custom Hardware Integration"
     APP_EXE = "4_Zone_Rgb_Toolkit.exe"
 
@@ -118,3 +118,6 @@ if __name__ == "__main__":
         print(
             f"Your final setup installer is waiting at: {os.path.join(FINAL_OUTPUT_DIR, '4_Zone_Rgb_Toolkit_Setup.exe')}"
         )
+    else:
+        print("[ERROR] Installer compilation failed.")
+        sys.exit(1)

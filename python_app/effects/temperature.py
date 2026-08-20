@@ -3,6 +3,7 @@ import os
 import json
 import tempfile
 import time
+import math
 from core.base import BaseEffect
 
 class TemperatureEffect(BaseEffect):
@@ -61,6 +62,10 @@ class TemperatureEffect(BaseEffect):
                         data = json.load(f)
                         self.cpu_temp = float(data.get("cpu", 0.0))
                         self.gpu_temp = float(data.get("gpu", 0.0))
+                        if math.isnan(self.cpu_temp): self.cpu_temp = 0.0
+                        if math.isnan(self.gpu_temp): self.gpu_temp = 0.0
+                        if math.isnan(self.cpu_temp): self.cpu_temp = 0.0
+                        if math.isnan(self.gpu_temp): self.gpu_temp = 0.0
             except Exception:
                 pass
 

@@ -1,6 +1,6 @@
 import time
+import colorsys
 import collections
-import math
 import threading
 import numpy as np
 from typing import List, Dict
@@ -20,34 +20,30 @@ FORMAT = pyaudio.paInt16 if HAS_PYAUDIO else 8
 
 # ── Frequency bands (one per zone) ────────────────────────────────────────────
 BAND_RANGES = [
-    (20, 150),     # Sub-Bass / Kick
-    (150, 500),    # Bass
-    (500, 3000),   # Mids / Vocals
-    (3000, 10000), # Highs / Cymbals
+    (20, 100),     # Zone 1: Sub-Bass / Kick
+    (100, 300),    # Zone 2: Bass / Toms
+    (300, 800),    # Zone 3: Lower Mids / Synths / Guitars
+    (3000, 10000), # Zone 4: Highs / Cymbals / Hi-Hats
 ]
+BAND_NAMES = ["Sub", "Bass", "Mid", "High"]
 
-# ── Beat detection ─────────────────────────────────────────────────────────────
-BEAT_HISTORY_LONG = 40  # frames (~1.3 s)
-BEAT_HISTORY_SHORT = 5  # frames (~160 ms)
-BEAT_THRESHOLD = 1.35   # short/long ratio to call a beat
-BEAT_COOLDOWN = 0.10    # seconds min between beats per zone
+# ── Adaptive Engine Constants ─────────────────────────────────────────────────
+DEFAULT_MULT = [0.35, 0.45, 0.55, 0.65]
+TARGET_LOW   = [1.2,  1.5,  1.0,  0.8]
+TARGET_HIGH  = [4.5,  5.5,  3.5,  3.0]
+MULT_MIN     = [0.10, 0.12, 0.15, 0.20]
+MULT_MAX     = [0.85, 0.88, 0.92, 0.95]
+MIN_FLOOR    = [20.0, 10.0, 8.0,  3.0]
 
-BASE_REFS = [500.0, 300.0, 150.0, 100.0]
+def _energy(fft_mag, band_idx):
+    """RMS energy for a frequency band."""
+    if len(band_idx) == 0:
+        return 0.0
+    return float(np.sqrt(np.mean(fft_mag[band_idx] ** 2)))
 
-def slider_to_ref_mult(val: int) -> float:
-    return 10.0 ** ((val - 50) / 25.0)
-
-def slider_to_attack(val: int) -> float:
-    return val / 100.0 * 0.70  # 0% → 0.00 (instant),  100% → 0.70 (smooth)
-
-def slider_to_decay(val: int) -> float:
-    return 0.10 + (val / 100.0) * 0.85  # 0% → 0.10 (flicker), 100% → 0.95 (glow)
-
-def slider_to_brightness_mult(val: int) -> float:
-    return 0.45 + (val / 100.0) * 2.55
 
 class AudioVisualizerEffect(BaseEffect):
-    preferred_smoothing = 0.0 # Handled internally
+    preferred_smoothing = 0.0  # Handled internally
     ignore_global_brightness = True
 
     def __init__(self, keyboard_controller, parent_app=None, config: Dict = None):
@@ -58,22 +54,13 @@ class AudioVisualizerEffect(BaseEffect):
         self.stream = None
         self.audio_thread = None
         
-        # Audio thread outputs
+        # Audio thread → render thread communication
         self._lock = threading.Lock()
-        self.beat_targets = [0.0] * 4
-        self.ambient_floors = [0.0] * 4
-        self.beats = [False] * 4
-        
-        # Rendering state
-        self.brightness = [0.0] * 4
-        self.velocity = [0.0] * 4
-        self.brightness_history = [
-            collections.deque(maxlen=30) for _ in range(4)
-        ]
-        self.brightness_sums = [0.0] * 4
+        self._led_brightness = [0.0] * 4
+        self._zone_hues = [0.0] * 4
         
         # Precomputed FFT data
-        self.rate = 44100  # Default, updated when stream opens
+        self.rate = 44100
         self.channels = 2
         self.window = np.hanning(CHUNK)
         self.band_indices = []
@@ -88,6 +75,7 @@ class AudioVisualizerEffect(BaseEffect):
             return False
 
         print("[Visualizer] Locating WASAPI Loopback Desktop Audio...")
+        self.stop()
         self.p = pyaudio.PyAudio()
         try:
             wasapi_info = self.p.get_host_api_info_by_type(pyaudio.paWASAPI)
@@ -107,7 +95,7 @@ class AudioVisualizerEffect(BaseEffect):
 
             print(f"[Visualizer] Capturing from: {target_device['name']}")
         except Exception as e:
-            print(f"[Visualizer] CRITICAL: WASAPI unavailable or error during initialization: {e}")
+            print(f"[Visualizer] CRITICAL: WASAPI unavailable: {e}")
             if self.p:
                 self.p.terminate()
             return False
@@ -138,186 +126,163 @@ class AudioVisualizerEffect(BaseEffect):
 
         # Clear state
         with self._lock:
-            self.beat_targets = [0.0] * 4
-            self.ambient_floors = [0.0] * 4
-            self.beats = [False] * 4
-            
-        self.brightness = [0.0] * 4
-        self.velocity = [0.0] * 4
-        self.brightness_history = [collections.deque(maxlen=30) for _ in range(4)]
-        self.brightness_sums = [0.0] * 4
-        
-        self._running = True
-        self.audio_thread = threading.Thread(target=self._audio_loop, daemon=True)
+            self._led_brightness = [0.0] * 4
+            self._zone_hues = [0.0] * 4
+
+        self._stop_event = threading.Event()
+        self.audio_thread = threading.Thread(target=self._audio_loop, args=(self.p, self.stream, self._stop_event), daemon=True)
         self.audio_thread.start()
         
         return True
 
     def stop(self) -> None:
-        self._running = False
-        # Do NOT join the thread or destroy PyAudio from the UI thread!
-        # The background _audio_loop will safely destroy its own stream when it exits.
-        # This prevents the hard crash (Access Violation) in PortAudio.
+        if hasattr(self, '_stop_event'):
+            self._stop_event.set()
+        if hasattr(self, 'audio_thread') and getattr(self.audio_thread, 'is_alive', lambda: False)():
+            self.audio_thread.join(timeout=2.0)
 
-    def _audio_loop(self):
-        # Local state for audio thread
-        energy_history = [collections.deque(maxlen=BEAT_HISTORY_LONG) for _ in range(4)]
-        energy_sums = [0.0] * 4
-        short_energy_history = [collections.deque(maxlen=BEAT_HISTORY_SHORT) for _ in range(4)]
-        short_energy_sums = [0.0] * 4
-        last_beat_time = [0.0] * 4
+    def _audio_loop(self, p, stream, stop_event):
+        """
+        Background thread: reads audio, runs FFT, spectral flux, adaptive 
+        calibration, silence detection, and outputs brightness + hue per zone.
+        """
+        # ── Adaptive Engine State ──
+        prev_energy    = [0.0] * 4
+        led_brightness = [0.0] * 4
+        flux_peaks     = [0.0] * 4
+        adaptive_mult  = list(DEFAULT_MULT)
+        
+        hit_timestamps = [collections.deque(maxlen=100) for _ in range(4)]
+        
+        # Song-transition detection
+        energy_fast = [0.0] * 4
+        energy_slow = [0.0] * 4
+        
+        # Silence detection
+        global_rms = 0.0
 
-        while self._running:
+        while not stop_event.is_set():
             try:
-                data = self.stream.read(CHUNK, exception_on_overflow=False)
+                data = stream.read(CHUNK, exception_on_overflow=False)
                 audio_data = np.frombuffer(data, dtype=np.int16).astype(np.float32)
 
                 if self.channels > 1:
                     audio_data = audio_data.reshape(-1, self.channels).mean(axis=1)
+                elif self.channels < 1:
+                    time.sleep(0.05)
+                    continue
 
                 if len(audio_data) != CHUNK:
+                    time.sleep(0.01)
                     continue
 
                 fft_mag = np.abs(np.fft.rfft(audio_data * self.window)) / (CHUNK / 2)
                 now = time.monotonic()
                 
-                # Fetch sensitivity once per frame to avoid locking per zone
-                with self._lock:
-                    sensitivity = max(0, min(100, self.config.get("speed", 50)))
-                ref_mult = slider_to_ref_mult(sensitivity)
-                ref_levels = [r * ref_mult for r in BASE_REFS]
+                # ── Silence Detection ──
+                frame_rms = float(np.sqrt(np.mean(audio_data ** 2)))
+                global_rms = global_rms * 0.95 + frame_rms * 0.05
+                is_silent = global_rms < 50.0
 
-                new_beat_targets = [0.0] * 4
-                new_ambient_floors = [0.0] * 4
-                new_beats = [False] * 4
+                zone_hues = [0.0] * 4
 
                 for i in range(4):
-                    idx = self.band_indices[i]
-                    energy = float(np.sqrt(np.mean(fft_mag[idx] ** 2))) if len(idx) > 0 else 0.0
+                    curr_energy = _energy(fft_mag, self.band_indices[i])
+                    
+                    # ── 1. Song Transition Detection ──
+                    energy_fast[i] = energy_fast[i] * 0.85 + curr_energy * 0.15
+                    energy_slow[i] = energy_slow[i] * 0.995 + curr_energy * 0.005
+                    
+                    if energy_slow[i] > 1e-6:
+                        ratio = energy_fast[i] / energy_slow[i]
+                        if ratio > 3.0 or ratio < 0.33:
+                            adaptive_mult[i] += (DEFAULT_MULT[i] - adaptive_mult[i]) * 0.1
+                    
+                    # ── 2. Spectral Flux ──
+                    flux = max(0.0, curr_energy - prev_energy[i])
+                    prev_energy[i] = curr_energy
+                    
+                    # ── 3. Peak Envelope ──
+                    flux_peaks[i] = max(flux, flux_peaks[i] * 0.990)
+                    
+                    # ── 4. Hit-Rate Proportional Feedback ──
+                    ts = hit_timestamps[i]
+                    while ts and (now - ts[0]) > 1.5:
+                        ts.popleft()
+                    hps = len(ts) / 1.5
+                    
+                    if hps > TARGET_HIGH[i]:
+                        overshoot = (hps - TARGET_HIGH[i]) / (TARGET_HIGH[i] + 1e-9)
+                        adaptive_mult[i] += 0.003 + overshoot * 0.008
+                    elif hps < TARGET_LOW[i]:
+                        undershoot = (TARGET_LOW[i] - hps) / (TARGET_LOW[i] + 1e-9)
+                        adaptive_mult[i] -= 0.002 + undershoot * 0.005
+                    else:
+                        adaptive_mult[i] += (DEFAULT_MULT[i] - adaptive_mult[i]) * 0.001
+                    
+                    adaptive_mult[i] = max(MULT_MIN[i], min(MULT_MAX[i], adaptive_mult[i]))
+                    
+                    # ── 5. Final Threshold ──
+                    threshold = max(MIN_FLOOR[i], flux_peaks[i] * adaptive_mult[i])
+                    
+                    # ── 6. Beat Detection + Silence Handling ──
+                    if is_silent:
+                        led_brightness[i] *= 0.90
+                    elif flux > threshold:
+                        led_brightness[i] = 1.0
+                        ts.append(now)
+                    else:
+                        led_brightness[i] *= 0.82
+                        if led_brightness[i] < 0.01:
+                            led_brightness[i] = 0.0
 
-                    norm_linear = min(1.0, energy / (ref_levels[i] + 1e-9))
-                    norm = math.log10(1.0 + 99.0 * norm_linear) / 2.0
+                    # ── 7. Individual Zone Rainbow Hue ──
+                    zone_hues[i] = (time.time() * 0.15 + (i * 0.25)) % 1.0
 
-                    hist = energy_history[i]
-                    if len(hist) == hist.maxlen:
-                        energy_sums[i] -= hist[0]
-                    hist.append(energy)
-                    energy_sums[i] += energy
-                    long_avg = energy_sums[i] / len(hist)
-
-                    short_hist = short_energy_history[i]
-                    if len(short_hist) == short_hist.maxlen:
-                        short_energy_sums[i] -= short_hist[0]
-                    short_hist.append(energy)
-                    short_energy_sums[i] += energy
-                    short_avg = short_energy_sums[i] / len(short_hist)
-
-                    smoothed_norm_linear = min(1.0, short_avg / (ref_levels[i] + 1e-9))
-                    smoothed_norm = math.log10(1.0 + 99.0 * smoothed_norm_linear) / 2.0
-
-                    beat = (
-                        long_avg > 1e-6
-                        and short_avg > long_avg * BEAT_THRESHOLD
-                        and norm > 0.05
-                        and (now - last_beat_time[i]) > BEAT_COOLDOWN
-                    )
-
-                    new_beat_targets[i] = min(1.0, norm)
-                    new_ambient_floors[i] = min(0.40, smoothed_norm * 1.0)
-                    if beat:
-                        last_beat_time[i] = now
-                        new_beats[i] = True
-
+                # Push results to render thread
                 with self._lock:
-                    self.beat_targets = new_beat_targets
-                    self.ambient_floors = new_ambient_floors
-                    for i in range(4):
-                        if new_beats[i]:
-                            self.beats[i] = True
+                    self._led_brightness = led_brightness[:]
+                    self._zone_hues = zone_hues[:]
 
             except Exception as e:
-                # If device is lost, thread stops gracefully
-                if not self._running:
+                if stop_event.is_set():
                     break
                 time.sleep(0.05)
 
-        # --- SAFE CLEANUP IN THE AUDIO THREAD ---
-        if hasattr(self, 'stream') and self.stream:
+        # ── Safe Cleanup ──
+        if stream:
             try:
-                self.stream.stop_stream()
-                self.stream.close()
+                stream.stop_stream()
+                stream.close()
             except Exception:
                 pass
-            self.stream = None
             
-        if hasattr(self, 'p') and self.p:
+        if p:
             try:
-                self.p.terminate()
+                p.terminate()
             except Exception:
                 pass
-            self.p = None
 
     def update(self, dt: float) -> List[int]:
-        # Config params
-        # Note: In main.py, "brightness" slider is used for smoothness, "speed" for sensitivity
+        """
+        Called by the render thread at ~30fps. Reads brightness + hue from
+        the audio thread and converts to RGB colors for the keyboard.
+        All UI controls are disabled for this effect — the adaptive engine 
+        handles everything automatically.
+        """
         with self._lock:
-            smoothness = max(0, min(100, self.config.get("brightness", 0)))
-            flicker_raw = max(0, min(100, self.config.get("flicker", 0)))
-            zone_colors_raw = self.config.get("zone_colors", [[255, 255, 255] for _ in range(4)])
-            zone_colors = [(c[0], c[1], c[2]) for c in zone_colors_raw]
-            
-            beat_targets = self.beat_targets[:]
-            ambient_floors = self.ambient_floors[:]
-            beats = self.beats[:]
-            self.beats = [False] * 4 # Clear beats after reading
-
-        attack_factor = slider_to_attack(smoothness)
-        decay_factor = slider_to_decay(smoothness)
-        brightness_mult = slider_to_brightness_mult(30) * 1.5 # Fixed max boost
-        flicker_window_target = max(1, round(1 + (flicker_raw / 100.0) * 29))
+            brightness = self._led_brightness[:]
+            hues = self._zone_hues[:]
 
         colors = [0] * 12
 
         for i in range(4):
-            beat = beats[i]
-            beat_target = beat_targets[i]
-            ambient = ambient_floors[i]
-
-            if beat:
-                self.brightness[i] = self.brightness[i] * attack_factor + beat_target * (1.0 - attack_factor)
-                self.velocity[i] = 0.0
-            else:
-                gravity = 0.002 + (1.0 - decay_factor) * 0.02
-                self.velocity[i] += gravity
-                decayed = self.brightness[i] - self.velocity[i]
-                
-                if decayed < ambient:
-                    decayed = ambient
-                    self.velocity[i] = 0.0
-
-                self.brightness[i] = max(ambient, decayed)
-
-            # Flicker reduction
-            bright_hist = self.brightness_history[i]
-            # Adjust window size dynamically if config changed
-            if bright_hist.maxlen != flicker_window_target:
-                new_hist = collections.deque(list(bright_hist)[-flicker_window_target:], maxlen=flicker_window_target)
-                self.brightness_history[i] = new_hist
-                self.brightness_sums[i] = sum(new_hist)
-                bright_hist = new_hist
-                
-            if len(bright_hist) == bright_hist.maxlen:
-                self.brightness_sums[i] -= bright_hist[0]
-            bright_hist.append(self.brightness[i])
-            self.brightness_sums[i] += self.brightness[i]
-            smoothed_bv = self.brightness_sums[i] / len(bright_hist)
-
-            bv = min(1.0, smoothed_bv * brightness_mult)
-            base_r, base_g, base_b = zone_colors[i]
+            br = brightness[i]
+            r_f, g_f, b_f = colorsys.hsv_to_rgb(hues[i], 1.0, 1.0)
             
-            colors[i * 3] = int(base_r * bv)
-            colors[i * 3 + 1] = int(base_g * bv)
-            colors[i * 3 + 2] = int(base_b * bv)
+            colors[i * 3]     = int(r_f * 255 * br)
+            colors[i * 3 + 1] = int(g_f * 255 * br)
+            colors[i * 3 + 2] = int(b_f * 255 * br)
 
         return colors
 

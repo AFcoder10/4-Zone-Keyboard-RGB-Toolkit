@@ -17,7 +17,7 @@ class ValorantSpikeEffect(BaseEffect):
         self.spike_start_time = 0.0
         self.spike_cooldown_until = 0.0
         self.last_spike_scan = 0.0
-        self.sct = mss.mss() if HAS_MSS else None
+        self.sct = None
         self.update_config(self.config)
 
     @property
@@ -28,6 +28,8 @@ class ValorantSpikeEffect(BaseEffect):
         if not HAS_MSS:
             print("mss is required for Valorant Spike Timer.")
             return False
+        if self.sct is None:
+            self.sct = mss.mss()
         self._running = True
         self.t = 0.0
         self.spike_active = False
@@ -55,6 +57,9 @@ class ValorantSpikeEffect(BaseEffect):
 
     def update(self, dt: float) -> List[int]:
         self.t += dt
+        if self.config.pop("spike_test_active", False):
+            self.spike_active = True
+            self.spike_start_time = self.t - 35.0  # Fast forward to intense part
         target_colors = [0] * 12
         
         if self.spike_active:

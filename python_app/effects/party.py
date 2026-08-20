@@ -82,9 +82,9 @@ class PartyEffect(BaseEffect):
                 
             pop = min(zone_pops[i], max_pop)
             
-            target_colors[i * 3] = int(min(255, base_r * pulse * pop))
-            target_colors[i * 3 + 1] = int(min(255, base_g * pulse * pop))
-            target_colors[i * 3 + 2] = int(min(255, base_b * pulse * pop))
+            target_colors[i * 3] = int(max(0, min(255, base_r * pulse * pop)))
+            target_colors[i * 3 + 1] = int(max(0, min(255, base_g * pulse * pop)))
+            target_colors[i * 3 + 2] = int(max(0, min(255, base_b * pulse * pop)))
             
         self.party_state["zone_pops"] = zone_pops
         return target_colors

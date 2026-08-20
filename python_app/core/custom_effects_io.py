@@ -34,13 +34,25 @@ def list_custom_effects() -> List[Dict[str, Any]]:
             print(f"Error loading custom effect {filepath}: {e}")
     return result
 
-def save_custom_effect(effect_data: Dict[str, Any]) -> str:
+def save_custom_effect(effect_data: Dict[str, Any], overwrite: bool = True) -> str:
     """Saves a custom effect JSON to AppData."""
     effects_dir = get_custom_effects_dir()
     name = effect_data.get("name", "Untitled Effect").strip() or "Untitled Effect"
     safe_name = "".join(c for c in name if c.isalnum() or c in (" ", "_", "-")).rstrip()
-    filepath = os.path.join(effects_dir, f"{safe_name}.json")
     
+    base_filepath = os.path.join(effects_dir, f"{safe_name}.json")
+    filepath = base_filepath
+    
+    if not overwrite:
+        counter = 1
+        while os.path.exists(filepath):
+            filepath = os.path.join(effects_dir, f"{safe_name}_{counter}.json")
+            counter += 1
+            
+        # Update the name in the data to match the new file
+        if filepath != base_filepath:
+            effect_data["name"] = f"{name} {counter-1}"
+
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(effect_data, f, indent=2)
         

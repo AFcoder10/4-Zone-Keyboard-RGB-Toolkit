@@ -22,7 +22,9 @@ class BatteryEffect(BaseEffect):
         
         # Read from injected state (config or external cache reference)
         percent = self.config.get("battery_percent", 100)
+        if percent is None: percent = 100
         charging = self.config.get("battery_charging", True)
+        if charging is None: charging = True
         
         if charging:
             if percent >= 100:

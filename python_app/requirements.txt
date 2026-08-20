@@ -10,3 +10,5 @@ hidapi
 pyinstaller
 websockets
 pythonnet
+fastapi
+uvicorn

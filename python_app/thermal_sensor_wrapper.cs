@@ -11,10 +11,12 @@ class Program {
         if (args.Length < 2) return;
         string py = args[0];
         string script = args[1];
-        string allArgs = "\"" + script + "\"";
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append("\"").Append(script).Append("\"");
         for(int i=2; i<args.Length; i++) {
-            allArgs += " " + args[i];
+            sb.Append(" \"").Append(args[i].Replace("\"", "\\\"")).Append("\"");
         }
+        string allArgs = sb.ToString();
         
         ProcessStartInfo info = new ProcessStartInfo();
         info.FileName = py;
@@ -22,6 +24,8 @@ class Program {
         info.UseShellExecute = false;
         info.CreateNoWindow = true;
         
-        Process.Start(info);
+        using (Process p = Process.Start(info))
+        {
+        }
     }
 }

@@ -53,9 +53,9 @@ def get_chroma_weighted_zone_colors(img, vibrance_mult=1.5):
             h, s, v = colorsys.rgb_to_hsv(avg_r / 255.0, avg_g / 255.0, avg_b / 255.0)
             final_r, final_g, final_b = colorsys.hsv_to_rgb(h, min(1.0, s * vibrance_mult), v)
 
-            target_colors[i * 3] = int(final_r * 255)
-            target_colors[i * 3 + 1] = int(final_g * 255)
-            target_colors[i * 3 + 2] = int(final_b * 255)
+            target_colors[i * 3] = int(max(0, min(255, final_r * 255)))
+            target_colors[i * 3 + 1] = int(max(0, min(255, final_g * 255)))
+            target_colors[i * 3 + 2] = int(max(0, min(255, final_b * 255)))
 
     except Exception as e:
         print(f"[Chroma Utils] Error calculating weighted averages: {e}")

@@ -24,7 +24,9 @@ def generate_obfuscated_url(url: str) -> str:
 def _decode_default_endpoint() -> str:
     """
     Reconstructs the default community marketplace database link in transient memory.
-    This prevents plaintext strings from appearing in Git or being extracted from compiled .exe binaries via strings.exe.
+    Note: This XOR + Base64 approach is NOT true encryption and is trivially reversible. 
+    It is used here merely to prevent the plaintext URL from being scraped by automated GitHub bots 
+    or easily read via strings.exe. This endpoint is considered a public community database.
     """
     # Paste your obfuscated string produced by generate_obfuscated_url() inside the quotes below:
     obfuscated = "Mi4uKilgdXUgNTQ/KD04LjU1NjEzLnc+Pzw7LzYudyguPjh0OykzO3cpNS8uMj87KS5rdDwzKD84Oyk/PjsuOzg7KT90OyoqdTc7KDE/Lio2Ozk/dDApNTQ="
@@ -39,26 +41,35 @@ def _decode_default_endpoint() -> str:
 def get_firebase_url():
     return _decode_default_endpoint()
 
-FIREBASE_URL = get_firebase_url()
+
 
 class FetchCloudWorker(QThread):
     data_fetched = Signal(dict)
     error = Signal(str)
 
     def run(self):
-        if not FIREBASE_URL:
+        firebase_url = get_firebase_url()
+        if not firebase_url:
             self.error.emit("Firebase endpoint configuration is missing or invalid.")
             return
             
-        try:
-            req = urllib.request.Request(FIREBASE_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                data = json.loads(response.read().decode('utf-8', errors='ignore'))
-                if not data:
-                    data = {}
-                self.data_fetched.emit(data)
-        except Exception as e:
-            self.error.emit(str(e))
+        import time
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(firebase_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    data = json.loads(response.read().decode('utf-8', errors='ignore'))
+                    if not data:
+                        data = {}
+                    self.data_fetched.emit(data)
+                return
+            except Exception as e:
+                if attempt == 2:
+                    self.error.emit(str(e))
+                    return
+                else:
+                    time.sleep(1)
+
 
 
 class UploadCloudWorker(QThread):
@@ -70,23 +81,36 @@ class UploadCloudWorker(QThread):
         self.data_payload = data_payload
 
     def run(self):
-        if not FIREBASE_URL:
+        firebase_url = get_firebase_url()
+        if not firebase_url:
             self.error.emit("Firebase endpoint configuration is missing or invalid.")
             return
             
-        try:
-            payload = json.dumps(self.data_payload).encode('utf-8')
-            req = urllib.request.Request(
-                FIREBASE_URL, 
-                data=payload, 
-                headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
-                method='POST'
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                response.read()
-            self.upload_success.emit()
-        except Exception as e:
-            self.error.emit(str(e))
+        import time
+        preset_name = self.data_payload.get("preset_name", "Unknown")
+        author = self.data_payload.get("author", "Unknown")
+        import re
+        safe_key = re.sub(r'[^a-zA-Z0-9]', '_', f"{preset_name}_{author}")
+        payload = json.dumps({safe_key: self.data_payload}).encode('utf-8')
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(
+                    firebase_url, 
+                    data=payload, 
+                    headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
+                    method='PATCH'
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    response.read()
+                self.upload_success.emit()
+                return
+            except Exception as e:
+                if attempt == 2:
+                    self.error.emit(str(e))
+                    return
+                else:
+                    time.sleep(1)
+
 
 
 class MarketplaceItemCard(QFrame):
@@ -269,8 +293,10 @@ class EffectDetailDialog(QDialog):
         if is_custom:
             c_data = self.item_data.get("custom_effect_data")
             if c_data and isinstance(c_data, dict):
+                import copy
+                c_data = copy.deepcopy(c_data)
                 from core.custom_effects_io import save_custom_effect
-                save_custom_effect(c_data)
+                save_custom_effect(c_data, overwrite=False)
                 if self.parent_app and hasattr(self.parent_app, "reload_custom_effects"):
                     self.parent_app.reload_custom_effects()
                 QMessageBox.information(self, "Success", f"Custom effect '{title}' has been downloaded to your local library!")
@@ -297,8 +323,10 @@ class EffectDetailDialog(QDialog):
         c_data = self.item_data.get("custom_effect_data")
         if not c_data or not isinstance(c_data, dict):
             return
+        import copy
+        c_data = copy.deepcopy(c_data)
         from core.custom_effects_io import save_custom_effect
-        save_custom_effect(c_data)
+        save_custom_effect(c_data, overwrite=False)
         if self.parent_app and hasattr(self.parent_app, "reload_custom_effects"):
             self.parent_app.reload_custom_effects()
 
@@ -489,6 +517,8 @@ class MarketplaceDialog(QDialog):
                 print(f"Error loading custom effects into upload combo: {e}")
 
     def refresh_cloud_data(self):
+        if getattr(self, 'fetch_worker', None) and self.fetch_worker.isRunning():
+            return
         self.on_upload_type_changed(self.upload_type_combo.currentText())
         self._clear_layout(self.presets_grid_layout)
         self._clear_layout(self.custom_grid_layout)
@@ -517,8 +547,15 @@ class MarketplaceDialog(QDialog):
 
         preset_idx = 0
         custom_idx = 0
+        seen_names = set()
 
         for key, item in self.cloud_data.items():
+            if not isinstance(item, dict):
+                continue
+            item_name = item.get("preset_name", "")
+            if item_name in seen_names:
+                continue
+            seen_names.add(item_name)
             is_custom = "custom_effect_data" in item
             if is_custom:
                 card = MarketplaceItemCard(key, item, self.open_item_detail)
@@ -576,24 +613,43 @@ class MarketplaceDialog(QDialog):
                 return
             payload["custom_effect_data"] = eff_data
 
+        if len(json.dumps(payload).encode('utf-8')) > 256 * 1024:
+            QMessageBox.critical(self, "Error", "Payload exceeds 256KB limit. Too many frames in custom effect.")
+            return
+
+        if getattr(self, 'upload_worker', None) and self.upload_worker.isRunning():
+            return
+
         self.btn_upload.setEnabled(False)
         self.btn_upload.setText("Uploading...")
         self.upload_worker = UploadCloudWorker(payload)
-        self.upload_worker.upload_success.connect(lambda: (
-            self.btn_upload.setEnabled(True),
-            self.btn_upload.setText("Upload To Marketplace"),
-            self.desc_input.clear(),
-            QMessageBox.information(self, "Uploaded", f"Creation '{selected_item_name}' successfully shared with the community!"),
-            self.refresh_cloud_data(),
-            self.main_tabs.setCurrentIndex(1 if type_str == "Custom Effect" else 0)
-        ))
-        self.upload_worker.error.connect(lambda err: (
-            self.btn_upload.setEnabled(True),
-            self.btn_upload.setText("Upload To Marketplace"),
-            QMessageBox.critical(self, "Upload Error", f"Failed to upload creation:\n{err}")
-        ))
+        self.upload_worker.upload_success.connect(self._on_upload_success)
+        self.upload_worker.error.connect(self._on_upload_error)
         self.upload_worker.start()
 
+    def _on_upload_success(self):
+        self.btn_upload.setEnabled(True)
+        self.btn_upload.setText("Upload To Marketplace")
+        self.desc_input.clear()
+        selected = self.item_select_combo.currentText().strip()
+        QMessageBox.information(self, "Uploaded", f"Creation '{selected}' successfully shared with the community!")
+        self.refresh_cloud_data()
+        self.main_tabs.setCurrentIndex(1 if self.upload_type_combo.currentText().strip() == "Custom Effect" else 0)
+
+    def _on_upload_error(self, err):
+        self.btn_upload.setEnabled(True)
+        self.btn_upload.setText("Upload To Marketplace")
+        QMessageBox.critical(self, "Upload Error", f"Failed to upload creation:\n{err}")
+
+
+    def closeEvent(self, event):
+        if getattr(self, 'fetch_worker', None) and self.fetch_worker.isRunning():
+            self.fetch_worker.disconnect()
+            self.fetch_worker.wait(1000)
+        if getattr(self, 'upload_worker', None) and self.upload_worker.isRunning():
+            self.upload_worker.disconnect()
+            self.upload_worker.wait(1000)
+        super().closeEvent(event)
 
 # Compatibility alias for any legacy imports
 CloudHubDialog = MarketplaceDialog

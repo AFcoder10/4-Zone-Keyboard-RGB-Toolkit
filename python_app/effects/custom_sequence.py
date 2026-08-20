@@ -144,7 +144,8 @@ class CustomSequenceEffect(BaseEffect):
                 # Show current frame's solid colors
                 for z in range(4):
                     zc = curr_zones[z] if z < len(curr_zones) else [0, 0, 0]
-                    colors.extend(zc)
+                    if len(zc) < 3: zc = zc + [0]*(3-len(zc))
+                    colors.extend(zc[:3])
             else:
                 # Smoothly blend from current to next
                 trans = self._trans_sec(curr)
@@ -153,7 +154,9 @@ class CustomSequenceEffect(BaseEffect):
                 for z in range(4):
                     c1 = curr_zones[z] if z < len(curr_zones) else [0, 0, 0]
                     c2 = next_zones[z] if z < len(next_zones) else [0, 0, 0]
-                    colors.extend(self._lerp(c1, c2, t))
+                    if len(c1) < 3: c1 = c1 + [0]*(3-len(c1))
+                    if len(c2) < 3: c2 = c2 + [0]*(3-len(c2))
+                    colors.extend(self._lerp(c1[:3], c2[:3], t))
 
             # Apply brightness
             bright_mult = float(self.config.get("brightness", 100)) / 100.0

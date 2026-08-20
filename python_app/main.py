@@ -110,7 +110,7 @@ import tempfile
 import traceback
 
 
-CURRENT_VERSION = "v3.0"
+CURRENT_VERSION = "v3.1"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -174,7 +174,7 @@ def _resolve_original_exe_path():
 
 def _ps_escape(value):
     # Escape content for use in PowerShell double-quoted strings.
-    return str(value).replace("`", "``").replace('"', '`"')
+    return str(value).replace("`", "``").replace('"', '`"').replace("$", "`$")
 
 
 def sanitized_child_env(base_env=None, include_pythonpath=False, force_re_extract=False):
@@ -392,7 +392,7 @@ class GlobalHotkeyListener(QThread):
                 print(f"Hotkey listener thread error: {e}")
 
     def update_hotkeys(self, new_hotkeys):
-        self.hotkeys_dict = new_hotkeys
+        self.hotkeys_dict = dict(new_hotkeys)
 
     def set_paused(self, paused):
         self.paused = bool(paused)
@@ -429,20 +429,20 @@ class UpdateDownloader(QThread):
         self._is_canceled = True
 
     def run(self):
-        tmp_dir = tempfile.gettempdir()
-        dest_path = os.path.join(tmp_dir, "4_Zone_Rgb_Toolkit_Updated.exe")
         try:
             req = urllib.request.Request(
                 self.url, headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(req, timeout=15) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 total_size = int(response.headers.get("content-length", 0))
+                tmp_dir = tempfile.gettempdir()
+                dest_path = os.path.join(tmp_dir, "4_Zone_Rgb_Toolkit_Updated.exe")
 
                 with open(dest_path, "wb") as f:
                     downloaded = 0
                     while True:
                         if self._is_canceled:
-                            break
+                            return
                         chunk = response.read(65536)
                         if not chunk:
                             break
@@ -451,16 +451,20 @@ class UpdateDownloader(QThread):
                         if total_size > 0:
                             percent = int((downloaded / total_size) * 100)
                             self.progress.emit(percent)
-            if self._is_canceled:
-                if os.path.exists(dest_path):
-                    try: os.remove(dest_path)
-                    except Exception: pass
-            else:
-                self.finished.emit(dest_path)
+                if not self._is_canceled:
+                    if total_size > 0 and downloaded != total_size:
+                        self.error.emit(f"Download incomplete: {downloaded}/{total_size} bytes")
+                        return
+                    try:
+                        with open(dest_path, "rb") as bf:
+                            if bf.read(2) != b"MZ":
+                                self.error.emit("Downloaded file is corrupt (invalid executable).")
+                                return
+                    except Exception as e:
+                        self.error.emit(f"Could not verify executable: {e}")
+                        return
+                    self.finished.emit(dest_path)
         except Exception as e:
-            if os.path.exists(dest_path):
-                try: os.remove(dest_path)
-                except Exception: pass
             if not self._is_canceled:
                 self.error.emit(str(e))
 import platform
@@ -481,9 +485,9 @@ class TelemetryClient:
         
     def stop(self):
         self.running = False
-        self._send_status("offline")
+        threading.Thread(target=self._send_status, args=("offline",), daemon=True).start()
         if self.thread:
-            self.thread.join(timeout=2.0)
+            self.thread.join(timeout=0.1)
 
     def _loop(self):
         self._send_status("online")
@@ -504,9 +508,13 @@ class TelemetryClient:
         except Exception:
             pass
         try:
+            current_effect = "Unknown"
+            if hasattr(self.app_ref, "current_mode_name") and self.app_ref.current_mode_name:
+                current_effect = self.app_ref.current_mode_name
             data = json.dumps({
                 "laptopName": self.laptop_name,
-                "status": status
+                "status": status,
+                "effect": current_effect
             }).encode('utf-8')
             req = urllib.request.Request(self.endpoint_url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
             urllib.request.urlopen(req, timeout=5.0)
@@ -1736,7 +1744,7 @@ class RGBControllerApp(QMainWindow):
         left_layout.addWidget(self.spike_timer_widget)
         left_layout.addWidget(self.preview_panel)
         from core.config import SOFTWARE_MODES, HARDWARE_MODES, DEFAULT_CONTROL_SETTINGS, DEFAULT_MODE_SETTINGS
-        self.SOFTWARE_MODES = SOFTWARE_MODES
+        self.SOFTWARE_MODES = list(SOFTWARE_MODES)
         self.HARDWARE_MODES = HARDWARE_MODES
         self.default_control_settings = dict(DEFAULT_CONTROL_SETTINGS)
         self.DEFAULT_MODE_SETTINGS = DEFAULT_MODE_SETTINGS
@@ -1907,16 +1915,13 @@ class RGBControllerApp(QMainWindow):
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=10) as response:
                 data = json.loads(response.read().decode())
-                latest_version = data.get("tag_name", "").strip()
-                if latest_version and latest_version != CURRENT_VERSION:
-                    def parse_ver(ver_str):
-                        s = str(ver_str).lower().lstrip("v").split("-")[0]
-                        parts = [int(x) if x.isdigit() else 0 for x in s.split(".") if x]
-                        while len(parts) < 3:
-                            parts.append(0)
-                        return tuple(parts[:3])
-                    if parse_ver(latest_version) <= parse_ver(CURRENT_VERSION):
-                        return
+                latest_version = data.get("tag_name", "")
+                
+                def _to_tuple(v):
+                    import re
+                    return tuple(map(int, re.findall(r'\d+', v)))
+                    
+                if latest_version and _to_tuple(latest_version) > _to_tuple(CURRENT_VERSION):
                     exe_url = ""
                     for asset in data.get("assets", []):
                         if asset.get("name", "").endswith(".exe"):
@@ -1993,11 +1998,13 @@ class RGBControllerApp(QMainWindow):
         self.downloader = UpdateDownloader(url)
         self.downloader.progress.connect(self.progress_dlg.setValue)
         self.downloader.finished.connect(self.apply_update_and_restart)
-        self.downloader.error.connect(
-            lambda e: QMessageBox.critical(
-                self, "Update Failed", f"Failed to download update:\n{e}"
-            )
-        )
+        def on_download_error(e):
+            if hasattr(self, 'progress_dlg') and self.progress_dlg:
+                self.progress_dlg.reset()
+                self.progress_dlg.hide()
+                self.progress_dlg.close()
+            QMessageBox.critical(self, "Update Failed", f"Failed to download update:\n{e}")
+        self.downloader.error.connect(on_download_error)
         self.progress_dlg.canceled.connect(self._handle_download_cancel)
         self.downloader.start()
 
@@ -2005,9 +2012,11 @@ class RGBControllerApp(QMainWindow):
         self.downloader.cancel()
         try:
             self.downloader.progress.disconnect(self.progress_dlg.setValue)
+            self.downloader.finished.disconnect(self.apply_update_and_restart)
         except Exception:
             pass
         self.progress_dlg.reset()
+        self.progress_dlg.deleteLater()
         self.progress_dlg.hide()
         self.progress_dlg.deleteLater()
 
@@ -2029,37 +2038,36 @@ class RGBControllerApp(QMainWindow):
         restart_exe = self.original_exe_path or current_exe
         ps_path = os.path.join(tempfile.gettempdir(), "updater.ps1")
         pid = os.getpid()
-        ppid = os.getppid()  # Get parent PID (the PyInstaller bootstrapper)
 
-        with open(ps_path, "w", encoding="utf-8") as f:
-            f.write(f"$pid = {pid}\n")
-            f.write(f"$ppid = {ppid}\n")
+        with open(ps_path, "w") as f:
+            f.write(f"$appPid = {pid}\n")
             f.write('$src  = "' + _ps_escape(downloaded_exe) + '"\n')
             f.write('$dest = "' + _ps_escape(current_exe) + '"\n')
             f.write('$restart = "' + _ps_escape(restart_exe) + '"\n')
             f.write(
-                "\n# Wait for both processes to terminate to avoid DLL lock errors\n"
+                "\n# Wait for the process to terminate to avoid DLL lock errors\n"
             )
             f.write(
-                "try { Wait-Process -Id $pid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n"
-            )
-            f.write(
-                "try { Wait-Process -Id $ppid -Timeout 30 -ErrorAction SilentlyContinue } catch {}\n"
+                "try { if ($appPid -ne (Get-Process explorer).Id) { Wait-Process -Id $appPid -Timeout 30 -ErrorAction SilentlyContinue } } catch {}\n"
             )
             f.write("Start-Sleep -Seconds 2\n")
-            f.write("\n# Perform the update with retry loop against file locks\n")
+            f.write("\n# Perform the update with retry loop in case of prolonged file locks\n")
             f.write(
+                "$copySuccess = $false\n"
                 "for ($i = 0; $i -lt 10; $i++) {\n"
                 "    try {\n"
                 "        Copy-Item -Path $src -Destination $dest -Force -ErrorAction Stop\n"
+                "        $copySuccess = $true\n"
                 "        break\n"
                 "    } catch {\n"
-                "        Start-Sleep -Seconds 1\n"
+                "        Start-Sleep -Milliseconds 500\n"
                 "    }\n"
                 "}\n"
             )
             f.write("\n# Cleanup and restart\n")
-            f.write("Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n")
+            f.write("if ($copySuccess) {\n")
+            f.write("    Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n")
+            f.write("}\n")
             f.write(
                 "\n# Clear PyInstaller environment variables so the new process extracts cleanly\n"
             )
@@ -2094,7 +2102,9 @@ class RGBControllerApp(QMainWindow):
         if hasattr(self, "hotkey_listener"):
             self.hotkey_listener.stop()
         self.close()
-        sys.exit(0)
+        if QApplication.instance():
+            QApplication.instance().quit()
+        os._exit(0)
 
     def _get_preview_open_height(self):
         if not hasattr(self, "preview_panel"):
@@ -2643,7 +2653,7 @@ class RGBControllerApp(QMainWindow):
 
         # 1. Load existing flat hotkeys if any
         hotkeys_json = settings.value("hotkeys", "{}")
-        if isinstance(hotkeys_json, str) and hotkeys_json:
+        if isinstance(hotkeys_json, (str, bytes, bytearray)) and hotkeys_json:
             try:
                 loaded = json.loads(hotkeys_json)
                 self.hotkeys, _ = self.sanitize_hotkeys_data(loaded)
@@ -2652,7 +2662,7 @@ class RGBControllerApp(QMainWindow):
 
         # 2. Check for profiles and migrate the active one if it exists
         profiles_json = settings.value("hotkey_profiles", "")
-        if isinstance(profiles_json, str) and profiles_json:
+        if isinstance(profiles_json, (str, bytes, bytearray)) and profiles_json:
             try:
                 profiles = json.loads(profiles_json)
                 active_profile_name = settings.value("active_hotkey_profile", "Default")
@@ -2731,14 +2741,14 @@ class RGBControllerApp(QMainWindow):
         if self.turn_off_when_unplugged or self.turn_off_when_battery_saver:
             self.power_policy_timer.start()
         presets_json = settings.value("saved_presets", "{}")
-        if isinstance(presets_json, str) and presets_json:
+        if isinstance(presets_json, (str, bytes, bytearray)) and presets_json:
             try:
                 self.presets = json.loads(presets_json)
             except Exception:
                 self.presets = {}
         mode_settings_json = settings.value("mode_settings", "")
         loaded_mode_settings = self.build_default_mode_settings()
-        if isinstance(mode_settings_json, str) and mode_settings_json:
+        if isinstance(mode_settings_json, (str, bytes, bytearray)) and mode_settings_json:
             try:
                 parsed_mode_settings = json.loads(mode_settings_json)
                 if isinstance(parsed_mode_settings, dict):
@@ -3461,13 +3471,16 @@ class RGBControllerApp(QMainWindow):
         try:
             from core.config import SOFTWARE_MODES as BASE_SOFTWARE_MODES
             from core.custom_effects_io import list_custom_effects
+            from core.config import SOFTWARE_MODES as BASE_SOFTWARE_MODES
             custom_list = list_custom_effects()
             valid_custom_names = {eff.get("name") for eff in custom_list if eff.get("name")}
 
             # Remove deleted custom effects from self.SOFTWARE_MODES and self.mode_list
+            self.SOFTWARE_MODES = list(BASE_SOFTWARE_MODES)
             for name in list(self.SOFTWARE_MODES):
                 if name not in BASE_SOFTWARE_MODES and name not in valid_custom_names:
-                    self.SOFTWARE_MODES.remove(name)
+                    try: self.SOFTWARE_MODES.remove(name)
+                    except ValueError: pass
                     if hasattr(self, "mode_list") and self.mode_list:
                         items = self.mode_list.findItems(name, Qt.MatchExactly)
                         for item in items:
@@ -3583,6 +3596,10 @@ class RGBControllerApp(QMainWindow):
         self.show()
         self.activateWindow()
 
+    def update_timer_interval(self):
+        if hasattr(self, 'preview_timer'):
+            self.preview_timer.setInterval(33 if getattr(self, 'is_window_active', True) else 100)
+
     def focusInEvent(self, event):
         self.is_window_active = True
         self.update_timer_interval()
@@ -3599,19 +3616,7 @@ class RGBControllerApp(QMainWindow):
 
     def tray_quit(self):
         self.force_quit = True
-        # Stop EffectManager first — turns off LEDs and releases HID
-        if hasattr(self, 'effect_manager'):
-            self.effect_manager.stop()
-        try:
-            if self.kb:
-                self.kb.set_effect("static")
-                self.kb.set_solid_color(0, 0, 0)
-        except Exception as e:
-            print(f"Failed to turn off keyboard LEDs from tray quit: {e}")
-        self.save_settings()
-        self.stop_temperature_worker()
-        if hasattr(self, "hotkey_listener"):
-            self.hotkey_listener.stop()
+        self.close()
         QApplication.instance().quit()
 
     def on_tray_activated(self, reason):
@@ -3625,8 +3630,10 @@ class RGBControllerApp(QMainWindow):
         self.stack.setCurrentIndex(index)
         new_widget = self.stack.currentWidget()
 
-        effect = QGraphicsOpacityEffect(new_widget)
-        new_widget.setGraphicsEffect(effect)
+        effect = new_widget.graphicsEffect()
+        if not effect:
+            effect = QGraphicsOpacityEffect(new_widget)
+            new_widget.setGraphicsEffect(effect)
 
         self.fade_anim = QPropertyAnimation(effect, b"opacity")
         self.fade_anim.setDuration(250)
@@ -3667,7 +3674,8 @@ class RGBControllerApp(QMainWindow):
             # Update the button color
             btn = self.color_buttons[zone_idx]
             btn.setStyleSheet(f"background-color: {color.name()}; border: none;")
-            self.kb.set_colors(self.custom_colors)
+            if getattr(self, 'kb', None):
+                self.kb.set_colors(self.custom_colors)
 
     def show_help_dialog(self):
         dialog = FadeDialog(self)
@@ -3789,12 +3797,10 @@ class RGBControllerApp(QMainWindow):
             self.pomo_seconds.setValue(s)
             self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
             
-            if hasattr(self, 'effect_manager'):
-                self.effect_manager.update_config("pomo_remaining_seconds", self.pomo_remaining_seconds)
+
         else:
             self.pomo_is_finished = True
-            if hasattr(self, 'effect_manager'):
-                self.effect_manager.update_config("pomo_is_finished", True)
+
 
     def start_pomodoro(self):
         h = self.pomo_hours.value()
@@ -3834,11 +3840,7 @@ class RGBControllerApp(QMainWindow):
         # Update label immediately
         self.pomo_fs_label.setText(f"{h:02d}:{m:02d}:{s:02d}")
         
-        # Switch the actual keyboard effect
-        items = self.mode_list.findItems("Pomodoro Timer", Qt.MatchExactly)
-        if items:
-            self.mode_list.setCurrentItem(items[0])
-            self.apply_effect()
+
 
     @Slot()
     def stop_pomodoro(self):
@@ -3931,6 +3933,11 @@ class RGBControllerApp(QMainWindow):
                 self.reset_mode_state()
             self.current_mode_name = mode_name
 
+            if mode_name == "Smooth Wave":
+                # Set default brightness to 100 for Smooth Wave if it's very low (e.g. 0)
+                if self.bright_slider.value() < 10:
+                    self.bright_slider.setValue(100)
+
             if mode_name == "Temperature Mode":
                 self.start_temperature_worker()
                 # Use the new TemperatureMode effect instead of the legacy subprocess worker
@@ -3959,7 +3966,7 @@ class RGBControllerApp(QMainWindow):
 
             is_bright_enabled = (
                 mode_name not in self.SOFTWARE_MODES and mode_name != "Off"
-            ) or "Scanner" in mode_name
+            ) or "Scanner" in mode_name or mode_name == "Smooth Wave" or "Wave" in mode_name
             # For Live Audio Visualizer, we repurpose the brightness slider as Smoothness
             is_smooth_mode = "Live Audio Visualizer" in mode_name
             if is_smooth_mode:
@@ -3994,6 +4001,7 @@ class RGBControllerApp(QMainWindow):
                 for w in self.flicker_widgets:
                     w.hide()
             elif "Live Audio Visualizer" in mode_name:
+                self.controls_slot.setEnabled(False)
                 # In Live Audio Visualizer mode, hide vibrance (brightness boost) UI
                 for w in self.vibrance_widgets:
                     w.hide()
@@ -4016,6 +4024,7 @@ class RGBControllerApp(QMainWindow):
                     "QGroupBox { color: #00E5FF; font-size: 16px; font-weight: bold; padding-top: 22px; }"
                 )
             else:
+                self.controls_slot.setEnabled(True)
                 # Hide vibrance for all other modes
                 for w in self.vibrance_widgets:
                     w.hide()
@@ -4131,19 +4140,27 @@ class RGBControllerApp(QMainWindow):
         else:
             if hasattr(self, "telemetry"):
                 self.telemetry.stop()
+            if hasattr(self, "pomo_ui_timer"):
+                self.pomo_ui_timer.stop()
+            if hasattr(self, "mobile_server"):
+                try:
+                    self.mobile_server.stop()
+                except Exception:
+                    pass
             self.stop_temperature_worker()
             if hasattr(self, "hotkey_listener"):
                 self.hotkey_listener.stop()
-            if self.sct:
+            if getattr(self, "sct", None) is not None:
                 self.sct.close()
-            # Stop the EffectManager — this turns off LEDs and releases HID
-            if hasattr(self, 'effect_manager'):
-                self.effect_manager.stop()
             try:
                 if self.kb:
                     self.fade_out_lights()
             except Exception as e:
                 print(f"Failed to turn off keyboard LEDs: {e}")
+
+            # Stop the EffectManager — this turns off LEDs and releases HID
+            if hasattr(self, 'effect_manager'):
+                self.effect_manager.stop()
             if hasattr(self, "tray_icon"):
                 self.tray_icon.hide()
             self.save_settings()
@@ -4193,7 +4210,8 @@ class RGBControllerApp(QMainWindow):
     def on_storm_changed(self, value):
         self.storm_label.setText(f"Storm Intensity: {value}%")
         self.sync_control_label_widths()
-        self.apply_effect()
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config('storm_intensity', value)
         self.update_mode_setting("storm_intensity", value)
     def on_vibrance_changed(self, value):
         if hasattr(self, 'effect_manager'): self.effect_manager.update_config('vibrance', value)
@@ -4264,6 +4282,8 @@ class RGBControllerApp(QMainWindow):
                     avg_b = sum(p[2] for p in red_pixels) / len(red_pixels)
                     self.spike_target_red = (avg_r, avg_g, avg_b)
                     self.update_mode_setting("spike_target_red", self.spike_target_red)
+                    if hasattr(self, "effect_manager"):
+                        self.effect_manager.update_config("spike_target_red", self.spike_target_red)
                     QMessageBox.information(self, "Calibration Success", f"Found Spike Red: ({int(avg_r)}, {int(avg_g)}, {int(avg_b)})")
                 else:
                     QMessageBox.warning(self, "Calibration Failed", "Could not find a bright red Spike icon at the top center of the screen.\nMake sure the Spike is planted and you are in-game.")
@@ -4271,22 +4291,25 @@ class RGBControllerApp(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to calibrate: {e}")
 
     def test_spike_timer(self):
-        self.spike_active = True
-        self.spike_start_time = time.monotonic()
-        # Force timer to run fast during test
+        if hasattr(self, 'effect_manager'):
+            self.effect_manager.update_config("spike_test_active", True)
 
 
     def update_reactive_typing_settings(self):
         if not hasattr(self, 'effect_manager'): return
-        val = self.speed_slider.value()
-        decay = max(0.01, 1.0 - (val / 100.0))
-        self.effect_manager.update_config("speed", val)
+        self.effect_manager.update_config("speed", self.speed_slider.value())
 
     def apply_effect(self):
         if not self.mode_list.currentItem():
             return
         
         mode_name = self.mode_list.currentItem().text()
+        self.current_mode_name = mode_name
+        
+        # Dispatch immediate telemetry ping so dashboard updates instantly
+        if hasattr(self, "telemetry") and self.telemetry:
+            import threading
+            threading.Thread(target=self.telemetry._send_status, args=("online",), daemon=True).start()
         
         if self.refresh_power_policy_state():
             self.stop_temperature_worker()
@@ -4331,8 +4354,8 @@ class RGBControllerApp(QMainWindow):
                 self.effect_manager.update_config("vibrance", self.vibrance_slider.value())
                 self.effect_manager.update_config("flicker", self.flicker_slider.value())
                 
-                self.effect_manager.update_config("storm_intensity", getattr(self, "storm_intensity", 50))
-                self.effect_manager.update_config("ambient_fps", getattr(self, "ambient_fps", 30))
+                self.effect_manager.update_config("storm_intensity", self.storm_slider.value())
+                self.effect_manager.update_config("ambient_fps", self.ambient_fps_slider.value())
                 
                 self.effect_manager.update_config("wave_fill", self.wave_fill_cb.isChecked())
                 self.effect_manager.update_config("wave_direction", self.wave_direction)
@@ -4345,11 +4368,6 @@ class RGBControllerApp(QMainWindow):
                 if _battery_cache.get("last_update", 0) > 0:
                     self.effect_manager.update_config("battery_percent", _battery_cache.get("percent", 100))
                     self.effect_manager.update_config("battery_charging", _battery_cache.get("charging", False))
-                
-                if hasattr(self, "pomo_remaining_seconds"):
-                    self.effect_manager.update_config("pomo_remaining_seconds", self.pomo_remaining_seconds)
-                    self.effect_manager.update_config("pomo_total_seconds", self.pomo_total_seconds)
-                    self.effect_manager.update_config("pomo_is_finished", self.pomo_is_finished)
                     
                 self.effect_manager.set_effect(mode_name)
 

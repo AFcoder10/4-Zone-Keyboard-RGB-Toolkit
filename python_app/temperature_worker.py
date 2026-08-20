@@ -114,9 +114,10 @@ def main():
             if gpu_err:
                 errs.append(gpu_err)
 
+            import math
             data = {
-                "cpu": cpu_temp if cpu_temp is not None else 0.0,
-                "gpu": gpu_temp if gpu_temp is not None else 0.0,
+                "cpu": cpu_temp if (cpu_temp is not None and not math.isnan(cpu_temp)) else 0.0,
+                "gpu": gpu_temp if (gpu_temp is not None and not math.isnan(gpu_temp)) else 0.0,
                 "error": " | ".join(errs) if errs else None,
             }
 

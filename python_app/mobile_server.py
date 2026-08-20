@@ -16,9 +16,11 @@ class MobileServer:
         self.loop = None
         self.thread = None
         self.connected_clients = set()
+        self.connected_clients_lock = threading.Lock()
         
     async def ws_handler(self, websocket):
-        self.connected_clients.add(websocket)
+        with self.connected_clients_lock:
+            self.connected_clients.add(websocket)
         try:
             # Send initial state
             state = {
@@ -35,10 +37,7 @@ class MobileServer:
                 "wave_fill": self.app.wave_fill_cb.isChecked() if hasattr(self.app, "wave_fill_cb") else False,
                 "smooth_wave_palette": self.app.smooth_wave_palette_combo.currentText() if hasattr(self.app, "smooth_wave_palette_combo") else "RGBW",
                 "scanner_rainbow": self.app.scanner_rainbow_cb.isChecked() if hasattr(self.app, "scanner_rainbow_cb") else False,
-                "reactive_rainbow": self.app.reactive_rainbow_cb.isChecked() if hasattr(self.app, "reactive_rainbow_cb") else False,
-                "pomo_running": getattr(self.app, "pomo_running", False),
-                "pomo_remaining": getattr(self.app, "pomo_remaining_seconds", 0),
-                "pomo_minutes": self.app.pomo_minutes.value() if hasattr(self.app, "pomo_minutes") else 25,
+                "reactive_rainbow": self.app.reactive_rainbow_cb.isChecked() if hasattr(self.app, "reactive_rainbow_cb") else False
             }
             try:
                 state["zone_colors"] = ["#%02x%02x%02x" % (c[0], c[1], c[2]) for c in self.app.zone_colors]
@@ -48,22 +47,29 @@ class MobileServer:
             await websocket.send(json.dumps(state))
             
             async for message in websocket:
-                data = json.loads(message)
+                try:
+                    data = json.loads(message)
+                except Exception:
+                    continue
                 if data.get("command") == "set_mode":
                     mode = data.get("mode")
-                    # Safely interact with GUI on main thread
-                    QMetaObject.invokeMethod(self.app, "set_mode_from_mobile", 
-                        Qt.QueuedConnection, Q_ARG(str, mode))
+                    if mode is not None:
+                        QMetaObject.invokeMethod(self.app, "set_mode_from_mobile", 
+                            Qt.QueuedConnection, Q_ARG(str, mode))
                 elif data.get("command") == "set_speed":
                     speed = data.get("speed")
-                    QMetaObject.invokeMethod(self.app.speed_slider, "setValue", 
-                        Qt.QueuedConnection, Q_ARG(int, speed))
+                    if speed is not None:
+                        QMetaObject.invokeMethod(self.app.speed_slider, "setValue", 
+                            Qt.QueuedConnection, Q_ARG(int, speed))
                 elif data.get("command") == "set_brightness":
                     brightness = data.get("brightness")
-                    QMetaObject.invokeMethod(self.app.bright_slider, "setValue", 
-                        Qt.QueuedConnection, Q_ARG(int, brightness))
+                    if brightness is not None:
+                        QMetaObject.invokeMethod(self.app.bright_slider, "setValue", 
+                            Qt.QueuedConnection, Q_ARG(int, brightness))
                 elif data.get("command") == "set_direction":
-                    d = data.get("direction").lower()
+                    d_raw = data.get("direction")
+                    if d_raw is None: continue
+                    d = d_raw.lower()
                     if "right" in d:
                         d = "right"
                     else:
@@ -89,6 +95,8 @@ class MobileServer:
                 elif data.get("command") == "set_zone_color":
                     zone_idx = data.get("zone_idx")
                     hex_val = data.get("hex")
+                    if zone_idx is None or hex_val is None:
+                        continue
                     from PySide6.QtGui import QColor
                     QMetaObject.invokeMethod(self.app, "set_custom_color_from_mobile", 
                         Qt.QueuedConnection, Q_ARG(int, zone_idx), Q_ARG(QColor, QColor(hex_val)))
@@ -123,17 +131,20 @@ class MobileServer:
         except Exception as e:
             logger.error(f"Mobile Server Error: {e}")
         finally:
-            self.connected_clients.remove(websocket)
+            with self.connected_clients_lock:
+                self.connected_clients.remove(websocket)
 
     def broadcast_colors(self, colors):
         """ colors should be a list of 4 strings e.g. ['#ff0000', '#00ff00', ...] """
-        if not self.loop or not self.connected_clients:
+        if not self.loop or not self.loop.is_running() or not self.connected_clients:
             return
             
         message = json.dumps({"type": "colors", "data": colors})
         
         async def _broadcast():
-            websockets.broadcast(self.connected_clients, message)
+            with self.connected_clients_lock:
+                clients = self.connected_clients.copy()
+            websockets.broadcast(clients, message)
             
         asyncio.run_coroutine_threadsafe(_broadcast(), self.loop)
 
@@ -144,7 +155,10 @@ class MobileServer:
     def _run(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(self._main_serve())
+        try:
+            self.loop.run_until_complete(self._main_serve())
+        except Exception:
+            pass
 
     def start(self):
         self.thread = threading.Thread(target=self._run, daemon=True)

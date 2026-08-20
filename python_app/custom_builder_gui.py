@@ -742,7 +742,7 @@ class GifSplashScreen(QWidget):
         self.label.setPixmap(QPixmap.fromImage(scaled_img))
         
         # Stop at the very last frame
-        if frameNumber == self.movie.frameCount() - 1:
+        if self.movie.frameCount() > 0 and frameNumber >= self.movie.frameCount() - 1:
             self.movie.stop()
             self.fade_out()
             
@@ -794,9 +794,23 @@ class FrameCardWidget(QFrame):
         
         hold_ms = frame_data.get("hold_ms", 600)
         t_style = frame_data.get("transition_style", "smooth")
-        info_lbl = QLabel(f"Hold: {hold_ms}ms | {t_style.capitalize()}")
-        info_lbl.setStyleSheet("color: #9AA0A6; font-size: 10px; font-weight: 500; border: none; background: transparent;")
-        layout.addWidget(info_lbl)
+        self.info_lbl = QLabel(f"Hold: {hold_ms}ms | {t_style.capitalize()}")
+        self.info_lbl.setStyleSheet("color: #9AA0A6; font-size: 10px; font-weight: 500; border: none; background: transparent;")
+        layout.addWidget(self.info_lbl)
+
+    def update_card(self, frame_data, is_selected):
+        self.set_selected(is_selected)
+        zones = frame_data.get("zones", [[0, 0, 0] for _ in range(4)])
+        # update swatches
+        swatch_layout = self.layout().itemAt(1).layout()
+        for z in range(4):
+            z_rgb = zones[z] if z < len(zones) else [0, 0, 0]
+            sw = swatch_layout.itemAt(z).widget()
+            sw.setStyleSheet(f"background-color: rgb({z_rgb[0]}, {z_rgb[1]}, {z_rgb[2]}); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 3px;")
+        
+        hold_ms = frame_data.get("hold_ms", 600)
+        t_style = frame_data.get("transition_style", "smooth")
+        self.info_lbl.setText(f"Hold: {hold_ms}ms | {t_style.capitalize()}")
 
     def set_selected(self, is_selected):
         if is_selected:
@@ -956,15 +970,30 @@ class EffectStudioDialog(QDialog):
 
         # Save previous active mode
         self.previous_mode = None
+        self.pre_studio_custom_config = None
         if self.parent_app and hasattr(self.parent_app, "mode_list") and self.parent_app.mode_list.currentItem():
             self.previous_mode = self.parent_app.mode_list.currentItem().text()
+            
+        if self.previous_mode == "Custom Sequence" and self.parent_app and hasattr(self.parent_app, "effect_manager"):
+            import copy
+            self.pre_studio_custom_config = copy.deepcopy(self.parent_app.effect_manager.config)
+            loaded_frames = self.pre_studio_custom_config.get("frames", [])
+            if loaded_frames:
+                self.frames = copy.deepcopy(loaded_frames)
 
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(35)
+        self._update_timer.setInterval(100)
         self._update_timer.timeout.connect(self._do_live_update_hardware)
 
         self._build_ui()
+        
+        if getattr(self, 'pre_studio_custom_config', None):
+            if "speed" in self.pre_studio_custom_config:
+                self.default_speed_slider.setValue(self.pre_studio_custom_config["speed"])
+            if "brightness" in self.pre_studio_custom_config:
+                self.default_bright_slider.setValue(self.pre_studio_custom_config["brightness"])
+                
         self.refresh_saved_effects_combo()
         self.rebuild_frame_list()
         self.load_frame_into_inspector(0)
@@ -999,7 +1028,8 @@ class EffectStudioDialog(QDialog):
                 self.parent_app.effect_manager.update_config("speed", 50)
                 self.parent_app.effect_manager.update_config("brightness", 0)
             else:
-                self.parent_app.effect_manager.update_config("frames", self.frames)
+                import copy
+                self.parent_app.effect_manager.update_config("frames", copy.deepcopy(self.frames))
                 self.parent_app.effect_manager.update_config("speed", self.default_speed_slider.value())
                 self.parent_app.effect_manager.update_config("brightness", self.default_bright_slider.value())
 
@@ -1018,15 +1048,27 @@ class EffectStudioDialog(QDialog):
     def accept(self):
         if hasattr(self, "_update_timer"):
             self._update_timer.stop()
+        self.pre_studio_custom_config = None  # Don't restore if accepted!
         self._restore_previous_effect()
         super().accept()
 
     def _restore_previous_effect(self):
-        if self.parent_app and self.previous_mode:
-            items = self.parent_app.mode_list.findItems(self.previous_mode, Qt.MatchExactly)
-            if items:
-                self.parent_app.mode_list.setCurrentItem(items[0])
-                self.parent_app.apply_effect()
+        if self.parent_app and hasattr(self.parent_app, "effect_manager") and getattr(self, "pre_studio_custom_config", None) is not None:
+            if "frames" in self.pre_studio_custom_config:
+                self.parent_app.effect_manager.update_config("frames", self.pre_studio_custom_config["frames"])
+            if "speed" in self.pre_studio_custom_config:
+                self.parent_app.effect_manager.update_config("speed", self.pre_studio_custom_config["speed"])
+            if "brightness" in self.pre_studio_custom_config:
+                self.parent_app.effect_manager.update_config("brightness", self.pre_studio_custom_config["brightness"])
+        if getattr(self, "parent_app", None) and getattr(self, "previous_mode", None):
+            try:
+                items = self.parent_app.mode_list.findItems(self.previous_mode, Qt.MatchExactly)
+                if items and len(items) > 0:
+                    self.parent_app.mode_list.setCurrentItem(items[0])
+                    if hasattr(self.parent_app, "apply_effect"):
+                        self.parent_app.apply_effect()
+            except Exception:
+                pass
 
     def _build_ui(self):
         master_layout = QVBoxLayout(self)
@@ -1280,6 +1322,21 @@ class EffectStudioDialog(QDialog):
         t_row1.addStretch()
         t_layout.addLayout(t_row1)
 
+        t_row1b = QHBoxLayout()
+        t_row1b.setSpacing(12)
+        t_row1b.addWidget(QLabel("Transition Time (ms):"))
+        self.trans_ms_spin = QSpinBox()
+        self.trans_ms_spin.setRange(0, 10000)
+        self.trans_ms_spin.setSingleStep(50)
+        self.trans_ms_spin.setValue(400)
+        self.trans_ms_spin.setFixedHeight(26)
+        self.trans_ms_spin.setMinimumWidth(95)
+        self.trans_ms_spin.setToolTip("Duration (in milliseconds) of the transition to the next frame.")
+        self.trans_ms_spin.valueChanged.connect(self.on_trans_ms_changed)
+        t_row1b.addWidget(self.trans_ms_spin)
+        t_row1b.addStretch()
+        t_layout.addLayout(t_row1b)
+
         t_row2 = QHBoxLayout()
         t_row2.setSpacing(10)
         self.btn_apply_trans_all = QPushButton("Apply Transition to All")
@@ -1340,6 +1397,15 @@ class EffectStudioDialog(QDialog):
         self.effect_selector_combo.blockSignals(False)
 
     def rebuild_frame_list(self):
+        if self.frames_list_layout.count() == len(self.frames):
+            # Optimised update in place
+            for idx, f_data in enumerate(self.frames):
+                is_selected = (idx == self.selected_frame_idx)
+                card = self.frames_list_layout.itemAt(idx).widget()
+                if isinstance(card, FrameCardWidget):
+                    card.update_card(f_data, is_selected)
+            return
+
         while self.frames_list_layout.count():
             child = self.frames_list_layout.takeAt(0)
             if child.widget():
@@ -1372,6 +1438,8 @@ class EffectStudioDialog(QDialog):
             self.btn_apply_hold_all.setEnabled(False)
             self.trans_combo.setEnabled(False)
             self.btn_apply_trans_all.setEnabled(False)
+            if hasattr(self, "trans_ms_spin"):
+                self.trans_ms_spin.setEnabled(False)
             self.btn_dup_frame.setEnabled(False)
             self.btn_del_frame.setEnabled(False)
             return
@@ -1385,6 +1453,8 @@ class EffectStudioDialog(QDialog):
         self.btn_apply_hold_all.setEnabled(True)
         self.trans_combo.setEnabled(True)
         self.btn_apply_trans_all.setEnabled(True)
+        if hasattr(self, "trans_ms_spin"):
+            self.trans_ms_spin.setEnabled(True)
         self.btn_dup_frame.setEnabled(True)
         self.btn_del_frame.setEnabled(True)
 
@@ -1406,9 +1476,14 @@ class EffectStudioDialog(QDialog):
         style = f.get("transition_style", "smooth")
         self.trans_combo.setCurrentText("Smooth" if style == "smooth" else "Quick (Instant)")
         self.trans_combo.blockSignals(False)
+        
+        if hasattr(self, "trans_ms_spin"):
+            self.trans_ms_spin.blockSignals(True)
+            self.trans_ms_spin.setValue(f.get("transition_ms", 400))
+            self.trans_ms_spin.blockSignals(False)
 
     def pick_zone_color(self, zone_idx):
-        if self.selected_frame_idx >= len(self.frames):
+        if self.selected_frame_idx < 0 or self.selected_frame_idx >= len(self.frames):
             return
         curr_zones = self.frames[self.selected_frame_idx].get("zones", [[0, 0, 0] for _ in range(4)])
         c_rgb = curr_zones[zone_idx] if zone_idx < len(curr_zones) else [0, 0, 0]
@@ -1423,7 +1498,7 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def pick_all_zones_color(self):
-        if self.selected_frame_idx >= len(self.frames):
+        if self.selected_frame_idx < 0 or self.selected_frame_idx >= len(self.frames):
             return
         curr_zones = self.frames[self.selected_frame_idx].get("zones", [[0, 0, 0] for _ in range(4)])
         c_rgb = curr_zones[0] if len(curr_zones) > 0 else [0, 0, 0]
@@ -1438,7 +1513,7 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def shift_colors_left(self):
-        if self.selected_frame_idx >= len(self.frames):
+        if self.selected_frame_idx < 0 or self.selected_frame_idx >= len(self.frames):
             return
         curr_zones = self.frames[self.selected_frame_idx].get("zones", [[0, 0, 0] for _ in range(4)])
         if len(curr_zones) == 4:
@@ -1449,7 +1524,7 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def shift_colors_right(self):
-        if self.selected_frame_idx >= len(self.frames):
+        if self.selected_frame_idx < 0 or self.selected_frame_idx >= len(self.frames):
             return
         curr_zones = self.frames[self.selected_frame_idx].get("zones", [[0, 0, 0] for _ in range(4)])
         if len(curr_zones) == 4:
@@ -1460,20 +1535,26 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def on_hold_time_changed(self, value):
-        if self.selected_frame_idx < len(self.frames):
+        if 0 <= self.selected_frame_idx < len(self.frames):
             self.frames[self.selected_frame_idx]["hold_ms"] = value
             self.rebuild_frame_list()
             self.live_update_hardware()
 
     def on_trans_style_changed(self, text):
-        if self.selected_frame_idx < len(self.frames):
+        if 0 <= self.selected_frame_idx < len(self.frames):
             style = "smooth" if "Smooth" in text else "quick"
             self.frames[self.selected_frame_idx]["transition_style"] = style
             self.rebuild_frame_list()
             self.live_update_hardware()
 
+    def on_trans_ms_changed(self, value):
+        if 0 <= self.selected_frame_idx < len(self.frames):
+            self.frames[self.selected_frame_idx]["transition_ms"] = value
+            # self.rebuild_frame_list() # Not strictly necessary to rebuild frame list since we don't show trans_ms on the card, but let's be consistent
+            self.live_update_hardware()
+
     def apply_hold_to_all(self):
-        if self.selected_frame_idx < len(self.frames):
+        if 0 <= self.selected_frame_idx < len(self.frames):
             target_hold = self.frames[self.selected_frame_idx].get("hold_ms", 600)
             for f in self.frames:
                 f["hold_ms"] = target_hold
@@ -1481,7 +1562,7 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def apply_trans_to_all(self):
-        if self.selected_frame_idx < len(self.frames):
+        if 0 <= self.selected_frame_idx < len(self.frames):
             target_style = self.frames[self.selected_frame_idx].get("transition_style", "smooth")
             for f in self.frames:
                 f["transition_style"] = target_style
@@ -1489,12 +1570,21 @@ class EffectStudioDialog(QDialog):
             self.live_update_hardware()
 
     def add_frame_action(self):
-        new_frame = {
-            "zones": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-            "hold_ms": 600,
-            "transition_style": "smooth",
-            "transition_ms": 400,
-        }
+        if self.frames and self.selected_frame_idx >= 0:
+            ref = self.frames[self.selected_frame_idx]
+            new_frame = {
+                "zones": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                "hold_ms": ref.get("hold_ms", 600),
+                "transition_style": ref.get("transition_style", "smooth"),
+                "transition_ms": ref.get("transition_ms", 400),
+            }
+        else:
+            new_frame = {
+                "zones": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                "hold_ms": 600,
+                "transition_style": "smooth",
+                "transition_ms": 400,
+            }
         self.frames.append(new_frame)
         self.selected_frame_idx = len(self.frames) - 1
         self.rebuild_frame_list()
@@ -1526,6 +1616,9 @@ class EffectStudioDialog(QDialog):
         if not name:
             QMessageBox.warning(self, "Invalid Name", "Please enter a valid effect name.")
             return
+        if self.effect_selector_combo.findText(name) != -1:
+            reply = QMessageBox.question(self, "Overwrite?", f"An effect named '{name}' already exists. Overwrite?", QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.No: return
         data = {
             "name": name,
             "loop": True,
@@ -1568,7 +1661,8 @@ class EffectStudioDialog(QDialog):
             self.name_input.setText(data.get("name", ""))
             self.default_speed_slider.setValue(data.get("default_speed", 50))
             self.default_bright_slider.setValue(data.get("default_brightness", 100))
-            self.frames = data.get("frames", self.frames)
+            import copy
+            self.frames = copy.deepcopy(data.get("frames", self.frames))
             self.selected_frame_idx = 0 if len(self.frames) > 0 else -1
             self.rebuild_frame_list()
             self.load_frame_into_inspector(self.selected_frame_idx)
@@ -1581,7 +1675,15 @@ class EffectStudioDialog(QDialog):
                 import json
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    if "frames" not in data or not isinstance(data["frames"], list):
+                        raise ValueError("Missing or invalid 'frames' list.")
+                    for frame in data["frames"]:
+                        if "zones" not in frame or not isinstance(frame["zones"], list): raise ValueError("Invalid zones format.")
+                        if "hold_ms" not in frame or not isinstance(frame["hold_ms"], (int, float)) or frame["hold_ms"] < 0: raise ValueError("Invalid hold_ms.")
+                        if "transition_style" not in frame: raise ValueError("Missing transition_style.")
                     if "frames" in data:
+                        import copy
+                        data["frames"] = copy.deepcopy(data["frames"])
                         self.name_input.setText(data.get("name", os.path.splitext(os.path.basename(path))[0]))
                         self.default_speed_slider.setValue(data.get("default_speed", 50))
                         self.default_bright_slider.setValue(data.get("default_brightness", 100))

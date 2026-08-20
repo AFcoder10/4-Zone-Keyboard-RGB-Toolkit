@@ -16,7 +16,6 @@ SOFTWARE_MODES = [
     "Ambient Screen Color",
     "Battery Visualizer",
     "Mouse-Reactive Aura",
-    "Pomodoro Timer",
     "Live Audio Visualizer",
     "Temperature Mode",
     "Reactive Typing",
@@ -111,9 +110,6 @@ DEFAULT_MODE_SETTINGS = {
         "brightness": 100,
         "speed": 20,
     },
-    "Pomodoro Timer": {
-        "brightness": 100,
-    },
     "Live Audio Visualizer": {
         "brightness": 0,
         "speed": 20,
@@ -148,7 +144,6 @@ EFFECT_METADATA = {
     "Ambient Screen Color": {"type": EFFECT_TYPE_SOFTWARE, "has_ambient_fps": True, "has_vibrance": True},
     "Battery Visualizer": {"type": EFFECT_TYPE_SOFTWARE},
     "Mouse-Reactive Aura": {"type": EFFECT_TYPE_SOFTWARE, "has_speed": True, "has_colors": True},
-    "Pomodoro Timer": {"type": EFFECT_TYPE_SOFTWARE},
     "Live Audio Visualizer": {"type": EFFECT_TYPE_EXTERNAL, "has_speed": True, "has_flicker": True, "has_colors": True},
     "Temperature Mode": {"type": EFFECT_TYPE_EXTERNAL, "has_speed": True},
     "Valorant Spike Timer": {"type": EFFECT_TYPE_SOFTWARE},

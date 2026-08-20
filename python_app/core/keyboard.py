@@ -1,5 +1,4 @@
 import hid
-import atexit
 import time
 
 
@@ -24,6 +23,8 @@ class RGBKeyboard:
     EFFECTS = {"static": 0x01, "breath": 0x03, "wave": 0x04, "smooth": 0x06}
 
     def __init__(self):
+        import threading
+        self._lock = threading.Lock()
         self.device = hid.device()
         self.device_path = self._find_device()
 
@@ -43,8 +44,7 @@ class RGBKeyboard:
         self._payload_buffer = bytearray(33)
         self._payload_buffer[0] = 0xCC
         
-        # Register atexit handler
-        atexit.register(self.close)
+
 
     def __enter__(self):
         return self
@@ -93,9 +93,11 @@ class RGBKeyboard:
         return self._payload_buffer
 
     def refresh(self):
-        # Send the feature report using the pre-allocated buffer
-        payload = self._build_payload()
-        self.device.send_feature_report(payload)
+        with self._lock:
+            if self.device is None: return False
+            # Send the feature report using the pre-allocated buffer
+            payload = self._build_payload()
+            self.device.send_feature_report(payload)
 
     def set_effect(self, effect, speed=None, brightness=None, direction=None):
         if effect not in self.EFFECTS:
@@ -137,7 +139,13 @@ class RGBKeyboard:
 
     def close(self):
         """Closes the connection to the HID device"""
-        self.device.close()
+        with self._lock:
+            if getattr(self, 'device', None):
+                try:
+                    self.device.close()
+                except Exception:
+                    pass
+                self.device = None
 
 
 if __name__ == "__main__":

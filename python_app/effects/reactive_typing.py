@@ -57,7 +57,7 @@ class ReactiveTypingEffect(BaseEffect):
                 with open(json_path, 'r') as f:
                     self.mapping = json.load(f)
             except Exception as e:
-                print(f"Error loading mapping: {e}")
+                pass
 
     def start(self) -> bool:
         self.listener = keyboard.Listener(on_press=self.on_press)
@@ -67,8 +67,12 @@ class ReactiveTypingEffect(BaseEffect):
 
     def stop(self) -> None:
         self._running = False
-        if self.listener:
-            self.listener.stop()
+        if getattr(self, 'listener', None):
+            try:
+                if self.listener.is_alive():
+                    self.listener.stop()
+            except Exception:
+                pass
             self.listener = None
 
     def on_press(self, key):
@@ -126,7 +130,7 @@ class ReactiveTypingEffect(BaseEffect):
                             "color": color_to_use
                         })
         except Exception as e:
-            print(f"[{self.effect_name}] on_press error: {e}")
+            pass
 
     def update(self, dt: float) -> List[int]:
         with self._lock:

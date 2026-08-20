@@ -9,8 +9,9 @@ function Changelog() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    const controller = new AbortController();
     // Fetch releases
-    fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases')
+    fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -19,9 +20,11 @@ function Changelog() {
         setLoading(false);
       })
       .catch(err => {
+        if (err.name === 'AbortError') return;
         console.error("Failed to fetch releases:", err);
         setLoading(false);
       });
+    return () => controller.abort();
   }, []);
 
   return (
