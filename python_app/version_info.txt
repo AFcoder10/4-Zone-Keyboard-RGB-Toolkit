@@ -18,7 +18,7 @@ VSVersionInfo(
         StringStruct('FileDescription', '4 Zone RGB Toolkit'),
         StringStruct('FileVersion', '3.1'),
         StringStruct('InternalName', '4 Zone RGB Toolkit'),
-        StringStruct('LegalCopyright', 'Copyright (c) 2024'),
+        StringStruct('LegalCopyright', 'Copyright (c) 2026'),
         StringStruct('OriginalFilename', '4_Zone_Rgb_Toolkit.exe'),
         StringStruct('ProductName', '4 Zone RGB Toolkit'),
         StringStruct('ProductVersion', '3.1')])
