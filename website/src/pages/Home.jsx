@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import animeInstance from 'animejs/lib/anime.es.js';
+const anime = animeInstance.default || animeInstance;
 import { Link } from 'react-router-dom';
 import iconImg from '../assets/rgb_wheel.ico';
 import previewImg from '../assets/preview.png';
@@ -10,6 +12,59 @@ function Home() {
   const [repoStats, setRepoStats] = useState({ stars: 0, latestDownloads: 0, forks: 0, lastUpdated: 'N/A' });
 
   useEffect(() => {
+    // Coordinated animation sequence
+    let pendingStats = null;
+    let animsDone = false;
+
+    function runStatsTicker() {
+      if (!pendingStats || !animsDone) return;
+      const { stars, downloads, forks } = pendingStats;
+      const statObj = { s: 0, d: 0, f: 0 };
+      anime({
+        targets: statObj,
+        s: stars,
+        d: downloads,
+        f: forks,
+        round: 1,
+        easing: 'easeOutQuint',
+        duration: 2500,
+        update: function() {
+          const sEl = document.getElementById('stat-stars');
+          const dEl = document.getElementById('stat-dl');
+          const fEl = document.getElementById('stat-forks');
+          if(sEl) sEl.textContent = statObj.s;
+          if(dEl) dEl.textContent = statObj.d;
+          if(fEl) fEl.textContent = statObj.f;
+        }
+      });
+    }
+
+    // Step 1: Typewriter for "Unlock Your Laptop's"
+    // Step 2: Gaussian blur fade-in for "True Colors"
+    // Step 3: 1s pause then number spin-up
+    anime.timeline({ loop: false })
+      .add({
+        targets: '.hero h1 .letter',
+        opacity: [0, 1],
+        easing: 'linear',
+        duration: 100,
+        delay: anime.stagger(50, { start: 300 })
+      })
+      .add({
+        targets: '.grad-reveal',
+        opacity: [0, 1],
+        filter: ['blur(16px)', 'blur(0px)'],
+        easing: 'easeOutQuad',
+        duration: 500,
+        complete: function() {
+          // 1s after True Colors fades in, spin up numbers
+          setTimeout(function() {
+            animsDone = true;
+            runStatsTicker();
+          }, 1000);
+        }
+      });
+
     // Add scroll animation observer
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -44,12 +99,13 @@ function Home() {
       
       if (repoData && !repoData.message) {
         const updatedDate = new Date(repoData.pushed_at || repoData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        setRepoStats({
+        setRepoStats(prev => ({ ...prev, lastUpdated: updatedDate }));
+        pendingStats = {
           stars: repoData.stargazers_count || 0,
-          latestDownloads: latestDls,
-          forks: repoData.forks_count || 0,
-          lastUpdated: updatedDate
-        });
+          downloads: latestDls,
+          forks: repoData.forks_count || 0
+        };
+        runStatsTicker();
       }
     })
     .catch(err => {
@@ -84,7 +140,11 @@ function Home() {
       <header className="hero">
         <div className="hero-inner">
           <p className="eyebrow anim" style={{ '--d': 0 }}>Open-source · Free forever</p>
-          <h1 className="anim" style={{ '--d': 1 }}>Unlock Your Laptop's<br /><span className="grad">True Colors</span></h1>
+          <h1 style={{ '--d': 1 }}>
+            { "Unlock Your Laptop's".split('').map((char, index) => <span key={`a-${index}`} className="letter" style={{ opacity: 0 }}>{char === ' ' ? '\u00A0' : char}</span>) }
+            <br />
+            <span className="grad grad-reveal" style={{ opacity: 0, filter: "blur(16px)" }}>True Colors</span>
+          </h1>
           <p className="subtitle anim" style={{ '--d': 2 }}>Hardware &amp; software RGB control designed for Lenovo LOQ and Legion laptops.</p>
           <div className="hero-btns anim" style={{ '--d': 3 }}>
             <a href={downloadUrl} className="btn-fill">{versionText}</a>
@@ -94,15 +154,15 @@ function Home() {
 
           <div className="stats-bar anim" style={{ '--d': 4 }}>
             <div className="stat-item">
-              <span className="stat-value">{repoStats.stars}</span>
+              <span className="stat-value" id="stat-stars">0</span>
               <span className="stat-label">⭐ Stars</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{repoStats.latestDownloads}</span>
+              <span className="stat-value" id="stat-dl">0</span>
               <span className="stat-label">📥 Latest Downloads</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{repoStats.forks}</span>
+              <span className="stat-value" id="stat-forks">0</span>
               <span className="stat-label">🔄 Forks</span>
             </div>
             <div className="stat-item">
