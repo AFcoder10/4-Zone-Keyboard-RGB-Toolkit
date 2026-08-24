@@ -7,6 +7,7 @@ function Home() {
   const [latestRelease, setLatestRelease] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState('https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases/latest');
   const [versionText, setVersionText] = useState('Download');
+  const [repoStats, setRepoStats] = useState({ stars: 0, latestDownloads: 0, forks: 0, lastUpdated: 'N/A' });
 
   useEffect(() => {
     // Add scroll animation observer
@@ -23,26 +24,38 @@ function Home() {
 
     const controller = new AbortController();
 
-    // Fetch releases
-    fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases', { signal: controller.signal })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const latest = data[0];
-          setLatestRelease(latest);
-          
-          // Find the exe asset
-          const exeAsset = latest.assets?.find(asset => asset.name.endsWith('.exe'));
-          if (exeAsset) {
-            setDownloadUrl(exeAsset.browser_download_url);
-            setVersionText(`Download ${latest.tag_name}`);
-          }
+    // Fetch releases and repo stats
+    Promise.all([
+      fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases', { signal: controller.signal }).then(r => r.json()),
+      fetch('https://api.github.com/repos/AFcoder10/4-Zone-Keyboard-RGB-Toolkit', { signal: controller.signal }).then(r => r.json())
+    ])
+    .then(([releasesData, repoData]) => {
+      let latestDls = 0;
+      if (Array.isArray(releasesData) && releasesData.length > 0) {
+        const latest = releasesData[0];
+        setLatestRelease(latest);
+        const exeAsset = latest.assets?.find(asset => asset.name.endsWith('.exe'));
+        if (exeAsset) {
+          setDownloadUrl(exeAsset.browser_download_url);
+          setVersionText(`Download ${latest.tag_name}`);
         }
-      })
-      .catch(err => {
-        if (err.name === 'AbortError') return;
-        console.error("Failed to fetch releases:", err);
-      });
+        latestDls = latest.assets?.reduce((sum, asset) => sum + asset.download_count, 0) || 0;
+      }
+      
+      if (repoData && !repoData.message) {
+        const updatedDate = new Date(repoData.pushed_at || repoData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        setRepoStats({
+          stars: repoData.stargazers_count || 0,
+          latestDownloads: latestDls,
+          forks: repoData.forks_count || 0,
+          lastUpdated: updatedDate
+        });
+      }
+    })
+    .catch(err => {
+      if (err.name === 'AbortError') return;
+      console.error("Failed to fetch Github stats:", err);
+    });
 
     return () => {
       animatedElements.forEach(el => observer.unobserve(el));
@@ -77,6 +90,25 @@ function Home() {
             <a href={downloadUrl} className="btn-fill">{versionText}</a>
             <Link to="/changelog" className="btn-outline">View Changelog</Link>
             <a href="https://discord.gg/ecKwmsDBXg" target="_blank" rel="noreferrer" className="btn-outline" style={{marginLeft: '10px'}}>Join Discord</a>
+          </div>
+
+          <div className="stats-bar anim" style={{ '--d': 4 }}>
+            <div className="stat-item">
+              <span className="stat-value">{repoStats.stars}</span>
+              <span className="stat-label">⭐ Stars</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{repoStats.latestDownloads}</span>
+              <span className="stat-label">📥 Latest Downloads</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{repoStats.forks}</span>
+              <span className="stat-label">🔄 Forks</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{repoStats.lastUpdated}</span>
+              <span className="stat-label">⏰ Last Updated</span>
+            </div>
           </div>
         </div>
       </header>
