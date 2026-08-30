@@ -2,7 +2,12 @@ import json
 import os
 import math
 from typing import List, Dict, Any
-from pynput import keyboard
+try:
+    from pynput import keyboard
+    HAS_PYNPUT = True
+except ImportError:
+    keyboard = None
+    HAS_PYNPUT = False
 from core.base import BaseEffect
 
 MAPPING_FILE = "keyboard_zones.json"
@@ -60,10 +65,17 @@ class ReactiveTypingEffect(BaseEffect):
                 pass
 
     def start(self) -> bool:
-        self.listener = keyboard.Listener(on_press=self.on_press)
-        self.listener.start()
-        self._running = True
-        return True
+        if not HAS_PYNPUT or not keyboard:
+            print("Reactive Typing unavailable: pynput is not installed.")
+            return False
+        try:
+            self.listener = keyboard.Listener(on_press=self.on_press)
+            self.listener.start()
+            self._running = True
+            return True
+        except Exception as e:
+            print(f"Failed to start reactive typing listener: {e}")
+            return False
 
     def stop(self) -> None:
         self._running = False

@@ -90,7 +90,7 @@ def compile_inno_setup(script_path):
 
 if __name__ == "__main__":
     APP_NAME = "4 Zone Rgb Toolkit"
-    APP_VERSION = "v3.1"
+    APP_VERSION = "v3.2"
     APP_PUBLISHER = "Custom Hardware Integration"
     APP_EXE = "4_Zone_Rgb_Toolkit.exe"
 

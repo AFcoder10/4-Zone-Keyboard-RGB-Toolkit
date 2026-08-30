@@ -107,6 +107,8 @@ def build_standalone_exe():
         # --- Hidden imports (utils package) ---
         "--hidden-import=utils",
         "--hidden-import=utils.chroma_utils",
+        "--hidden-import=utils.system_info",
+        "--hidden-import=winreg",
         # --- Hidden imports (effects package) ---
         "--hidden-import=effects",
         "--hidden-import=effects.reactive_typing",

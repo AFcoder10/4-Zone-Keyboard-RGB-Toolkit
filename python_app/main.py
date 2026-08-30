@@ -2,13 +2,12 @@
 import sys
 import subprocess
 import os
+import platform
+from utils.system_info import get_laptop_model
 import time
 import colorsys
-import math
-import random
 import ctypes
 import json
-import webbrowser
 from ctypes.wintypes import MSG, RECT
 
 try:
@@ -30,7 +29,6 @@ try:
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
-from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -45,18 +43,15 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QGroupBox,
     QGridLayout,
-    QSpacerItem,
     QSizePolicy,
     QStackedLayout,
     QCheckBox,
     QSystemTrayIcon,
     QMenu,
-    QStyle,
     QComboBox,
     QInputDialog,
     QMessageBox,
     QDialog,
-    QPlainTextEdit,
     QProgressDialog,
     QTextBrowser,
     QGraphicsOpacityEffect,
@@ -67,7 +62,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QSpinBox,
     QAbstractItemView,
-    QStyleOptionSlider,
 )
 from PySide6.QtCore import (
     Qt,
@@ -82,7 +76,7 @@ from PySide6.QtCore import (
     QUrl,
     Slot,
 )
-from PySide6.QtGui import QColor, QFont, QIcon, QMouseEvent, QAction, QKeySequence, QDesktopServices, QPixmap, QMovie
+from PySide6.QtGui import QColor, QFont, QIcon, QAction, QDesktopServices
 from mobile_server import MobileServer
 import winreg
 from core.keyboard import RGBKeyboard
@@ -97,7 +91,6 @@ from custom_builder_gui import (
     LogsDialog,
     KeyboardPreviewWidget,
     HotkeyDialog,
-    HotkeyRecorderButton,
     GifSplashScreen,
     EffectStudioDialog,
 )
@@ -110,7 +103,7 @@ import tempfile
 import traceback
 
 
-CURRENT_VERSION = "v3.1"
+CURRENT_VERSION = "v3.2"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -467,13 +460,13 @@ class UpdateDownloader(QThread):
         except Exception as e:
             if not self._is_canceled:
                 self.error.emit(str(e))
-import platform
 
 class TelemetryClient:
     def __init__(self, app_ref, endpoint_url="https://rgb-toolkit-telemetry.vercel.app/api"):
         self.app_ref = app_ref
         self.endpoint_url = endpoint_url
         self.laptop_name = platform.node()
+        self.laptop_model = get_laptop_model()
         self.running = False
         self.thread = None
 
@@ -513,6 +506,7 @@ class TelemetryClient:
                 current_effect = self.app_ref.current_mode_name
             data = json.dumps({
                 "laptopName": self.laptop_name,
+                "model": self.laptop_model,
                 "status": status,
                 "effect": current_effect
             }).encode('utf-8')
@@ -530,6 +524,7 @@ class RGBControllerApp(QMainWindow):
         super().__init__()
         self.setWindowTitle("4 Zone Rgb Toolkit")
         
+        self.laptop_model = get_laptop_model()
         self.telemetry = TelemetryClient(self)
         self.custom_colors = [0] * 12
         self.telemetry.start()
@@ -744,12 +739,21 @@ class RGBControllerApp(QMainWindow):
         self.telemetry_cb.toggled.connect(self.save_settings)
         telemetry_row.addWidget(self.telemetry_cb)
         
-        telemetry_row.addWidget(AnimatedInfoIcon("When enabled, the app periodically sends an anonymous ping\ncontaining your computer name to the dashboard\nto display the total active user count."))
+        telemetry_row.addWidget(AnimatedInfoIcon("When enabled, the app periodically sends an anonymous ping\ncontaining your device model to the dashboard\nto display the total active user count."))
         telemetry_row.addStretch()
         
         telemetry_layout.addLayout(telemetry_row)
 
-
+        model_row = QHBoxLayout()
+        model_row.setContentsMargins(2, 6, 2, 2)
+        model_title = QLabel("Device Model:")
+        model_title.setStyleSheet("color: #888888; font-size: 12px; font-weight: 500;")
+        model_val = QLabel(self.laptop_model)
+        model_val.setStyleSheet("color: #00E5FF; font-size: 12px; font-weight: 700; background: rgba(0, 229, 255, 0.08); border-radius: 4px; padding: 2px 8px; border: 1px solid rgba(0, 229, 255, 0.2);")
+        model_row.addWidget(model_title)
+        model_row.addWidget(model_val)
+        model_row.addStretch()
+        telemetry_layout.addLayout(model_row)
 
         gen_content_layout.addWidget(telemetry_card)
 
@@ -836,7 +840,7 @@ class RGBControllerApp(QMainWindow):
 
         gen_content_layout.addLayout(maintenance_grid)
 
-        version_label = QLabel(f"Version: {CURRENT_VERSION}")
+        version_label = QLabel(f"Version: {CURRENT_VERSION}  •  Model: {self.laptop_model}")
         version_label.setAlignment(Qt.AlignCenter)
         version_label.setStyleSheet(
             'color: #444444; margin-top: 20px; font-size: 10px; font-weight: bold; font-family: "Segoe UI Variable";'
@@ -1222,8 +1226,6 @@ class RGBControllerApp(QMainWindow):
                 width: 0px;
             }
         """
-
-        from PySide6.QtWidgets import QSpinBox
 
         self.pomo_hours = QSpinBox()
         self.pomo_hours.setRange(0, 99)
@@ -3471,7 +3473,6 @@ class RGBControllerApp(QMainWindow):
         try:
             from core.config import SOFTWARE_MODES as BASE_SOFTWARE_MODES
             from core.custom_effects_io import list_custom_effects
-            from core.config import SOFTWARE_MODES as BASE_SOFTWARE_MODES
             custom_list = list_custom_effects()
             valid_custom_names = {eff.get("name") for eff in custom_list if eff.get("name")}
 
@@ -4321,30 +4322,36 @@ class RGBControllerApp(QMainWindow):
             if hasattr(self, "effect_manager"):
                 self.kb = self.effect_manager.reacquire_keyboard()
             else:
-                self.kb = RGBKeyboard()
+                try:
+                    self.kb = RGBKeyboard()
+                except Exception:
+                    self.kb = None
 
         if hasattr(self, "effect_manager"):
             if mode_name in self.HARDWARE_MODES:
                 self.effect_manager.set_effect(None)
                 if not self.kb:
                     return
-                hw_speed = max(1, min(4, int(self.speed_slider.value() / 25) + 1))
-                hw_brightness = max(1, min(4, int(self.bright_slider.value() / 25) + 1))
-                bright_mult = self.bright_slider.value() / 100.0
-                colors = [int(c * bright_mult) for rgb in self.zone_colors for c in rgb]
-                if mode_name == "Static":
-                    self.kb.set_effect("static")
-                    self.kb.set_colors(colors)
-                elif mode_name == "Breath":
-                    self.kb.set_effect("breath", speed=hw_speed, brightness=hw_brightness)
-                    self.kb.set_colors(colors)
-                elif mode_name == "Wave":
-                    self.kb.set_effect("wave", speed=hw_speed, brightness=hw_brightness, direction=self.wave_direction)
-                elif mode_name == "Smooth":
-                    self.kb.set_effect("smooth", speed=hw_speed, brightness=hw_brightness)
-                elif mode_name == "Off":
-                    self.kb.set_effect("static")
-                    self.kb.set_solid_color(0, 0, 0)
+                try:
+                    hw_speed = max(1, min(4, int(self.speed_slider.value() / 25) + 1))
+                    hw_brightness = max(1, min(4, int(self.bright_slider.value() / 25) + 1))
+                    bright_mult = self.bright_slider.value() / 100.0
+                    colors = [int(c * bright_mult) for rgb in self.zone_colors for c in rgb]
+                    if mode_name == "Static":
+                        self.kb.set_effect("static")
+                        self.kb.set_colors(colors)
+                    elif mode_name == "Breath":
+                        self.kb.set_effect("breath", speed=hw_speed, brightness=hw_brightness)
+                        self.kb.set_colors(colors)
+                    elif mode_name == "Wave":
+                        self.kb.set_effect("wave", speed=hw_speed, brightness=hw_brightness, direction=self.wave_direction)
+                    elif mode_name == "Smooth":
+                        self.kb.set_effect("smooth", speed=hw_speed, brightness=hw_brightness)
+                    elif mode_name == "Off":
+                        self.kb.set_effect("static")
+                        self.kb.set_solid_color(0, 0, 0)
+                except Exception as ex:
+                    print(f"Warning: Failed to set hardware mode: {ex}")
             else:
                 if self.kb:
                     self.kb.set_effect("static")

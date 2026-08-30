@@ -75,4 +75,7 @@ class FastAPIThread(threading.Thread):
         self.port = port
         
     def run(self):
-        uvicorn.run(app, host="0.0.0.0", port=self.port, log_level="critical")
+        try:
+            uvicorn.run(app, host="0.0.0.0", port=self.port, log_level="critical")
+        except Exception as e:
+            print(f"FastAPI Server thread stopped: {e}")

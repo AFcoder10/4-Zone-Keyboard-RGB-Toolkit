@@ -149,21 +149,45 @@ class MobileServer:
         asyncio.run_coroutine_threadsafe(_broadcast(), self.loop)
 
     async def _main_serve(self):
-        async with websockets.serve(self.ws_handler, "0.0.0.0", self.port):
-            await asyncio.Future()  # run forever
+        try:
+            async with websockets.serve(self.ws_handler, "0.0.0.0", self.port):
+                await self.stop_event.wait()
+        except (asyncio.CancelledError, GeneratorExit):
+            pass
+        except Exception as e:
+            logger.error(f"Mobile server error: {e}")
 
     def _run(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
+        self.stop_event = asyncio.Event()
         try:
             self.loop.run_until_complete(self._main_serve())
-        except Exception:
+        except (asyncio.CancelledError, GeneratorExit, Exception):
             pass
+        finally:
+            try:
+                pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
+                for t in pending:
+                    t.cancel()
+                if pending:
+                    self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                self.loop.close()
+            except Exception:
+                pass
 
     def start(self):
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
         
     def stop(self):
-        if self.loop:
-            self.loop.call_soon_threadsafe(self.loop.stop)
+        if self.loop and hasattr(self, 'stop_event') and self.stop_event:
+            try:
+                self.loop.call_soon_threadsafe(self.stop_event.set)
+            except Exception:
+                pass
+        elif self.loop and self.loop.is_running():
+            try:
+                self.loop.call_soon_threadsafe(self.loop.stop)
+            except Exception:
+                pass

@@ -2,16 +2,23 @@ import time
 import colorsys
 import collections
 import threading
-import numpy as np
 from typing import List, Dict
 
 from core.base import BaseEffect
 from effects import register_effect
 
 try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    np = None
+    HAS_NUMPY = False
+
+try:
     import pyaudiowpatch as pyaudio
     HAS_PYAUDIO = True
 except ImportError:
+    pyaudio = None
     HAS_PYAUDIO = False
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
@@ -62,7 +69,7 @@ class AudioVisualizerEffect(BaseEffect):
         # Precomputed FFT data
         self.rate = 44100
         self.channels = 2
-        self.window = np.hanning(CHUNK)
+        self.window = np.hanning(CHUNK) if HAS_NUMPY and np is not None else None
         self.band_indices = []
 
     @property
@@ -70,9 +77,11 @@ class AudioVisualizerEffect(BaseEffect):
         return "Live Audio Visualizer"
 
     def start(self) -> bool:
-        if not HAS_PYAUDIO:
-            print("[Visualizer] pyaudiowpatch is not installed. Cannot start.")
+        if not HAS_PYAUDIO or not HAS_NUMPY:
+            print("[Visualizer] pyaudiowpatch or numpy is not installed. Cannot start.")
             return False
+        if self.window is None and HAS_NUMPY and np is not None:
+            self.window = np.hanning(CHUNK)
 
         print("[Visualizer] Locating WASAPI Loopback Desktop Audio...")
         self.stop()
