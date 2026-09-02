@@ -701,11 +701,21 @@ class RGBControllerApp(QMainWindow):
         launch_row.addStretch()
         behavior_layout.addLayout(launch_row)
 
+        start_min_row = QHBoxLayout()
+        start_min_row.setContentsMargins(0, 0, 0, 0)
+        self.start_minimized_cb = QCheckBox("Start Minimized (System Tray)")
+        self.start_minimized_cb.setStyleSheet(toggle_css)
+        self.start_minimized_cb.toggled.connect(self.on_start_minimized_toggled)
+        start_min_row.addWidget(self.start_minimized_cb)
+        start_min_row.addWidget(AnimatedInfoIcon("Launches the application silently into the system tray without showing the main window."))
+        start_min_row.addStretch()
+        behavior_layout.addLayout(start_min_row)
+
         boot_gif_row = QHBoxLayout()
         boot_gif_row.setContentsMargins(0, 0, 0, 0)
         self.boot_gif_cb = QCheckBox("Show Splash Screen on Boot")
         self.boot_gif_cb.setStyleSheet(toggle_css)
-        self.boot_gif_cb.toggled.connect(self.save_settings)
+        self.boot_gif_cb.toggled.connect(self.on_boot_gif_toggled)
         boot_gif_row.addWidget(self.boot_gif_cb)
         boot_gif_row.addWidget(AnimatedInfoIcon("Plays the boot GIF animation when launching the app."))
         boot_gif_row.addStretch()
@@ -2695,6 +2705,7 @@ class RGBControllerApp(QMainWindow):
 
         self.minimize_to_tray_cb.blockSignals(True)
         self.launch_on_start_cb.blockSignals(True)
+        self.start_minimized_cb.blockSignals(True)
         self.boot_gif_cb.blockSignals(True)
         self.telemetry_cb.blockSignals(True)
         self.auto_update_cb.blockSignals(True)
@@ -2716,6 +2727,9 @@ class RGBControllerApp(QMainWindow):
             else bool(launch_val)
         )
         self.launch_on_start_cb.setChecked(launch_start)
+        self.start_minimized_cb.setChecked(
+            settings.value("start_minimized", False, type=bool)
+        )
         self.boot_gif_cb.setChecked(
             settings.value("show_boot_gif", False, type=bool)
         )
@@ -2829,6 +2843,7 @@ class RGBControllerApp(QMainWindow):
         )
         launch_start = self.launch_on_start_cb.isChecked()
         settings.setValue("launch_on_start", launch_start)
+        settings.setValue("start_minimized", self.start_minimized_cb.isChecked())
         settings.setValue("telemetry_enabled", self.telemetry_cb.isChecked())
         settings.setValue("auto_update", self.auto_update_cb.isChecked())
         settings.setValue(
@@ -2939,12 +2954,14 @@ class RGBControllerApp(QMainWindow):
             self.manage_startup_registry(True)
             self.minimize_to_tray_cb.blockSignals(True)
             self.launch_on_start_cb.blockSignals(True)
+            self.start_minimized_cb.blockSignals(True)
             self.boot_gif_cb.blockSignals(True)
             self.turn_off_unplugged_cb.blockSignals(True)
             self.turn_off_battery_saver_cb.blockSignals(True)
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(True)
+            self.start_minimized_cb.setChecked(False)
             self.boot_gif_cb.setChecked(False)
             self.turn_off_unplugged_cb.setChecked(False)
             self.turn_off_battery_saver_cb.setChecked(False)
@@ -2968,6 +2985,7 @@ class RGBControllerApp(QMainWindow):
             self.update_preset_combos()
             self.minimize_to_tray_cb.blockSignals(False)
             self.launch_on_start_cb.blockSignals(False)
+            self.start_minimized_cb.blockSignals(False)
             self.turn_off_unplugged_cb.blockSignals(False)
             self.turn_off_battery_saver_cb.blockSignals(False)
             self.startup_preset_combo.blockSignals(False)
@@ -3196,6 +3214,22 @@ class RGBControllerApp(QMainWindow):
             self.startup_preset_combo.setCurrentText(curr_startup)
         self.startup_preset_combo.blockSignals(False)
         # Auto-refresh logic if relevant
+
+    @Slot(bool)
+    def on_start_minimized_toggled(self, checked):
+        if checked:
+            self.boot_gif_cb.blockSignals(True)
+            self.boot_gif_cb.setChecked(False)
+            self.boot_gif_cb.blockSignals(False)
+        self.save_settings()
+
+    @Slot(bool)
+    def on_boot_gif_toggled(self, checked):
+        if checked:
+            self.start_minimized_cb.blockSignals(True)
+            self.start_minimized_cb.setChecked(False)
+            self.start_minimized_cb.blockSignals(False)
+        self.save_settings()
 
     def manage_startup_registry(self, enabled):
         key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
@@ -4445,14 +4479,16 @@ if __name__ == "__main__":
     app.setStyle("Fusion")
     
     splash = None
-    if "--hidden" not in sys.argv:
+    from PySide6.QtCore import QSettings
+    settings = QSettings("4ZoneRgbToolkit", "Preferences")
+    start_min = settings.value("start_minimized", False, type=bool)
+    
+    if "--hidden" not in sys.argv and not start_min:
         if getattr(sys, "frozen", False):
             base_dir = sys._MEIPASS
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
         gif_path = os.path.join(base_dir, "assets", "boot.gif")
-        from PySide6.QtCore import QSettings
-        settings = QSettings("4ZoneRgbToolkit", "Preferences")
         if os.path.exists(gif_path) and settings.value("show_boot_gif", False, type=bool):
             splash = GifSplashScreen(gif_path, None)
             splash.show()
@@ -4463,6 +4499,6 @@ if __name__ == "__main__":
     
     if splash:
         splash.main_window = window
-    elif "--hidden" not in sys.argv:
+    elif "--hidden" not in sys.argv and not start_min:
         window.show()
     sys.exit(app.exec())
