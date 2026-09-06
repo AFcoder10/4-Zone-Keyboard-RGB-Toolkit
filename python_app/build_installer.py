@@ -90,8 +90,8 @@ def compile_inno_setup(script_path):
 
 if __name__ == "__main__":
     APP_NAME = "4 Zone Rgb Toolkit"
-    APP_VERSION = "v3.2"
-    APP_PUBLISHER = "Custom Hardware Integration"
+    APP_VERSION = "v3.3"
+    APP_PUBLISHER = "AFcoder10"
     APP_EXE = "4_Zone_Rgb_Toolkit.exe"
 
     # With --onefile, the raw executable is dropped directly into the dist root

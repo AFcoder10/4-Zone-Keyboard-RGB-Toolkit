@@ -6,6 +6,12 @@ from core.base import BaseEffect
 try:
     import mss
     HAS_MSS = True
+    try:
+        import mss.windows
+        # Disable CAPTUREBLT to prevent mouse cursor flickering during screen capture (fixes Issue #12)
+        mss.windows.CAPTUREBLT = 0
+    except (ImportError, AttributeError):
+        pass
 except ImportError:
     HAS_MSS = False
 

@@ -89,6 +89,7 @@ def build_standalone_exe():
         "--hidden-import=uvicorn",
         "--hidden-import=numpy",
         "--hidden-import=mss",
+        "--hidden-import=mss.windows",
         "--hidden-import=PIL",
         # --- Hidden imports (app top-level modules) ---
         "--hidden-import=custom_builder_gui",

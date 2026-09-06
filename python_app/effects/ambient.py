@@ -13,6 +13,12 @@ except ImportError:
 try:
     import mss
     HAS_MSS = True
+    try:
+        import mss.windows
+        # Disable CAPTUREBLT to prevent mouse cursor flickering during rapid screen captures (fixes Issue #12)
+        mss.windows.CAPTUREBLT = 0
+    except (ImportError, AttributeError):
+        pass
 except ImportError:
     HAS_MSS = False
 
