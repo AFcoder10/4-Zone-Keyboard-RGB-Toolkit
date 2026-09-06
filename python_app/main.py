@@ -1954,7 +1954,8 @@ class RGBControllerApp(QMainWindow):
                 if latest_version and _to_tuple(latest_version) > _to_tuple(CURRENT_VERSION):
                     exe_url = ""
                     for asset in data.get("assets", []):
-                        if asset.get("name", "").endswith(".exe"):
+                        asset_name = asset.get("name", "")
+                        if asset_name.endswith(".exe") and "Setup" not in asset_name:
                             exe_url = asset.get("browser_download_url")
                             break
                     if exe_url:
