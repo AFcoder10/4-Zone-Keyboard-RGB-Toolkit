@@ -2066,65 +2066,129 @@ class RGBControllerApp(QMainWindow):
             return
 
         restart_exe = self.original_exe_path or current_exe
-        ps_path = os.path.join(tempfile.gettempdir(), "updater.ps1")
+        tmp_dir = tempfile.gettempdir()
+        ps_path = os.path.join(tmp_dir, "updater.ps1")
+        log_path = os.path.join(tmp_dir, "updater.log")
         pid = os.getpid()
+
+        # Check if destination is in a protected directory (Program Files)
+        dest_lower = current_exe.lower()
+        needs_elevation = ("\\program files\\" in dest_lower or "\\program files (x86)\\" in dest_lower)
 
         with open(ps_path, "w") as f:
             f.write(f"$appPid = {pid}\n")
-            f.write('$src  = "' + _ps_escape(downloaded_exe) + '"\n')
-            f.write('$dest = "' + _ps_escape(current_exe) + '"\n')
+            f.write('$src     = "' + _ps_escape(downloaded_exe) + '"\n')
+            f.write('$dest    = "' + _ps_escape(current_exe) + '"\n')
             f.write('$restart = "' + _ps_escape(restart_exe) + '"\n')
+            f.write('$logFile = "' + _ps_escape(log_path) + '"\n')
+            f.write('$oldExe  = "$dest.old"\n')
+            f.write("\n")
+            f.write("function Log($msg) { $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'; Add-Content -Path $logFile -Value \"[$ts] $msg\" }\n")
+            f.write("\n")
+            f.write("Log 'Updater started'\n")
+            f.write("Log \"PID=$appPid src=$src dest=$dest restart=$restart\"\n")
+            f.write("\n# Wait for the app process to exit\n")
             f.write(
-                "\n# Wait for the process to terminate to avoid DLL lock errors\n"
-            )
-            f.write(
-                "try { if ($appPid -ne (Get-Process explorer).Id) { Wait-Process -Id $appPid -Timeout 30 -ErrorAction SilentlyContinue } } catch {}\n"
+                "try { if ($appPid -ne (Get-Process explorer -ErrorAction SilentlyContinue).Id) "
+                "{ Wait-Process -Id $appPid -Timeout 30 -ErrorAction SilentlyContinue } } catch {}\n"
             )
             f.write("Start-Sleep -Seconds 2\n")
-            f.write("\n# Perform the update with retry loop in case of prolonged file locks\n")
+            f.write("Log 'App process exited'\n")
+
+            # Step 1: Rename old exe out of the way (Windows allows renaming in-use files)
+            f.write("\n# Step 1: Rename old exe out of the way\n")
             f.write(
-                "$copySuccess = $false\n"
-                "for ($i = 0; $i -lt 10; $i++) {\n"
+                "$renameSuccess = $false\n"
+                "for ($i = 0; $i -lt 20; $i++) {\n"
                 "    try {\n"
-                "        Copy-Item -Path $src -Destination $dest -Force -ErrorAction Stop\n"
-                "        $copySuccess = $true\n"
+                "        if (Test-Path $oldExe) { Remove-Item -Path $oldExe -Force -ErrorAction Stop }\n"
+                "        Rename-Item -Path $dest -NewName ([System.IO.Path]::GetFileName($oldExe)) -Force -ErrorAction Stop\n"
+                "        $renameSuccess = $true\n"
+                '        Log "Rename succeeded on attempt $i"\n'
                 "        break\n"
                 "    } catch {\n"
-                "        Start-Sleep -Milliseconds 500\n"
+                '        Log "Rename attempt $i failed: $_"\n'
+                "        Start-Sleep -Milliseconds 1000\n"
                 "    }\n"
                 "}\n"
             )
-            f.write("\n# Cleanup and restart\n")
-            f.write("if ($copySuccess) {\n")
-            f.write("    Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n")
-            f.write("}\n")
+
+            # Step 2: Copy new exe into place
+            f.write("\n# Step 2: Copy new exe into place\n")
             f.write(
-                "\n# Clear PyInstaller environment variables so the new process extracts cleanly\n"
+                "$copySuccess = $false\n"
+                "if ($renameSuccess) {\n"
+                "    try {\n"
+                "        Copy-Item -Path $src -Destination $dest -Force -ErrorAction Stop\n"
+                "        $copySuccess = $true\n"
+                '        Log "Copy succeeded"\n'
+                "    } catch {\n"
+                '        Log "Copy failed: $_ - rolling back rename"\n'
+                "        try { Rename-Item -Path $oldExe -NewName ([System.IO.Path]::GetFileName($dest)) -Force -ErrorAction Stop } catch {}\n"
+                "    }\n"
+                "} else {\n"
+                "    # Fallback: direct copy if rename failed (exe already exited)\n"
+                "    for ($i = 0; $i -lt 20; $i++) {\n"
+                "        try {\n"
+                "            Copy-Item -Path $src -Destination $dest -Force -ErrorAction Stop\n"
+                "            $copySuccess = $true\n"
+                '            Log "Direct copy succeeded on attempt $i"\n'
+                "            break\n"
+                "        } catch {\n"
+                '            Log "Direct copy attempt $i failed: $_"\n'
+                "            Start-Sleep -Milliseconds 1000\n"
+                "        }\n"
+                "    }\n"
+                "}\n"
             )
+
+            # Step 3: Cleanup and restart
+            f.write("\n# Step 3: Cleanup and restart\n")
+            f.write(
+                "if ($copySuccess) {\n"
+                "    Remove-Item -Path $src -Force -ErrorAction SilentlyContinue\n"
+                "    Remove-Item -Path $oldExe -Force -ErrorAction SilentlyContinue\n"
+                '    Log "Cleanup done, launching new version"\n'
+                "} else {\n"
+                '    Log "UPDATE FAILED - could not replace executable"\n'
+                "}\n"
+            )
+
+            # Clear PyInstaller environment
+            f.write("\n# Clear PyInstaller environment variables\n")
             f.write("Remove-Item env:_MEIPASS2 -ErrorAction SilentlyContinue\n")
             f.write("Remove-Item env:_MEIPASS -ErrorAction SilentlyContinue\n")
             f.write(
                 'Get-ChildItem env: | Where-Object {$_.Name -like "_PYI_*"} | ForEach-Object { Remove-Item "env:$($_.Name)" -ErrorAction SilentlyContinue }\n'
             )
             f.write('$env:PYINSTALLER_RESET_ENVIRONMENT = "1"\n')
+
+            # Launch the new version
             f.write(
-                "if (Test-Path $restart) { Start-Process -FilePath $restart } elseif (Test-Path $dest) { Start-Process -FilePath $dest }\n"
+                "if (Test-Path $restart) { Start-Process -FilePath $restart } "
+                "elseif (Test-Path $dest) { Start-Process -FilePath $dest }\n"
             )
+            f.write("Log 'Updater finished'\n")
             f.write(
                 "Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n"
             )
 
+        # If the exe lives in Program Files, re-launch the script with elevation
+        ps_args = [
+            "powershell", "-WindowStyle", "Hidden",
+            "-ExecutionPolicy", "Bypass", "-File", ps_path,
+        ]
+        if needs_elevation:
+            # Wrap in a Start-Process -Verb RunAs to get UAC elevation
+            escaped_ps_path = _ps_escape(ps_path)
+            ps_args = [
+                "powershell", "-WindowStyle", "Hidden", "-Command",
+                f'Start-Process powershell -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"{escaped_ps_path}`"" -Verb RunAs -WindowStyle Hidden',
+            ]
+
         updater_env = sanitized_child_env(os.environ, include_pythonpath=False, force_re_extract=True)
         subprocess.Popen(
-            [
-                "powershell",
-                "-WindowStyle",
-                "Hidden",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                ps_path,
-            ],
+            ps_args,
             creationflags=subprocess.CREATE_NO_WINDOW,
             env=updater_env,
         )
