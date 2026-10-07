@@ -9,6 +9,7 @@ Welcome to the **v3.3** release! This update brings enhanced system tray launch 
 
 *   **Start Minimized (System Tray):** Added a new setting under Behavior to launch the application silently straight into the Windows system tray without showing the main window. Ideal for users launching manually via custom startup shortcuts or background task managers.
     *   *Special thanks to [@pranavakshit](https://github.com/pranavakshit) for proposing and pitching this feature!*
+*   **Cinema Mode (Auto-dim in Fullscreen Video):** Added an intelligent theater mode toggle under Settings. When watching fullscreen movies or videos in any browser (Chrome, Edge, Firefox), streaming app (Netflix, Disney+), or media player (VLC, MPV), the keyboard lighting smoothly fades to black over 2.5 seconds. Does not interfere with music (Spotify/Apple Music) or Ambient screen sync mode, and instantly wakes up the moment you move the mouse or press any key!
 
 ## Stability & Bug Fixes
 

@@ -31,6 +31,7 @@ class EffectManager:
         self.current_colors = [0] * 12
         self.target_colors = [0] * 12
         self.transition_ticks = 0
+        self.theater_dim_factor = 1.0
         
         self._running = False
         self._thread = None
@@ -220,7 +221,12 @@ class EffectManager:
                         
                     self.current_colors[i] = new_val
                     
-                    final_val = new_val * bright_mult
+                    # Apply theater mode dimming factor (unless active effect is Ambient)
+                    effective_dim = 1.0
+                    if getattr(self, "active_effect", None) and "ambient" not in getattr(self.active_effect, "effect_name", "").lower():
+                        effective_dim = getattr(self, "theater_dim_factor", 1.0)
+
+                    final_val = new_val * bright_mult * effective_dim
                     final_colors.append(int(max(0, min(255, final_val))))
                 
                 if self.kb and self.active_effect:

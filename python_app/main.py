@@ -87,6 +87,13 @@ from mobile_server import MobileServer
 import winreg
 from core.keyboard import RGBKeyboard
 from core.manager import EffectManager
+from core.theater_mode import (
+    TheaterModeManager,
+    DisplayOffManager,
+    GUID_CONSOLE_DISPLAY_STATE,
+    GUID_SESSION_DISPLAY_STATUS,
+    guid_equals,
+)
 from custom_builder_gui import (
     _normalize_hotkey_key_name,
     FadeDialog,
@@ -139,6 +146,16 @@ GUID_OVERLAY_BEST_POWER_EFFICIENCY = GUID(
     0x4F9D,
     (ctypes.c_ubyte * 8)(0x81, 0x74, 0x7D, 0x86, 0x18, 0x1B, 0x8A, 0x7A),
 )
+
+WM_POWERBROADCAST = 0x0218
+PBT_POWERSETTINGCHANGE = 0x8013
+
+class POWERBROADCAST_SETTING(ctypes.Structure):
+    _fields_ = [
+        ("PowerSetting", GUID),
+        ("DataLength", ctypes.c_uint32),
+        ("Data", ctypes.c_ubyte * 4),
+    ]
 
 
 def _guid_equals(a, b):
@@ -278,6 +295,7 @@ sys.stderr = _STDERR_BUFFER
 
 class GlobalHotkeyListener(QThread):
     hotkey_triggered = Signal(str)
+    any_key_pressed = Signal()
 
     def __init__(self, hotkeys_dict, parent=None):
         super().__init__(parent)
@@ -301,6 +319,11 @@ class GlobalHotkeyListener(QThread):
                 return False
             if self.paused:
                 return
+
+            try:
+                self.any_key_pressed.emit()
+            except Exception:
+                pass
 
             # Map modifier keys
             with self.lock:
@@ -812,6 +835,26 @@ class RGBControllerApp(QMainWindow):
         saver_row.addWidget(AnimatedInfoIcon("Turns off RGB lighting when Windows\nenters Battery Saver mode."))
         saver_row.addStretch()
         power_layout.addLayout(saver_row)
+
+        theater_row = QHBoxLayout()
+        theater_row.setContentsMargins(0, 0, 0, 0)
+        self.theater_mode_cb = QCheckBox("Cinema Mode: Auto-dim in Fullscreen Video")
+        self.theater_mode_cb.setStyleSheet(toggle_css)
+        self.theater_mode_cb.toggled.connect(self.on_theater_mode_setting_changed)
+        theater_row.addWidget(self.theater_mode_cb)
+        theater_row.addWidget(AnimatedInfoIcon("Smoothly fades keyboard lighting away over 2.5s when watching\nfullscreen video (browsers, Netflix, VLC - except Ambient mode).\nInstantly wakes up on mouse movement or keypress."))
+        theater_row.addStretch()
+        power_layout.addLayout(theater_row)
+
+        display_off_row = QHBoxLayout()
+        display_off_row.setContentsMargins(0, 0, 0, 0)
+        self.display_off_sync_cb = QCheckBox("Display Sync: Turn off LEDs with display")
+        self.display_off_sync_cb.setStyleSheet(toggle_css)
+        self.display_off_sync_cb.toggled.connect(self.on_display_off_sync_changed)
+        display_off_row.addWidget(self.display_off_sync_cb)
+        display_off_row.addWidget(AnimatedInfoIcon("Turns off keyboard lighting when your display turns off,\nand restores it when the display wakes up."))
+        display_off_row.addStretch()
+        power_layout.addLayout(display_off_row)
 
         gen_content_layout.addWidget(power_card)
 
@@ -1896,6 +1939,8 @@ class RGBControllerApp(QMainWindow):
         self.turn_off_when_unplugged = False
         self.turn_off_when_battery_saver = False
         self._is_power_policy_forcing_off = False
+        self.cinema_mode_enabled = False
+        self.display_off_sync_enabled = False
         self.power_policy_timer = QTimer(self)
         self.power_policy_timer.setInterval(2000)
         self.power_policy_timer.timeout.connect(self.poll_power_policy)
@@ -1930,6 +1975,46 @@ class RGBControllerApp(QMainWindow):
         self.hotkey_listener = GlobalHotkeyListener(self.hotkeys)
         self.hotkey_listener.hotkey_triggered.connect(self.on_global_hotkey_triggered)
         self.hotkey_listener.start()
+        
+        # Cinema Mode / Theater Auto-Dim Subsystem
+        self.theater_manager = TheaterModeManager(self)
+        self.theater_manager.dim_factor_changed.connect(self.on_theater_dim_factor_changed)
+        self.hotkey_listener.any_key_pressed.connect(self.theater_manager.on_user_activity)
+
+        self.display_off_manager = DisplayOffManager(self)
+        self.display_off_manager.display_turned_off.connect(self._on_display_turned_off)
+        self.display_off_manager.display_turned_on.connect(self._on_display_turned_on)
+        self._display_power_notify_handles = []
+        try:
+            import ctypes
+            from ctypes import wintypes
+            user32 = ctypes.windll.user32
+            user32.RegisterPowerSettingNotification.argtypes = [
+                wintypes.HANDLE,
+                ctypes.c_void_p,
+                wintypes.DWORD,
+            ]
+            user32.RegisterPowerSettingNotification.restype = wintypes.HANDLE
+
+            _hwnd = int(self.winId())
+            h_console = user32.RegisterPowerSettingNotification(
+                _hwnd,
+                ctypes.byref(GUID_CONSOLE_DISPLAY_STATE),
+                0,  # DEVICE_NOTIFY_WINDOW_HANDLE
+            )
+            if h_console:
+                self._display_power_notify_handles.append(h_console)
+
+            h_session = user32.RegisterPowerSettingNotification(
+                _hwnd,
+                ctypes.byref(GUID_SESSION_DISPLAY_STATUS),
+                0,  # DEVICE_NOTIFY_WINDOW_HANDLE
+            )
+            if h_session:
+                self._display_power_notify_handles.append(h_session)
+            print(f"[DisplayOffSync] Registered power notification handles: {self._display_power_notify_handles}")
+        except Exception as e:
+            print(f"[DisplayOffSync] Could not register power setting notification: {e}")
         
 
         
@@ -2794,6 +2879,8 @@ class RGBControllerApp(QMainWindow):
         self.auto_update_cb.blockSignals(True)
         self.turn_off_unplugged_cb.blockSignals(True)
         self.turn_off_battery_saver_cb.blockSignals(True)
+        self.theater_mode_cb.blockSignals(True)
+        self.display_off_sync_cb.blockSignals(True)
         if hasattr(self, "startup_preset_combo"):
             self.startup_preset_combo.blockSignals(True)
         min_val = settings.value("minimize_to_tray", False)
@@ -2843,6 +2930,26 @@ class RGBControllerApp(QMainWindow):
             else bool(battery_saver_val)
         )
         self.turn_off_battery_saver_cb.setChecked(self.turn_off_when_battery_saver)
+        
+        cinema_val = settings.value("cinema_mode_enabled", False)
+        self.cinema_mode_enabled = (
+            str(cinema_val).lower() == "true"
+            if isinstance(cinema_val, str)
+            else bool(cinema_val)
+        )
+        self.theater_mode_cb.setChecked(self.cinema_mode_enabled)
+        if hasattr(self, "theater_manager"):
+            self.theater_manager.set_enabled(self.cinema_mode_enabled)
+
+        display_off_val = settings.value("display_off_sync_enabled", False)
+        self.display_off_sync_enabled = (
+            str(display_off_val).lower() == "true"
+            if isinstance(display_off_val, str)
+            else bool(display_off_val)
+        )
+        self.display_off_sync_cb.setChecked(self.display_off_sync_enabled)
+        if hasattr(self, "display_off_manager"):
+            self.display_off_manager.set_enabled(self.display_off_sync_enabled)
         
         # Start power policy timer if either setting is enabled
         if self.turn_off_when_unplugged or self.turn_off_when_battery_saver:
@@ -2894,6 +3001,8 @@ class RGBControllerApp(QMainWindow):
         self.auto_update_cb.blockSignals(False)
         self.turn_off_unplugged_cb.blockSignals(False)
         self.turn_off_battery_saver_cb.blockSignals(False)
+        self.theater_mode_cb.blockSignals(False)
+        self.display_off_sync_cb.blockSignals(False)
         if startup_p in self.presets:
             if self.presets[startup_p].get("mode") == "Temperature Mode":
                 startup_p = "None (Use Last State)"
@@ -2944,8 +3053,93 @@ class RGBControllerApp(QMainWindow):
         settings.setValue(
             "turn_off_when_battery_saver", self.turn_off_battery_saver_cb.isChecked()
         )
+        settings.setValue(
+            "cinema_mode_enabled", self.theater_mode_cb.isChecked()
+        )
+        settings.setValue(
+            "display_off_sync_enabled", self.display_off_sync_cb.isChecked()
+        )
 
         self.manage_startup_registry(launch_start)
+
+    def on_theater_mode_setting_changed(self, *args):
+        self.cinema_mode_enabled = self.theater_mode_cb.isChecked()
+        self.save_settings()
+        if hasattr(self, "theater_manager"):
+            self.theater_manager.set_enabled(self.cinema_mode_enabled)
+
+    def on_display_off_sync_changed(self, *args):
+        self.display_off_sync_enabled = self.display_off_sync_cb.isChecked()
+        self.save_settings()
+        if hasattr(self, "display_off_manager"):
+            self.display_off_manager.set_enabled(self.display_off_sync_enabled)
+
+    def _on_display_turned_off(self):
+        """Called when display turns off — immediately turn off keyboard LEDs."""
+        if not getattr(self, "display_off_sync_enabled", False):
+            return
+        print("[DisplayOffSync] Turning off keyboard LEDs due to display off.")
+        try:
+            self.stop_temperature_worker()
+            if hasattr(self, "effect_manager"):
+                self.effect_manager.turn_off()
+            if self.kb:
+                self.kb.set_effect("static")
+                self.kb.set_solid_color(0, 0, 0)
+        except Exception as e:
+            print(f"[DisplayOffSync] Error turning off LEDs: {e}")
+
+    def _on_display_turned_on(self):
+        """Called when display wakes up — restore keyboard LEDs to current effect."""
+        if not getattr(self, "display_off_sync_enabled", False):
+            return
+        print("[DisplayOffSync] Restoring keyboard LEDs due to display on.")
+        try:
+            self.apply_effect()
+        except Exception as e:
+            print(f"[DisplayOffSync] Error restoring LEDs: {e}")
+
+    def on_theater_dim_factor_changed(self, factor: float):
+        # Do not dim when Ambient mode is active
+        current_mode = getattr(self, "current_mode_name", "")
+        if "ambient" in str(current_mode).lower():
+            return
+
+        # Update dim factor in effect_manager for software effects
+        if hasattr(self, "effect_manager"):
+            self.effect_manager.theater_dim_factor = factor
+            
+        # Also handle hardware modes (Static, Breath, Wave, Smooth) if active
+        current_mode = getattr(self, "current_mode_name", None)
+        if current_mode in getattr(self, "HARDWARE_MODES", ()):
+            if current_mode == "Off":
+                return
+            if not getattr(self, "kb", None):
+                return
+            try:
+                hw_speed = max(1, min(4, int(self.speed_slider.value() / 25) + 1))
+                # Scale hardware brightness down smoothly with factor
+                effective_bright = (self.bright_slider.value() / 100.0) * factor
+                hw_brightness = max(0, min(4, int(effective_bright * 4)))
+                colors = [int(c * effective_bright) for rgb in self.zone_colors for c in rgb]
+                
+                if factor <= 0.02:
+                    # Keyboard dimmed to black
+                    self.kb.set_effect("static")
+                    self.kb.set_solid_color(0, 0, 0)
+                else:
+                    if current_mode == "Static":
+                        self.kb.set_effect("static")
+                        self.kb.set_colors(colors)
+                    elif current_mode == "Breath":
+                        self.kb.set_effect("breath", speed=hw_speed, brightness=max(1, hw_brightness))
+                        self.kb.set_colors(colors)
+                    elif current_mode == "Wave":
+                        self.kb.set_effect("wave", speed=hw_speed, brightness=max(1, hw_brightness), direction=self.wave_direction)
+                    elif current_mode == "Smooth":
+                        self.kb.set_effect("smooth", speed=hw_speed, brightness=max(1, hw_brightness))
+            except Exception:
+                pass
 
 
 
@@ -3053,6 +3247,8 @@ class RGBControllerApp(QMainWindow):
             self.boot_gif_cb.blockSignals(True)
             self.turn_off_unplugged_cb.blockSignals(True)
             self.turn_off_battery_saver_cb.blockSignals(True)
+            self.theater_mode_cb.blockSignals(True)
+            self.display_off_sync_cb.blockSignals(True)
             self.startup_preset_combo.blockSignals(True)
             self.minimize_to_tray_cb.setChecked(False)
             self.launch_on_start_cb.setChecked(True)
@@ -3060,8 +3256,16 @@ class RGBControllerApp(QMainWindow):
             self.boot_gif_cb.setChecked(False)
             self.turn_off_unplugged_cb.setChecked(False)
             self.turn_off_battery_saver_cb.setChecked(False)
+            self.theater_mode_cb.setChecked(False)
+            self.display_off_sync_cb.setChecked(False)
             self.turn_off_when_unplugged = False
             self.turn_off_when_battery_saver = False
+            self.cinema_mode_enabled = False
+            self.display_off_sync_enabled = False
+            if hasattr(self, "theater_manager"):
+                self.theater_manager.set_enabled(False)
+            if hasattr(self, "display_off_manager"):
+                self.display_off_manager.set_enabled(False)
             self._is_power_policy_forcing_off = False
             self.presets = {}
             self.hotkeys = {}
@@ -3084,6 +3288,8 @@ class RGBControllerApp(QMainWindow):
             self.boot_gif_cb.blockSignals(False)
             self.turn_off_unplugged_cb.blockSignals(False)
             self.turn_off_battery_saver_cb.blockSignals(False)
+            self.theater_mode_cb.blockSignals(False)
+            self.display_off_sync_cb.blockSignals(False)
             self.startup_preset_combo.blockSignals(False)
             self.bright_slider.setValue(100)
             self.vibrance_slider.setValue(15)
@@ -3910,6 +4116,31 @@ class RGBControllerApp(QMainWindow):
             msg = MSG.from_address(message.__int__())
             if msg.message == 131 and msg.wParam:
                 return (True, 0)
+            # Handle display-off sync via WM_POWERBROADCAST
+            if msg.message == WM_POWERBROADCAST:
+                if msg.wParam == PBT_POWERSETTINGCHANGE and msg.lParam:
+                    try:
+                        ps = POWERBROADCAST_SETTING.from_address(msg.lParam)
+                        data_val = int(ps.Data[0])
+                        if hasattr(self, "display_off_manager"):
+                            self.display_off_manager.handle_power_setting_change(ps.PowerSetting, data_val)
+                    except Exception as e:
+                        print(f"[DisplayOffSync] Error handling power setting change: {e}")
+                elif msg.wParam == 0x0004:  # PBT_APMSUSPEND
+                    if hasattr(self, "display_off_manager"):
+                        self.display_off_manager.handle_sleep_state(True)
+                elif msg.wParam in (0x0007, 0x0012):  # PBT_APMRESUMESUSPEND / PBT_APMRESUMEAUTOMATIC
+                    if hasattr(self, "display_off_manager"):
+                        self.display_off_manager.handle_sleep_state(False)
+            elif msg.message == 0x0112:  # WM_SYSCOMMAND
+                cmd = msg.wParam & 0xFFF0
+                if cmd == 0xF170:  # SC_MONITORPOWER
+                    if msg.lParam == 2:  # Monitor power off
+                        if hasattr(self, "display_off_manager"):
+                            self.display_off_manager.handle_sleep_state(True)
+                    elif msg.lParam == -1:  # Monitor power on
+                        if hasattr(self, "display_off_manager"):
+                            self.display_off_manager.handle_sleep_state(False)
         return super().nativeEvent(eventType, message)
 
     @Slot()
@@ -4294,6 +4525,13 @@ class RGBControllerApp(QMainWindow):
                 self.effect_manager.stop()
             if hasattr(self, "tray_icon"):
                 self.tray_icon.hide()
+            if hasattr(self, "_display_power_notify_handles"):
+                for h in self._display_power_notify_handles:
+                    if h:
+                        try:
+                            ctypes.windll.user32.UnregisterPowerSettingNotification(h)
+                        except Exception:
+                            pass
             self.save_settings()
             super().closeEvent(event)
 
@@ -4436,12 +4674,33 @@ class RGBControllerApp(QMainWindow):
         
         mode_name = self.mode_list.currentItem().text()
         self.current_mode_name = mode_name
-        
+
+        # If switching to Ambient mode, wake theater manager immediately so lights are full brightness
+        if hasattr(self, "theater_manager") and "ambient" in str(mode_name).lower():
+            self.theater_manager.wake_up(force=True)
+
         # Dispatch immediate telemetry ping so dashboard updates instantly
         if hasattr(self, "telemetry") and self.telemetry:
             import threading
             threading.Thread(target=self.telemetry._send_status, args=("online",), daemon=True).start()
-        
+
+        # If display is off under Display Sync, keep keyboard LEDs off
+        if (
+            getattr(self, "display_off_sync_enabled", False)
+            and getattr(self, "display_off_manager", None)
+            and self.display_off_manager.is_display_off
+        ):
+            self.stop_temperature_worker()
+            if hasattr(self, "effect_manager"):
+                self.effect_manager.turn_off()
+            if self.kb:
+                try:
+                    self.kb.set_effect("static")
+                    self.kb.set_solid_color(0, 0, 0)
+                except Exception:
+                    pass
+            return
+
         if self.refresh_power_policy_state():
             self.stop_temperature_worker()
             if hasattr(self, "effect_manager"):
