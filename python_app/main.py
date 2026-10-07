@@ -90,7 +90,9 @@ from core.manager import EffectManager
 from core.theater_mode import (
     TheaterModeManager,
     DisplayOffManager,
+    DisplayOffEventFilter,
     GUID_CONSOLE_DISPLAY_STATE,
+    GUID_MONITOR_POWER_ON,
     GUID_SESSION_DISPLAY_STATUS,
     guid_equals,
 )
@@ -1984,7 +1986,13 @@ class RGBControllerApp(QMainWindow):
         self.display_off_manager = DisplayOffManager(self)
         self.display_off_manager.display_turned_off.connect(self._on_display_turned_off)
         self.display_off_manager.display_turned_on.connect(self._on_display_turned_on)
+
+        # Install application-level native event filter so events are never missed even when hidden/in-tray
+        self._power_event_filter = DisplayOffEventFilter(self.display_off_manager)
+        QApplication.instance().installNativeEventFilter(self._power_event_filter)
+
         self._display_power_notify_handles = []
+        self._wts_registered_hwnd = None
         try:
             import ctypes
             from ctypes import wintypes
@@ -1997,18 +2005,37 @@ class RGBControllerApp(QMainWindow):
             user32.RegisterPowerSettingNotification.restype = wintypes.HANDLE
 
             _hwnd = int(self.winId())
+
+            # Register for Windows Session notifications (e.g. Win+L screen lock/unlock)
+            try:
+                if ctypes.windll.wtsapi32.WTSRegisterSessionNotification(_hwnd, 0):
+                    self._wts_registered_hwnd = _hwnd
+            except Exception as e:
+                print(f"[DisplayOffSync] WTS session notification failed: {e}")
+
+            # Register Console Display State (Windows 8/10/11: 0=off, 1=on, 2=dimmed)
             h_console = user32.RegisterPowerSettingNotification(
                 _hwnd,
                 ctypes.byref(GUID_CONSOLE_DISPLAY_STATE),
-                0,  # DEVICE_NOTIFY_WINDOW_HANDLE
+                0,
             )
             if h_console:
                 self._display_power_notify_handles.append(h_console)
 
+            # Register Monitor Power On (0=off, 1=on)
+            h_mon = user32.RegisterPowerSettingNotification(
+                _hwnd,
+                ctypes.byref(GUID_MONITOR_POWER_ON),
+                0,
+            )
+            if h_mon:
+                self._display_power_notify_handles.append(h_mon)
+
+            # Register Session Display Status (0=off, 1=on, 2=dimmed)
             h_session = user32.RegisterPowerSettingNotification(
                 _hwnd,
                 ctypes.byref(GUID_SESSION_DISPLAY_STATUS),
-                0,  # DEVICE_NOTIFY_WINDOW_HANDLE
+                0,
             )
             if h_session:
                 self._display_power_notify_handles.append(h_session)
@@ -4525,6 +4552,16 @@ class RGBControllerApp(QMainWindow):
                 self.effect_manager.stop()
             if hasattr(self, "tray_icon"):
                 self.tray_icon.hide()
+            if hasattr(self, "_power_event_filter") and self._power_event_filter:
+                try:
+                    QApplication.instance().removeNativeEventFilter(self._power_event_filter)
+                except Exception:
+                    pass
+            if hasattr(self, "_wts_registered_hwnd") and self._wts_registered_hwnd:
+                try:
+                    ctypes.windll.wtsapi32.WTSUnRegisterSessionNotification(self._wts_registered_hwnd)
+                except Exception:
+                    pass
             if hasattr(self, "_display_power_notify_handles"):
                 for h in self._display_power_notify_handles:
                     if h:
