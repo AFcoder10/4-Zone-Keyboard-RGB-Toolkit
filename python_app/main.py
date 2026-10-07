@@ -118,7 +118,7 @@ import tempfile
 import traceback
 
 
-CURRENT_VERSION = "v3.3"
+CURRENT_VERSION = "v3.4"
 
 
 class SYSTEM_POWER_STATUS(ctypes.Structure):

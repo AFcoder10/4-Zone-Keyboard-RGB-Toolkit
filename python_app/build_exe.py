@@ -105,6 +105,7 @@ def build_standalone_exe():
         "--hidden-import=core.manager",
         "--hidden-import=core.config",
         "--hidden-import=core.custom_effects_io",
+        "--hidden-import=core.theater_mode",
         # --- Hidden imports (utils package) ---
         "--hidden-import=utils",
         "--hidden-import=utils.chroma_utils",
