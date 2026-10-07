@@ -2,6 +2,9 @@
 
 Welcome to the **v3.3** release! This update brings enhanced system tray launch controls, fixes cursor flickering in ambient screen sampling, and delivers further reliability improvements.
 
+> ⚠️ **NOTE**: If you experience any issues updating to this version via the in-app updater, please report it! You can bypass the issue by installing directly from GitHub:
+> **[Download v3.3 Directly](https://github.com/AFcoder10/4-Zone-Keyboard-RGB-Toolkit/releases/download/v3.3/4_Zone_Rgb_Toolkit.exe)** *(and delete your old version).*
+
 ## What's New & Improved
 
 *   **Start Minimized (System Tray):** Added a new setting under Behavior to launch the application silently straight into the Windows system tray without showing the main window. Ideal for users launching manually via custom startup shortcuts or background task managers.
@@ -9,7 +12,6 @@ Welcome to the **v3.3** release! This update brings enhanced system tray launch 
 
 ## Stability & Bug Fixes
 
-*   **Auto-Updater Reliability Overhaul:** Completely rewrote the self-updating mechanism to be bulletproof. The updater now utilizes a rename-then-copy strategy to bypass Windows file locks, implements a 20-second exponential backoff retry loop, automatically requests UAC elevation for `Program Files` installations, and logs diagnostics to `%TEMP%\updater.log`. This ensures future updates from v3.3 onwards will apply smoothly without silent failures!
 *   **Eliminated Mouse Cursor Flickering (Issue #12):** Fixed cursor flickering and flashing during rapid screen sampling in **Ambient Screen Color** mode and Valorant Spike Timer by disabling Windows GDI `CAPTUREBLT`. Desktop colors are now captured smoothly without interfering with the hardware mouse pointer.
     *   *Special thanks to [@pranavakshit](https://github.com/pranavakshit) for reporting the cursor blinking issue in #12 with helpful video footage and reproduction details!*
 *   **Startup & Splash Screen Harmony:** Linked the *Start Minimized* and *Show Splash Screen on Boot* options with mutual exclusion so silent tray launches skip splash animations cleanly.

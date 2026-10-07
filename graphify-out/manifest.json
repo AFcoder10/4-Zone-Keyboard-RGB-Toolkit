@@ -1,0 +1,326 @@
+{
+  "python_app/build_exe.py": {
+    "mtime": 1788718595.2970264,
+    "seen": 1791351477.8234637,
+    "ast_hash": "2f2b432ba0a6424adfc8310e47ce5a71",
+    "semantic_hash": "2f2b432ba0a6424adfc8310e47ce5a71"
+  },
+  "python_app/build_installer.py": {
+    "mtime": 1788719382.4405773,
+    "seen": 1791351477.8234637,
+    "ast_hash": "b700b54e230bcbe08999d20f21da74a6",
+    "semantic_hash": "b700b54e230bcbe08999d20f21da74a6"
+  },
+  "python_app/cloud_hub.py": {
+    "mtime": 1787158094.469414,
+    "seen": 1791351477.8234637,
+    "ast_hash": "0202c9dc965ea5a9c22b34f875676471",
+    "semantic_hash": "0202c9dc965ea5a9c22b34f875676471"
+  },
+  "python_app/core/base.py": {
+    "mtime": 1784149768.6255476,
+    "seen": 1791351477.8234637,
+    "ast_hash": "7c2028a500c3333c5fcea7eb32d61005",
+    "semantic_hash": "7c2028a500c3333c5fcea7eb32d61005"
+  },
+  "python_app/core/config.py": {
+    "mtime": 1788290759.7378275,
+    "seen": 1791351477.8234637,
+    "ast_hash": "03877f40c3aaac7bd74be3580e95de16",
+    "semantic_hash": "03877f40c3aaac7bd74be3580e95de16"
+  },
+  "python_app/core/custom_effects_io.py": {
+    "mtime": 1786301644.750404,
+    "seen": 1791351477.8234637,
+    "ast_hash": "dde1f9d670414ec207583b545e683cce",
+    "semantic_hash": "dde1f9d670414ec207583b545e683cce"
+  },
+  "python_app/core/keyboard.py": {
+    "mtime": 1787143906.661176,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5880037dccda62b54ec098bc4f0d1e69",
+    "semantic_hash": "5880037dccda62b54ec098bc4f0d1e69"
+  },
+  "python_app/core/manager.py": {
+    "mtime": 1787131432.7691872,
+    "seen": 1791351477.8234637,
+    "ast_hash": "9cee0ce57cc4ec9f8499c3672d1395bb",
+    "semantic_hash": "9cee0ce57cc4ec9f8499c3672d1395bb"
+  },
+  "python_app/custom_builder_gui.py": {
+    "mtime": 1787158094.4638245,
+    "seen": 1791351477.8234637,
+    "ast_hash": "207f7ba1f85c9e9d4ff79863028f3c70",
+    "semantic_hash": "207f7ba1f85c9e9d4ff79863028f3c70"
+  },
+  "python_app/effects/__init__.py": {
+    "mtime": 1788290759.730314,
+    "seen": 1791351477.8234637,
+    "ast_hash": "d80cc31ac2dda3d070a12eb3acf0b2a7",
+    "semantic_hash": "d80cc31ac2dda3d070a12eb3acf0b2a7"
+  },
+  "python_app/effects/ambient.py": {
+    "mtime": 1788699800.2700262,
+    "seen": 1791351477.8234637,
+    "ast_hash": "fae10a3df73584c6876997e0eb55314c",
+    "semantic_hash": "fae10a3df73584c6876997e0eb55314c"
+  },
+  "python_app/effects/audio_visualizer.py": {
+    "mtime": 1788078093.311895,
+    "seen": 1791351477.8234637,
+    "ast_hash": "67e1c082a3ba9e4721080a34f27420bb",
+    "semantic_hash": "67e1c082a3ba9e4721080a34f27420bb"
+  },
+  "python_app/effects/aurora.py": {
+    "mtime": 1784149768.6280122,
+    "seen": 1791351477.8234637,
+    "ast_hash": "30d903ccdc1de83ef3862a28a9f2ab3b",
+    "semantic_hash": "30d903ccdc1de83ef3862a28a9f2ab3b"
+  },
+  "python_app/effects/battery.py": {
+    "mtime": 1787081566.0347912,
+    "seen": 1791351477.8234637,
+    "ast_hash": "6e8aa8171a9327ca76de41fda15fdfe3",
+    "semantic_hash": "6e8aa8171a9327ca76de41fda15fdfe3"
+  },
+  "python_app/effects/custom_sequence.py": {
+    "mtime": 1787081566.0347912,
+    "seen": 1791351477.8234637,
+    "ast_hash": "b307788ae9dc2f5890c76861f3ef3033",
+    "semantic_hash": "b307788ae9dc2f5890c76861f3ef3033"
+  },
+  "python_app/effects/lightning.py": {
+    "mtime": 1784149768.6285858,
+    "seen": 1791351477.8234637,
+    "ast_hash": "0bcf642752251814e30dc4220640eed8",
+    "semantic_hash": "0bcf642752251814e30dc4220640eed8"
+  },
+  "python_app/effects/meteor.py": {
+    "mtime": 1784149768.6285858,
+    "seen": 1791351477.8234637,
+    "ast_hash": "8a635655502b059a101ba83886061de4",
+    "semantic_hash": "8a635655502b059a101ba83886061de4"
+  },
+  "python_app/effects/mouse_aura.py": {
+    "mtime": 1785602885.5538554,
+    "seen": 1791351477.8234637,
+    "ast_hash": "1f1534f5e12cac4902cb6d33221b29bc",
+    "semantic_hash": "1f1534f5e12cac4902cb6d33221b29bc"
+  },
+  "python_app/effects/party.py": {
+    "mtime": 1787131432.7661917,
+    "seen": 1791351477.8234637,
+    "ast_hash": "c97bf7c0a64034d84f1afb58d6c1e1f0",
+    "semantic_hash": "c97bf7c0a64034d84f1afb58d6c1e1f0"
+  },
+  "python_app/effects/reactive_typing.py": {
+    "mtime": 1788078046.0836902,
+    "seen": 1791351477.8234637,
+    "ast_hash": "9ffad9a76f47861327aa9b5fb30dd06f",
+    "semantic_hash": "9ffad9a76f47861327aa9b5fb30dd06f"
+  },
+  "python_app/effects/realistic_fire.py": {
+    "mtime": 1784149768.6301827,
+    "seen": 1791351477.8234637,
+    "ast_hash": "04a1601226eaa3ec4ed584bf66246ed6",
+    "semantic_hash": "04a1601226eaa3ec4ed584bf66246ed6"
+  },
+  "python_app/effects/scanner.py": {
+    "mtime": 1787131432.7661917,
+    "seen": 1791351477.8234637,
+    "ast_hash": "ad9b0c4fae160c2a0222160ddc881c61",
+    "semantic_hash": "ad9b0c4fae160c2a0222160ddc881c61"
+  },
+  "python_app/effects/smooth_wave.py": {
+    "mtime": 1784150283.830212,
+    "seen": 1791351477.8234637,
+    "ast_hash": "35a8e0523b85aef07bc825928da0b02f",
+    "semantic_hash": "35a8e0523b85aef07bc825928da0b02f"
+  },
+  "python_app/effects/temperature.py": {
+    "mtime": 1787081631.2985523,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5a07f5c7b7be7dbfb8e466358d891041",
+    "semantic_hash": "5a07f5c7b7be7dbfb8e466358d891041"
+  },
+  "python_app/effects/valorant_spike.py": {
+    "mtime": 1788699807.5466437,
+    "seen": 1791351477.8234637,
+    "ast_hash": "0c70532d1745bb1324dacb8ace309c19",
+    "semantic_hash": "0c70532d1745bb1324dacb8ace309c19"
+  },
+  "python_app/fastapi_server.py": {
+    "mtime": 1788077346.0271287,
+    "seen": 1791351477.8234637,
+    "ast_hash": "63ffb4c06f31272519a757265744b3f3",
+    "semantic_hash": "63ffb4c06f31272519a757265744b3f3"
+  },
+  "python_app/keyboard_zones.json": {
+    "mtime": 1783309834.769466,
+    "seen": 1791351477.8234637,
+    "ast_hash": "209ce98e3e36a5cac85a683cb88bdbb9",
+    "semantic_hash": "209ce98e3e36a5cac85a683cb88bdbb9"
+  },
+  "python_app/main.py": {
+    "mtime": 1788726881.7290995,
+    "seen": 1791351477.8234637,
+    "ast_hash": "3a2b36ce627bac5b7875de938ec7a3bb",
+    "semantic_hash": "3a2b36ce627bac5b7875de938ec7a3bb"
+  },
+  "python_app/mobile_server.py": {
+    "mtime": 1788077061.827237,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5625f51672051918e6645277e9e3e4f4",
+    "semantic_hash": "5625f51672051918e6645277e9e3e4f4"
+  },
+  "python_app/temperature_worker.py": {
+    "mtime": 1787158094.4699185,
+    "seen": 1791351477.8234637,
+    "ast_hash": "4126c420b9eee6a7694478e30860accd",
+    "semantic_hash": "4126c420b9eee6a7694478e30860accd"
+  },
+  "python_app/thermal_sensor_wrapper.cs": {
+    "mtime": 1787147412.6333172,
+    "seen": 1791351477.8234637,
+    "ast_hash": "16d0be8d2d0dbfe433ab52b795fd05d3",
+    "semantic_hash": "16d0be8d2d0dbfe433ab52b795fd05d3"
+  },
+  "python_app/utils/__init__.py": {
+    "mtime": 1788077346.0271287,
+    "seen": 1791351477.8234637,
+    "ast_hash": "9655690e46e4c12d9303203b01b7bfba",
+    "semantic_hash": "9655690e46e4c12d9303203b01b7bfba"
+  },
+  "python_app/utils/chroma_utils.py": {
+    "mtime": 1787131432.768185,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5dfd0d7e3cfca3b77073cd5f6a8e26b8",
+    "semantic_hash": "5dfd0d7e3cfca3b77073cd5f6a8e26b8"
+  },
+  "python_app/utils/system_info.py": {
+    "mtime": 1788076550.9840195,
+    "seen": 1791351477.8234637,
+    "ast_hash": "d0cc5832c700d27b89bce96d6dbbefef",
+    "semantic_hash": "d0cc5832c700d27b89bce96d6dbbefef"
+  },
+  "python_app/wintemp.py": {
+    "mtime": 1782843020.2217095,
+    "seen": 1791351477.8234637,
+    "ast_hash": "a747426c0feb4dc28216f05b52252a2d",
+    "semantic_hash": "a747426c0feb4dc28216f05b52252a2d"
+  },
+  "website/.oxlintrc.json": {
+    "mtime": 1783271158.7809017,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5e6e3cea3e89137071c142dd7835b0ef",
+    "semantic_hash": "5e6e3cea3e89137071c142dd7835b0ef"
+  },
+  "website/package.json": {
+    "mtime": 1787590972.992349,
+    "seen": 1791351477.8234637,
+    "ast_hash": "50cc603886cdd23857fdb2c78319a54e",
+    "semantic_hash": "50cc603886cdd23857fdb2c78319a54e"
+  },
+  "website/src/App.jsx": {
+    "mtime": 1783363171.1472468,
+    "seen": 1791351477.8234637,
+    "ast_hash": "0dbda26610278a0fe64efc1052da453b",
+    "semantic_hash": "0dbda26610278a0fe64efc1052da453b"
+  },
+  "website/src/main.jsx": {
+    "mtime": 1783271158.8295383,
+    "seen": 1791351477.8234637,
+    "ast_hash": "e13723e2574429d9a6d849727e3ff695",
+    "semantic_hash": "e13723e2574429d9a6d849727e3ff695"
+  },
+  "website/src/pages/Changelog.jsx": {
+    "mtime": 1787082348.7851357,
+    "seen": 1791351477.8234637,
+    "ast_hash": "12d798ad8dd43335cd5181464abd9678",
+    "semantic_hash": "12d798ad8dd43335cd5181464abd9678"
+  },
+  "website/src/pages/Home.jsx": {
+    "mtime": 1788075033.465676,
+    "seen": 1791351477.8234637,
+    "ast_hash": "b832b617c55adba18dbc4c57fbac58d0",
+    "semantic_hash": "b832b617c55adba18dbc4c57fbac58d0"
+  },
+  "website/vite.config.js": {
+    "mtime": 1783328235.1109629,
+    "seen": 1791351477.8234637,
+    "ast_hash": "ae6a7e69fb8614ffafee4a2135941ff6",
+    "semantic_hash": "ae6a7e69fb8614ffafee4a2135941ff6"
+  },
+  ".github/workflows/static.yml": {
+    "mtime": 1783348821.9015632,
+    "seen": 1791351477.8234637,
+    "ast_hash": "330ca0226f409fa45cbf8c889534c599",
+    "semantic_hash": "330ca0226f409fa45cbf8c889534c599"
+  },
+  "README.md": {
+    "mtime": 1788719268.096056,
+    "seen": 1791351477.8234637,
+    "ast_hash": "1996dbc811f08c0a97dd4c4a78353b44",
+    "semantic_hash": "1996dbc811f08c0a97dd4c4a78353b44"
+  },
+  "RELEASE_NOTES.md": {
+    "mtime": 1788727346.0352466,
+    "seen": 1791351477.8234637,
+    "ast_hash": "76579f23463604a440a67bbdd3dc7002",
+    "semantic_hash": "76579f23463604a440a67bbdd3dc7002"
+  },
+  "UPDATER_ARCHITECTURE.md": {
+    "mtime": 1788726896.6834886,
+    "seen": 1791351477.8234637,
+    "ast_hash": "24c9ffa6219824cf5c23051da34f6b40",
+    "semantic_hash": "24c9ffa6219824cf5c23051da34f6b40"
+  },
+  "python_app/requirements.txt": {
+    "mtime": 1786301490.0153654,
+    "seen": 1791351477.8234637,
+    "ast_hash": "bbfc091644773e37bb4378be17d50d14",
+    "semantic_hash": "bbfc091644773e37bb4378be17d50d14"
+  },
+  "python_app/version_info.txt": {
+    "mtime": 1788719279.1321304,
+    "seen": 1791351477.8234637,
+    "ast_hash": "56212e2dab2a343404bdedd7df929844",
+    "semantic_hash": "56212e2dab2a343404bdedd7df929844"
+  },
+  "website/README.md": {
+    "mtime": 1783271158.8373005,
+    "seen": 1791351477.8234637,
+    "ast_hash": "75eb386f17caf77fd6fe3ce1d90968ee",
+    "semantic_hash": "75eb386f17caf77fd6fe3ce1d90968ee"
+  },
+  "website/index.html": {
+    "mtime": 1783362154.8005247,
+    "seen": 1791351477.8234637,
+    "ast_hash": "5294250d2f5796cff9b98473db92f305",
+    "semantic_hash": "5294250d2f5796cff9b98473db92f305"
+  },
+  "website/public/google23ed6c7162f83408.html": {
+    "mtime": 1785537229.8340318,
+    "seen": 1791351477.8234637,
+    "ast_hash": "427fe07ba9ff3f833c6e37884718e820",
+    "semantic_hash": "427fe07ba9ff3f833c6e37884718e820"
+  },
+  "assets/preview.png": {
+    "mtime": 1787833193.2408183,
+    "seen": 1791351477.8234637,
+    "ast_hash": "1b240fa78a23b5f5c5736ebe0ea591f0",
+    "semantic_hash": "1b240fa78a23b5f5c5736ebe0ea591f0"
+  },
+  "python_app/assets/boot.gif": {
+    "mtime": 1782908927.710825,
+    "seen": 1791351477.8234637,
+    "ast_hash": "35a96e1bc75d23778a1bbd2e88d8c4fb",
+    "semantic_hash": "35a96e1bc75d23778a1bbd2e88d8c4fb"
+  },
+  "website/src/assets/hero.png": {
+    "mtime": 1783271158.864141,
+    "seen": 1791351477.8234637,
+    "ast_hash": "aead493361b27e7510691c5d7072dfc1",
+    "semantic_hash": "aead493361b27e7510691c5d7072dfc1"
+  }
+}
